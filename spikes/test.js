@@ -78,6 +78,9 @@ setTimeout(function(){
         // results.forEach(function(p){
         //   console.log(new Uint32Array(p));
         // });
+        workers.forEach(function(w){
+          w.terminate();
+        })
       }
     };
 
