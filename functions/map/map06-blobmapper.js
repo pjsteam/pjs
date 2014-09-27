@@ -1,5 +1,5 @@
 /**
-  Workers use eval function to execute pjs.map @p mapper funcion.
+  Workers imports pjs.map @p mapper funcion as blob.
   pjs.map @p mapper is passed to workers on postMessage.
   pjs.map @p callback is being called once with the complete ordered result.
 */
@@ -19,7 +19,7 @@ var pjs = {
       var overallStart = data.overallStart;
       var result = data.result;
       var startIndex = data.startIndex;
-
+      var mapperURL = data.mapperURL;
 
       if (!pjs.resultMap) {
         pjs.resultMap = [];
@@ -31,6 +31,7 @@ var pjs = {
 
       finishCount++;
       if (finishCount === wks.length) {
+        URL.revokeObjectURL(mapperURL);
         var finalMappedArray = [];
         pjs.terminate();
         pjs.resultMap[runId].forEach(function (piece, index) {
@@ -55,8 +56,8 @@ var pjs = {
       var aux = 0;
       var wStart = wIndex * factor;
       var wEnd = wStart + factor;
-      var wMapper = mapper.toString();
-
+      var blobMapper = new Blob(['__mapper = ' + mapper.toString()], { type: 'application/javascript' });
+      var blobMapperURL = window.URL.createObjectURL(blobMapper);
       if (wIndex === (wks.length - 1)) {
         aux = array.length - wEnd;
       }
@@ -68,7 +69,7 @@ var pjs = {
         start: wTime,
         overallStart: overallStart,
         elements: wElements,
-        mapper: wMapper
+        mapperURL: blobMapperURL
       });
     }
   },
@@ -78,26 +79,27 @@ var pjs = {
     var i = parts;
 
     var wCode = function (event) {
-        var elements = event.data.elements;
-        var startTime = event.data.start;
-        var overallStart = event.data.overallStart;
-        var startIndex = event.data.startIndex;
-        var result = [];
-        var code = 'var __code = ' + event.data.mapper + ';';
-        var i = elements.length;
+      var elements = event.data.elements;
+      var startTime = event.data.start;
+      var overallStart = event.data.overallStart;
+      var startIndex = event.data.startIndex;
+      var result = [];
+      var mapperURL = event.data.mapperURL;
+      var i = elements.length;
 
-        eval(code);
+      importScripts(mapperURL);
 
-        for ( ; i--; ){
-          result[i] = __code(elements[i]);
-        }
+      for ( ; i--; ){
+        result[i] = __mapper(elements[i]);
+      }
 
-        postMessage({
-          startIndex: startIndex,
-          result: result,
-          overallStart: overallStart,
-          runTime: new Date() - startTime
-        });
+      postMessage({
+        startIndex: startIndex,
+        result: result,
+        overallStart: overallStart,
+        runTime: new Date() - startTime,
+        mapperURL: mapperURL
+      });
     };
     var blob = new Blob(["onmessage = " + wCode.toString()]);
     var blobURL = window.URL.createObjectURL(blob);
