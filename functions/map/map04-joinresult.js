@@ -1,13 +1,12 @@
 /**
-  pjs.map with workers.
-  pjs.map @p process function is ignored.
-  Only one worker at @p workers is being used.
+  pjs.map @p mapper function is ignored.
+  pjs.map @p callback is being called once with the complete ordered result.
 */
 
 // Define
 var pjs = {
   lastRunId: 0,
-  map: function(array, process, callback) {
+  map: function(array, mapper, callback) {
     var runId = this.lastRunId;
     var finishCount = 0;
     var wks = this.workers;

@@ -1,12 +1,13 @@
 /**
   pjs.map with workers.
-  pjs.map @p process function is ignored.
-  Only one worker at @p workers is being used.
+  Only one worker is being used from pjs.workers.
+  pjs.map @p mapper function is ignored.
+  pjs.map @p callback is being called for each worker result (unordered).
 */
 
 // Define
 var pjs = {
-  map: function(array, process, callback) {
+  map: function(array, mapper, callback) {
     var w = this.workers[0];
     w.onmessage = function(event) {
       var data = event.data;

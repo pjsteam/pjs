@@ -4,10 +4,8 @@
 
 // Define
 var pjs = {
-  map: function(array, process, callback) {
-    callback(array.map(function (item) {
-      return process(item);
-    }));
+  map: function(array, mapper, callback) {
+    callback(array.map(mapper));
   }
 };
 
