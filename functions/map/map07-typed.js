@@ -17,10 +17,10 @@ var pjs = {
     var factor = Math.floor(arrayLength / wks.length);
     var wCallback = function(event) {
       var data = event.data;
-      var time = data.runTime;
-      var overallStart = data.overallStart;
+      var paramsBuffer = data.params;
+      var params = new Uint32Array(paramsBuffer);
+      var startIndex = params[0];
       var result = data.result;
-      var startIndex = data.startIndex;
       var mapperURL = data.mapperURL;
 
       if (!pjs.resultMap) {
@@ -31,6 +31,7 @@ var pjs = {
       }
       pjs.resultMap[runId][startIndex] = result;
 
+      console.log('WW.runtime: ' + params[1]);
       finishCount++;
       if (finishCount === wks.length) {
         URL.revokeObjectURL(mapperURL);
@@ -43,7 +44,8 @@ var pjs = {
           }
         });
         delete pjs.resultMap[runId];
-        console.log('Overall time: ' + (new Date() - overallStart) + ' ms');
+        params[2] = new Date() - params[2];
+        console.log('Overall.runtime: ' + params[2] + ' ms');
         callback(finalMappedArray);
         pjs.terminate();
       }
@@ -65,13 +67,18 @@ var pjs = {
 
       wElements = array.buffer.slice(wStart * bytesPerElement, wEnd * bytesPerElement);
       w.onmessage = wCallback;
+
+      var paramsBuffer = new ArrayBuffer(12);
+      var params = new Uint32Array(paramsBuffer);
+      params[0] = wStart;
+      params[1] = wTime;
+      params[2] = overallStart;
+
       w.postMessage({
-        startIndex: wStart,
-        start: wTime,
-        overallStart: overallStart,
+        params: paramsBuffer,
         elements: wElements,
         mapperURL: blobMapperURL
-      }, [wElements]);
+      }, [paramsBuffer, wElements]);
     }
   },
   workers: ((function (){
@@ -94,13 +101,16 @@ var pjs = {
         result[i] = __mapper(elements[i]);
       }
 
+      var paramsBuffer = eventData.params;
+      var params = new Uint32Array(paramsBuffer);
+      var runTime = new Date() - params[1];
+      params[1] = runTime;
+
       postMessage({
-        startIndex: eventData.startIndex,
+        params: paramsBuffer,
         result: result.buffer,
-        overallStart: eventData.overallStart,
-        runTime: new Date() - eventData.start,
         mapperURL: mapperURL
-      }, [result.buffer]);
+      }, [paramsBuffer, result.buffer]);
     };
     var blob = new Blob(["onmessage = " + wCode.toString()]);
     var blobURL = window.URL.createObjectURL(blob);
