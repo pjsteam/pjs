@@ -1,9 +1,10 @@
 // Process
 var procesTypedElement = function (element) {
-  element += 1;
-  element += Math.floor(Math.random() * 2);
-  element += Math.floor(Math.random() * 2);
-  element += Math.floor(Math.random() * 2);
+  element = Math.floor(Math.random() * 10000)
+    + Math.floor(Math.random() * 10000)
+    + Math.floor(Math.random() * 10000)
+    + Math.floor(Math.random() * 10000);
+
   return element;
 };
 
@@ -53,7 +54,7 @@ var runU8Serial = function () {
 
 // Prepare
 var createData = function (Constructor) {
-  var total = 1048576; // 1024 * 1024
+  var total = 1048576 * 20; // 1024 * 1024
   var typed = new Constructor(total);
   var i = total;
   for ( ; i-- ; ){

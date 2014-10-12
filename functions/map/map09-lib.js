@@ -135,6 +135,8 @@ pjs = ((function () {
       console.log('WW.runtime: ' + params[1]);
       finishCount++;
       if (finishCount === wks.length) {
+        var k = new Date();
+        params[2] = k - params[2];
         URL.revokeObjectURL(mapperURL);
         var Constructor = helper.bufferArrayConstructorFromTypeId(params[3]);
         var finalMappedArray = new Constructor(arrayLength);
@@ -145,8 +147,8 @@ pjs = ((function () {
           }
         });
         delete resultMap[runId];
-        params[2] = new Date() - params[2];
         console.log('Overall.runtime: ' + params[2] + ' ms');
+        console.log('Overall.runtime with merge: ' + (new Date() - k) + ' ms');
         callback(finalMappedArray);
       }
     };
