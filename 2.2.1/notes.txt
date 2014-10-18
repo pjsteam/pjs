@@ -1,0 +1,64 @@
+2.2.1 Investigación: Realizar una búsqueda para determinar las alternativas posibles.
+
+Biblio:
+[1] High Performance JavaScript - Nicholas C. Zakas
+[2] Blob: http://www.javascripture.com/Blob
+[3] Web Workers - import scripts: https://developer.mozilla.org/en-US/docs/Web/Guide/Performance/Using_web_workers#Importing_scripts_and_libraries
+
+
+
+Investigación:
+
+Generar string del código:
+  1. eval
+  2. Function
+  3. setTimeout
+  4. setInterval
+
+  Dado que queremos aplicar la función a serializar y enviar al WW a cada uno de los elementos de nuestro array y la  doble evaluación de código que se genera con estas técnicas (ver [1] pag 151) esto implica que el tiempo de ejecución para el procesamiento de los datos dentro de un WW se duplicaría.
+
+  Además las funciones 3. y 4. agregan un overhead de procesamiento ya que el código generado por ellas es encolado en la 'UI queue' para se ejecutadas una vez que el 'UI thread' este libre (ver [1] pag 112).
+
+  Por estas razones descartamos estas alternativas y no ahondamos en ellas.
+
+
+
+Generar un Blob del código:
+
+  Una de las formas de agregar código a un Web Worker es la utilización de la función importScripts() (ver [3]).
+  Los blobs pueden ser usados para generar objetos que pueden ser tratados como archivos. Como dice la documentación: "Blobs allow you to construct file like objects on the client that you can pass to apis that expect urls" (ver [2]).
+
+  Combinando estos dos hechos podemos generar un Blob con el código a ejecutar por la función cliente y enviar la URL de este Blob al Web Worker para que lo importe como una función.
+
+  Con esto conseguimos las siguientes ventajas frente a la evaluación de la función mediante strings:
+    No se hacen 'doble evaluaciones'.
+    No se vulnera el scope de la función del worker creando variables que interfieran con el código del mismo.
+
+  Ejemplo:
+
+    // Código en la biblioteca
+    var f = ...; // Función del cliente
+    var ww = ...; // Web Worker
+
+    // Generación del blob
+    var blob = new Blob(['__f = ' + f.toString()], { type: 'application/javascript' });
+    // Obtención de la URL del blob
+    var blobURL = window.URL.createObjectURL(blob);
+
+    // Envio del
+    ww.postMessage({
+      blobURL: blobURL,
+      ...
+    });
+
+
+    // Código en el Web Worker
+    // Siendo event es el objeto con el que se ejecuta la función callback del postMessage
+    var data = event.data;
+
+    // Cargo el script desde el blob.
+    importScripts(data.blobURL);
+    // tengo disponible '__f' como objeto global que se definió como la función que ejecuta el código del cliente.
+
+  Spike
+    Correr blob-01.html y apretar en el boton "run". La salida de la ejecución se ve por consola.
