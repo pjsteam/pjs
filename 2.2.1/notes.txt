@@ -4,12 +4,20 @@ Biblio:
 [1] High Performance JavaScript - Nicholas C. Zakas
 [2] Blob: http://www.javascripture.com/Blob
 [3] Web Workers - import scripts: https://developer.mozilla.org/en-US/docs/Web/Guide/Performance/Using_web_workers#Importing_scripts_and_libraries
-
-
+[4] Web Workers: https://developer.mozilla.org/en-US/docs/Web/API/Worker
+[5] Web Wrokers - features: http://dev.w3.org/html5/workers/#apis-available-to-workers
+[6] Web Workers - comunication: http://dev.w3.org/html5/workers/#communicating-with-a-dedicated-worker
 
 Investigación:
 
-Generar string del código:
+Como comunicarme con un Web Worker
+  [5] nos muestran las features que contiene un web workers. Entre ellas vemos 'importScripts()' (ver [3]). Esta es la única manera que tienen los web workers para cargar scripts externos.
+
+  La otra forma de comunicarme con los Web Workers es mediante la transferencia de objectos. Por debajo se utiliza MessagePort para enviar mensajes mediante 'postMessage()'. Como primer parámetro se envia un objeto mediante clonación. Ademas se pueden transferir ArrayBuffers con el segundo parámetro (ver [6]).
+
+
+
+Generar string del código - postMessage():
   1. eval
   2. Function
   3. setTimeout
@@ -23,7 +31,7 @@ Generar string del código:
 
 
 
-Generar un Blob del código:
+Generar un Blob del código - importScripts():
 
   Una de las formas de agregar código a un Web Worker es la utilización de la función importScripts() (ver [3]).
   Los blobs pueden ser usados para generar objetos que pueden ser tratados como archivos. Como dice la documentación: "Blobs allow you to construct file like objects on the client that you can pass to apis that expect urls" (ver [2]).
@@ -61,4 +69,6 @@ Generar un Blob del código:
     // tengo disponible '__f' como objeto global que se definió como la función que ejecuta el código del cliente.
 
   Spike
-    Correr blob-01.html y apretar en el boton "run". La salida de la ejecución se ve por consola.
+    Correr blob-01.html y apretar en el boton "run". La salida de la ejecución se imprime por pantalla.
+
+    Correr blob-02.html para ver un ejemplo de la seguridad que da el blob frente a los metodos de evaluación de código string. En el, el código cliente intenta romper el 'for' forzando la condición de corte. Pero esto no surte efecto ya que la variable que se llama igual fue creada en otro scope, con lo cual el scope del worker queda protegido.
