@@ -22,14 +22,8 @@ var ww = (function () {
   var w = new Worker(blobURL);
 
   w.onmessage = function (event) {
-    var result = event.data.result;
-
-    var p = document.createElement('p');
-    p.textContent = 'Resultado: [' + result + ']';
-    document.getElementById("resultsDiv").appendChild(p);
-
     console.log('Resultado:');
-    console.log(result);
+    console.log(event.data.result);
   };
 
   return w;

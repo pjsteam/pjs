@@ -1,27 +1,15 @@
 var run = (function () {
-  var runCount = 0;
-
   var showStart = function (elements) {
-    runCount += 1;
-    var div = document.getElementById("resultsDiv");
-    while (div.hasChildNodes()) {
-      div.removeChild(div.lastChild);
-    }
-    var p = document.createElement('p');
-    p.textContent = 'Run : ' + runCount;
-    div.appendChild(p);
-    p = document.createElement('p');
-    p.textContent = 'Elementos a transformar: [' + elements + ']';
-    div.appendChild(p);
-
     console.log('Elementos a transformar:');
     console.log(elements);
   };
 
   var str2ab = function (str) {
-    var buf = new ArrayBuffer(str.length * 2);
+    var strLength = str.length;
+    var buf = new ArrayBuffer(strLength * 2);
     var bufView = new Uint16Array(buf);
-    for (var i = 0, strLen = str.length; i < strLen; i++) {
+    var i = strLength;
+    for (; i--; ) {
       bufView[i] = str.charCodeAt(i);
     }
     return bufView;
@@ -50,6 +38,5 @@ var run = (function () {
       code: bufferedBody,
       elements: elements
     }, [bufferedBody.buffer]);
-
   };
 })();
