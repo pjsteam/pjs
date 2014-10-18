@@ -7,6 +7,8 @@ Biblio:
 [4] Web Workers: https://developer.mozilla.org/en-US/docs/Web/API/Worker
 [5] Web Wrokers - features: http://dev.w3.org/html5/workers/#apis-available-to-workers
 [6] Web Workers - comunication: http://dev.w3.org/html5/workers/#communicating-with-a-dedicated-worker
+[7] Function: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Function
+[8] Transfeable Objects: http://updates.html5rocks.com/2011/12/Transferable-Objects-Lightning-Fast
 
 Investigación:
 
@@ -17,21 +19,9 @@ Como comunicarme con un Web Worker
 
 
 
-Generar string del código - postMessage():
-  1. eval
-  2. Function
-  3. setTimeout
-  4. setInterval
-
-  Dado que queremos aplicar la función a serializar y enviar al WW a cada uno de los elementos de nuestro array y la  doble evaluación de código que se genera con estas técnicas (ver [1] pag 151) esto implica que el tiempo de ejecución para el procesamiento de los datos dentro de un WW se duplicaría.
-
-  Además las funciones 3. y 4. agregan un overhead de procesamiento ya que el código generado por ellas es encolado en la 'UI queue' para se ejecutadas una vez que el 'UI thread' este libre (ver [1] pag 112).
-
-  Por estas razones descartamos estas alternativas y no ahondamos en ellas.
 
 
-
-Generar un Blob del código - importScripts():
+Enviando código por 'importScripts()':
 
   Una de las formas de agregar código a un Web Worker es la utilización de la función importScripts() (ver [3]).
   Los blobs pueden ser usados para generar objetos que pueden ser tratados como archivos. Como dice la documentación: "Blobs allow you to construct file like objects on the client that you can pass to apis that expect urls" (ver [2]).
@@ -72,3 +62,96 @@ Generar un Blob del código - importScripts():
     Correr blob-01.html y apretar en el boton "run". La salida de la ejecución se imprime por pantalla.
 
     Correr blob-02.html para ver un ejemplo de la seguridad que da el blob frente a los metodos de evaluación de código string. En el, el código cliente intenta romper el 'for' forzando la condición de corte. Pero esto no surte efecto ya que la variable que se llama igual fue creada en otro scope, con lo cual el scope del worker queda protegido.
+
+
+
+
+
+
+Enviando código por 'postMessage()':
+  Existen 4 formas de evaluar código:
+    1. eval
+    2. Function
+    3. setTimeout
+    4. setInterval
+
+  Dado que queremos aplicar la función a serializar y enviar al WW a cada uno de los elementos de nuestro array y la  doble evaluación de código que se genera con 1., 3. y 4. (ver [1] pag 151) hace que el tiempo de ejecución para el procesamiento de los datos dentro de un WW se duplicaría.
+
+  Además las funciones 3. y 4. agregan un overhead de procesamiento ya que el código generado por ellas es encolado en la 'UI queue' para se ejecutadas una vez que el 'UI thread' este libre (ver [1] pag 112).
+
+  La función 4., además se ejecuta repetitivamente, con lo cual la descartamos.
+
+  La función 3. agrega un evento en la cola de procesamiento, y aunque se agregue un timeout de 0 esto no significa que se ejecute en el momento y de forma sincronica.
+
+  Por estas razones descartamos estas alternativas 1., 3. y 4. y no ahondamos en ellas.
+
+
+
+
+
+Enviando código por 'postMessage()' y evaluandoló con 'new Function()'
+
+  El constructor Function genera una función a partir de una lista de argumentos (String) y el body de la función (String) (ver [7]).
+
+  Teniendo un objeto función y generando el string con el con 'toString()' provoca que haya que parsearlo para obtener los argumentos y el body.
+
+  Una vez parseado se debe enviar tanto los argumentos como el body a traves del postMessage y estos ser evaluados con el constructor Function.
+
+  El problema de la doble evaluación significa que para N elementos, se evalúa la función N + 1 veces. La vez que se agrega es producto de la creación mediante 'new Fucntion()'.
+
+  Ejemplo:
+
+    // Código en la biblioteca
+    var f = ...; // Función del cliente
+    var ww = ...; // Web Worker
+
+    // Generación del string
+    var sF = f.toString();
+    var sBody = parseBody(sF); // parseBody es una función a definir.
+    var arg = parseArg(sF); // parseArg es una función a definir.
+
+    // Envio al Web Worker
+    ww.postMessage({
+      arg: arg,
+      code: sBody,
+      blobURL: blobURL,
+      ...
+    });
+
+
+    // Código en el Web Worker
+    // Siendo event es el objeto con el que se ejecuta la función callback del postMessage
+    var data = event.data;
+
+    // Cargo el script desde el blob.
+    var __f = new Function(data.arg, data.code);
+
+  Spike
+    Correr function-01.html y apretar en el boton "run". La salida de la ejecución se imprime por pantalla.
+
+    Correr function-02.html para ver un ejemplo de la seguridad que da el new Function frente a los otros metodos de evaluación de código string. En el, el código cliente intenta romper el 'for' forzando la condición de corte. Pero esto no surte efecto ya que la variable que se llama igual fue creada en otro scope, con lo cual el scope del worker queda protegido.
+
+
+
+
+Mejorando la transferencia del string por 'postMessage()' utilizando TransferrableObject:
+
+  La forma de transferir objetos de forma mas rápida a un web worker es mediante Transferable Object (ver [8]).
+  Por esta razón si se va a optar por un modelo de enviar la función como string, posiblemente sea conveniente utilizar alguna técnica para convertir el string en un transferable Object antes y aprovechar este feature.
+
+  Ejemplo 1:
+
+  function ab2str(buf) {
+    return String.fromCharCode.apply(null, new Uint16Array(buf));
+  }
+
+  function str2ab(str) {
+    var buf = new ArrayBuffer(str.length*2); // 2 bytes for each char
+    var bufView = new Uint16Array(buf);
+    for (var i=0, strLen=str.length; i<strLen; i++) {
+      bufView[i] = str.charCodeAt(i);
+    }
+    return buf;
+  }
+
+  
