@@ -154,4 +154,9 @@ Mejorando la transferencia del string por 'postMessage()' utilizando Transferrab
     return buf;
   }
 
-  
+
+
+Tests
+http://jsperf.com/2-2-1-spike       function-03 vs function-04
+http://jsperf.com/2-2-1-spike2      function-04 vs function-01
+http://jsperf.com/2-2-1-spike3      function-01 vs function-03 vs function-04
