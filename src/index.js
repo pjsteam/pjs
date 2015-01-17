@@ -1,73 +1,51 @@
 var pjs = module.exports = {};
 
 var errors = require('./errors.js');
+var utils = require('./utils.js');
 
 var initialized = false;
-var workers; 
+var workers = [];
 
-function _init(options) {
-
+function init(options) {
 	if (initialized) {
-		throw new errors.InvalidOperationError('You should not recall init if the library is already initialized.');
+		throw new errors.InvalidOperationError(errors.messages.CONSECUTIVE_INITS);
 	}
 
+	options = options || {};
 	var cpus = navigator.hardwareConcurrency || 1;
-	options = options || {};
 	var maxWorkers = options.maxWorkers || cpus;
-
 	var workersCount = Math.min(maxWorkers, cpus);
 
-    var config = {
-    	get workers () {
-    		return workersCount;
-    	}
-    };
+	var wCode = function (event) {};
+	var blob = new Blob(["onmessage = " + wCode.toString()]);
+	var blobURL = window.URL.createObjectURL(blob);
+	while (workersCount--) {
+		var worker = new Worker(blobURL);
+		workers.push(worker);
+	}
 
-	generateGetter(pjs, 'config', config);
+	var config = {
+  	get workers () {
+  		return workers.length;
+  	}
+  };
 
-	workers = ((function (){
-		var items = [];
-		var i = pjs.config.workers;
-		var wCode = function (event) {
-			//todo
-			postMessage(null);
-		};
-		var blob = new Blob(["onmessage = " + wCode.toString()]);
-		var blobURL = window.URL.createObjectURL(blob);
-		for (; i--;) {
-			var worker = new Worker(blobURL);
-			items.push(worker);
-		}
-		return items;
-	})());
+  utils.getter(pjs, 'config', config);
 
 	initialized = true;
 }
 
-function _terminate() {
+function terminate() {
 	if (!initialized) {
-		throw new errors.InvalidOperationError('You should not terminate pjs if it was not initialized before.');
+		throw new errors.InvalidOperationError(errors.messages.TERMINATE_WITHOUT_INIT);
 	}
 
-	var i = workers.length;
-	workers.forEach(function (w) {
-		w.terminate();
-	});
-	workers = undefined;
-	delete(pjs.config);
+	workers.forEach(function (w) { w.terminate(); });
+	workers = [];
+	delete pjs.config;
 
 	initialized = false;
 };
 
-var generateGetter = function (obj, name, getter) {
-	Object.defineProperty(obj, name, {
-		enumerable: true,
-		configurable: true,
-		get: function () { 
-			return getter;
-		}
-	});
-};
-
-generateGetter(pjs, 'init', _init);
-generateGetter(pjs, 'terminate', _terminate);
+pjs.init = init;
+pjs.terminate = terminate;

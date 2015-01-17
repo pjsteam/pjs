@@ -6,8 +6,14 @@ describe('initialization', function(){
   var errors = require('../src/errors.js');
 
   beforeEach(function () {
-	pjs = require('../src/index.js');
+	  pjs = require('../src/index.js');
   });
+
+  afterEach(function(){
+    if (pjs.config){
+      pjs.terminate();
+    }
+  })
 
   it('should not have configuration before pjs initialization.', function () {
   	expect(pjs.config).to.equal(undefined);
@@ -16,25 +22,22 @@ describe('initialization', function(){
   it('should have configuration after pjs initialization.', function () {
   	pjs.init();
   	expect(pjs.config).to.not.equal(undefined);
-  	pjs.terminate();
   });
 
   it('should throw exception after consecutive initialization without termination', function () {
   	pjs.init();
   	expect(pjs.init).to.throw(errors.InvalidOperationError);
-  	pjs.terminate();
   });
-  
+
   it('should throw exception if terminate is called without previous initialization.', function () {
   	expect(pjs.terminate).to.throw(errors.InvalidOperationError);
   });
-  
+
   it('should have workers count equal to navigator.hardwareConcurrency if no options are passed.', function () {
   	pjs.init();
   	expect(pjs.config.workers).to.not.equal(undefined);
   	expect(pjs.config.workers).to.not.equal(0);
   	expect(pjs.config.workers).to.equal(navigator.hardwareConcurrency);
-  	pjs.terminate();
   });
 
   it('should not have configuration after termination.', function () {
@@ -51,7 +54,6 @@ describe('initialization', function(){
   	expect(pjs.config).to.equal(undefined);
   	pjs.init();
   	expect(pjs.config.workers).to.equal(navigator.hardwareConcurrency);
-  	pjs.terminate();
   });
 
   it('should have workers count equal to navigator.hardwareConcurrency - 1 if that value is passed as maxWorkers option.', function () {
@@ -62,7 +64,6 @@ describe('initialization', function(){
   	expect(pjs.config.workers).to.not.equal(undefined);
   	expect(pjs.config.workers).to.not.equal(0);
   	expect(pjs.config.workers).to.equal(max);
-  	pjs.terminate();
   });
 
   it('should have workers count equal to navigator.hardwareConcurrency if navigator.hardwareConcurrency + 3 is passed as maxWorkers option.', function () {
@@ -72,44 +73,19 @@ describe('initialization', function(){
   	expect(pjs.config.workers).to.not.equal(undefined);
   	expect(pjs.config.workers).to.not.equal(0);
   	expect(pjs.config.workers).to.equal(navigator.hardwareConcurrency);
-  	pjs.terminate();
-  });
-
-  it('should not be possible to override init method', function () {
-  	pjs.init();
-  	var overrideWrapper = function () {
-  		pjs.init = function () { return 'hello world'};
-  	};
-  	expect(overrideWrapper).to.throw();
-  	pjs.terminate();
-  });
-
-  it('should not be possible to override terminate method', function () {
-  	pjs.init();
-  	var overrideWrapper = function () {
-  		pjs.terminate = function () { return 'good bye world'};
-  	};
-  	expect(overrideWrapper).to.throw();
-  	pjs.terminate();
   });
 
   it('should not be possible to override config property', function () {
   	pjs.init();
-  	var overrideWrapper = function () {
-  		pjs.config = {};
-  	};
-  	expect(overrideWrapper).to.throw();
-  	pjs.terminate();
+  	expect(function () {
+      pjs.config = {};
+    }).to.throw();
   });
 
   it('should not be possible to override config.workers property', function () {
   	pjs.init();
-  	var overrideWrapper = function () {
-  		pjs.config.workers = 0;
-  	};
-  	expect(overrideWrapper).to.throw();
-  	pjs.terminate();
+  	expect(function () {
+      pjs.config.workers = 0;
+    }).to.throw();
   });
-
 });
-
