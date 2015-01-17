@@ -1,4 +1,4 @@
-// http://jsperf.com/worker-cold-start/3
+// http://jsperf.com/worker-cold-start/4
 
 // begin setup
 
@@ -38,5 +38,5 @@ worker.onmessage = function(event){
 // end setup
 
 // begin benchmark
-postCode(worker, function() { postMessage(); });
+postCode(worker, function() { postMessage(null); });
 // end benchmark

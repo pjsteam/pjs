@@ -1,10 +1,10 @@
-// http://jsperf.com/worker-cold-start/3
+// http://jsperf.com/worker-cold-start/4
 
 // begin setup
 
 function setupForNewWorkerEachTime(){
   var wCode = function(event){
-    postMessage();
+    postMessage(null);
   };
 
   var blob = new Blob([
@@ -24,5 +24,5 @@ newWorker.onmessage = function(event){
   newWorker.terminate();
   deferred.resolve();
 }
-newWorker.postMessage();
+newWorker.postMessage(null);
 // end benchmark
