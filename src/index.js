@@ -1,5 +1,7 @@
 module.exports = ((function () {
 
+	var errors = require('./errors.js');
+	console.log(errors);
 	var pjs = {};
 	var workers; 
 
@@ -11,7 +13,7 @@ module.exports = ((function () {
 		var workersCount = Math.min(maxWorkers, cpus);
 
         var config = {
-        	get workersCount () {
+        	get workers () {
         		return workersCount;
         	}
         };
@@ -26,7 +28,7 @@ module.exports = ((function () {
 
 		workers = ((function (){
 			var items = [];
-			var i = pjs.config.workersCount;
+			var i = pjs.config.workers;
 			var wCode = function (event) {
 				//todo
 				postMessage(null);
@@ -41,7 +43,7 @@ module.exports = ((function () {
 		})());
 
 		pjs.init = function () {
-			throw {message: 'You should not call consecutives init without calling terminate in the middle.'};
+			throw new errors.InvalidOperationError('You should not call consecutives init without calling terminate in the middle.');
 		};
 		pjs.terminate = _terminate;
 	}
