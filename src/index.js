@@ -3,9 +3,15 @@ module.exports = ((function () {
 	var errors = require('./errors.js');
 	console.log(errors);
 	var pjs = {};
+	var initialized = false;
 	var workers; 
 
 	function _init(options) {
+
+		if (initialized) {
+			throw new errors.InvalidOperationError('You should not recall init if the library is already initialized.');
+		}
+
 		var cpus = navigator.hardwareConcurrency || 1;
 		options = options || {};
 		var maxWorkers = options.maxWorkers || cpus;
@@ -18,13 +24,7 @@ module.exports = ((function () {
         	}
         };
 
-		Object.defineProperty(pjs, 'config', {
-			enumerable: true,
-			configurable: true,
-			get: function () { 
-				return config;
-			}
-		});
+		generateGetter(pjs, 'config', config);
 
 		workers = ((function (){
 			var items = [];
@@ -42,25 +42,36 @@ module.exports = ((function () {
 			return items;
 		})());
 
-		pjs.init = function () {
-			throw new errors.InvalidOperationError('You should not call consecutives init without calling terminate in the middle.');
-		};
-		pjs.terminate = _terminate;
+		initialized = true;
 	}
 
 	function _terminate() {
+		if (!initialized) {
+			throw new errors.InvalidOperationError('You should not terminate pjs if it was not initialized before.');
+		}
+
 		var i = workers.length;
 		workers.forEach(function (w) {
 			w.terminate();
 		});
 		workers = undefined;
 		delete(pjs.config);
-		pjs.init = _init;
-		pjs.terminate = function () {};
+
+		initialized = false;
 	};
 
-	pjs.init = _init;
-	pjs.terminate = function () {};
+	var generateGetter = function (obj, name, getter) {
+		Object.defineProperty(obj, name, {
+			enumerable: true,
+			configurable: true,
+			get: function () { 
+				return getter;
+			}
+		});
+	};
+
+	generateGetter(pjs, 'init', _init);
+	generateGetter(pjs, 'terminate', _terminate);
 
 	return pjs;
 })());
