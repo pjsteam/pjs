@@ -68,5 +68,21 @@ describe('Initialization', function(){
   	expect(pjs.config.workersCount).to.equal(navigator.hardwareConcurrency);
   });
 
+  it('Should not be possible to override config property', function () {
+  	pjs.init();
+  	var overrideWrapper = function () {
+  		pjs.config = {};
+  	};
+  	expect(overrideWrapper).to.throw();
+  });
+
+  it('Should not be possible to override config.workersCount property', function () {
+  	pjs.init();
+  	var overrideWrapper = function () {
+  		pjs.config.workersCount = 0;
+  	};
+  	expect(overrideWrapper).to.throw();
+  });
+
 });
 

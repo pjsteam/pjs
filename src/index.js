@@ -8,9 +8,21 @@ module.exports = ((function () {
 		options = options || {};
 		var maxWorkers = options.maxWorkers || cpus;
 
-		pjs.config = {
-			workersCount: Math.min(maxWorkers, cpus)
-		};
+		var workersCount = Math.min(maxWorkers, cpus);
+
+        var config = {
+        	get workersCount () {
+        		return workersCount;
+        	}
+        };
+
+		Object.defineProperty(pjs, 'config', {
+			enumerable: true,
+			configurable: true,
+			get: function () { 
+				return config;
+			}
+		});
 
 		workers = ((function (){
 			var items = [];
@@ -40,7 +52,7 @@ module.exports = ((function () {
 			w.terminate();
 		});
 		workers = undefined;
-		pjs.config = undefined;
+		delete(pjs.config);
 		pjs.init = _init;
 		pjs.terminate = function () {};
 	};
