@@ -1,2 +1,23 @@
-# ignore mac files
+lib-cov
+lcov.info
+*.seed
+*.log
+*.csv
+*.dat
+*.out
+*.pid
+*.gz
+
+*.sublime-workspace
+
+pids
+logs
+results
+build
+.grunt
+
+node_modules
+
+dist
+
 .DS_Store
