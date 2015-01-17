@@ -25,7 +25,8 @@
     "mocha": "^1.21.4",
     "sinon": "^1.10.3",
     "sinon-chai": "^2.5.0",
-    "vinyl-transform": "0.0.1"
+    "vinyl-transform": "0.0.1",
+    "karma-bro": "^0.8.0"
   },
   "repository": "pjsteam/pjs",
   "engines": {
