@@ -1,12 +1,10 @@
-module.exports = ((function () {
-	var errors = {};
-	InvalidOperationError = function InvalidOperationError(message) {
-		this.name = 'InvalidOperationError';
-		this.message = message || 'Invalid Operation';
-	}
-	InvalidOperationError.prototype = new Error();
-	InvalidOperationError.prototype.constructor = InvalidOperationError;
+var errors = module.exports = {};
+	
+InvalidOperationError = function InvalidOperationError(message) {
+	this.name = 'InvalidOperationError';
+	this.message = message || 'Invalid Operation';
+}
+InvalidOperationError.prototype = new Error();
+InvalidOperationError.prototype.constructor = InvalidOperationError;
 
-	errors.InvalidOperationError = InvalidOperationError;
-	return errors;
-})());
+errors.InvalidOperationError = InvalidOperationError;

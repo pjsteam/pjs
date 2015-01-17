@@ -1,77 +1,73 @@
-module.exports = ((function () {
+var pjs = module.exports = {};
 
-	var errors = require('./errors.js');
-	console.log(errors);
-	var pjs = {};
-	var initialized = false;
-	var workers; 
+var errors = require('./errors.js');
 
-	function _init(options) {
+var initialized = false;
+var workers; 
 
-		if (initialized) {
-			throw new errors.InvalidOperationError('You should not recall init if the library is already initialized.');
-		}
+function _init(options) {
 
-		var cpus = navigator.hardwareConcurrency || 1;
-		options = options || {};
-		var maxWorkers = options.maxWorkers || cpus;
-
-		var workersCount = Math.min(maxWorkers, cpus);
-
-        var config = {
-        	get workers () {
-        		return workersCount;
-        	}
-        };
-
-		generateGetter(pjs, 'config', config);
-
-		workers = ((function (){
-			var items = [];
-			var i = pjs.config.workers;
-			var wCode = function (event) {
-				//todo
-				postMessage(null);
-			};
-			var blob = new Blob(["onmessage = " + wCode.toString()]);
-			var blobURL = window.URL.createObjectURL(blob);
-			for (; i--;) {
-				var worker = new Worker(blobURL);
-				items.push(worker);
-			}
-			return items;
-		})());
-
-		initialized = true;
+	if (initialized) {
+		throw new errors.InvalidOperationError('You should not recall init if the library is already initialized.');
 	}
 
-	function _terminate() {
-		if (!initialized) {
-			throw new errors.InvalidOperationError('You should not terminate pjs if it was not initialized before.');
+	var cpus = navigator.hardwareConcurrency || 1;
+	options = options || {};
+	var maxWorkers = options.maxWorkers || cpus;
+
+	var workersCount = Math.min(maxWorkers, cpus);
+
+    var config = {
+    	get workers () {
+    		return workersCount;
+    	}
+    };
+
+	generateGetter(pjs, 'config', config);
+
+	workers = ((function (){
+		var items = [];
+		var i = pjs.config.workers;
+		var wCode = function (event) {
+			//todo
+			postMessage(null);
+		};
+		var blob = new Blob(["onmessage = " + wCode.toString()]);
+		var blobURL = window.URL.createObjectURL(blob);
+		for (; i--;) {
+			var worker = new Worker(blobURL);
+			items.push(worker);
 		}
+		return items;
+	})());
 
-		var i = workers.length;
-		workers.forEach(function (w) {
-			w.terminate();
-		});
-		workers = undefined;
-		delete(pjs.config);
+	initialized = true;
+}
 
-		initialized = false;
-	};
+function _terminate() {
+	if (!initialized) {
+		throw new errors.InvalidOperationError('You should not terminate pjs if it was not initialized before.');
+	}
 
-	var generateGetter = function (obj, name, getter) {
-		Object.defineProperty(obj, name, {
-			enumerable: true,
-			configurable: true,
-			get: function () { 
-				return getter;
-			}
-		});
-	};
+	var i = workers.length;
+	workers.forEach(function (w) {
+		w.terminate();
+	});
+	workers = undefined;
+	delete(pjs.config);
 
-	generateGetter(pjs, 'init', _init);
-	generateGetter(pjs, 'terminate', _terminate);
+	initialized = false;
+};
 
-	return pjs;
-})());
+var generateGetter = function (obj, name, getter) {
+	Object.defineProperty(obj, name, {
+		enumerable: true,
+		configurable: true,
+		get: function () { 
+			return getter;
+		}
+	});
+};
+
+generateGetter(pjs, 'init', _init);
+generateGetter(pjs, 'terminate', _terminate);
