@@ -1,8 +1,8 @@
-// http://jsperf.com/worker-cold-start
+// http://jsperf.com/worker-cold-start/3
 
 // begin setup
 
-function preForPreExistentWorker(){
+function setupForPreExistentWorker(){
   var wCode = function(event){
     var codeBuffer = event.data;
     var codeArray = new Uint8Array(codeBuffer);
@@ -29,7 +29,7 @@ function postCode(worker, f){
   worker.postMessage(b.buffer, [b.buffer]);
 }
 
-var worker = preForPreExistentWorker();
+var worker = setupForPreExistentWorker();
 
 worker.onmessage = function(event){
   // console.log('here');
