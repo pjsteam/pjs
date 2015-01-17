@@ -20,7 +20,7 @@ module.exports = function(config) {
       'karma-jquery',
       'karma-chai-jquery',
       'karma-mocha-reporter',
-      'karma-bro'
+      'karma-browserify'
     ],
 
     // list of files / patterns to load in the browser
