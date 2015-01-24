@@ -1,0 +1,12 @@
+Refs:
+- http://updates.html5rocks.com/2014/08/Easier-ArrayBuffer---String-conversion-with-the-Encoding-API
+- http://updates.html5rocks.com/2012/06/How-to-convert-ArrayBuffer-to-and-from-String
+
+
+El test para ver cual es la mejor forma de serializar código entre blobs-serialización:
+- http://jsperf.com/pjs-serialization
+- Gana serialización.
+
+El test para ver que forma de serializacion es mejor:
+- http://jsperf.com/pjs-serialization-comparison
+- Gana el no-uso de TextEncoder

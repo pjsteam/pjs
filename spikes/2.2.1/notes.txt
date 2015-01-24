@@ -114,7 +114,6 @@ Enviando código por 'postMessage()' y evaluandoló con 'new Function()'
     ww.postMessage({
       arg: arg,
       code: sBody,
-      blobURL: blobURL,
       ...
     });
 
@@ -166,3 +165,17 @@ http://jsperf.com/2-2-1-spike3      function-01 vs function-03 vs function-04
 
 Comparando blobs y transferrable
 http://jsperf.com/2-2-1-spike-blob-trans
+
+
+
+
+// 
+* Final
+
+El test para ver cual es la mejor forma de serializar código entre blobs-serialización:
+- http://jsperf.com/pjs-serialization
+- Gana serialización.
+
+El test para ver que forma de serializacion es mejor:
+- http://jsperf.com/pjs-serialization-comparison
+- Gana el no-uso de TextEncoder
