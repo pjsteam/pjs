@@ -172,9 +172,9 @@ http://jsperf.com/2-2-1-spike-blob-trans
 // 
 * Final
 
-El test para ver cual es la mejor forma de serializar código entre blobs-serialización:
-- http://jsperf.com/pjs-serialization
-- Gana serialización.
+El test para ver cual es la mejor forma de serializar código entre blobs-copy-trasnferrable:
+- http://jsperf.com/pjs-serialization/2
+- http://jsperf.com/pjs-serialization-long
 
 El test para ver que forma de serializacion es mejor:
 - http://jsperf.com/pjs-serialization-comparison
