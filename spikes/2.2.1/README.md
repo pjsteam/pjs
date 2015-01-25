@@ -12,7 +12,7 @@ Prueba la posibilidad de enviar una Function de ECMAScript por medio de postMess
 *Prueba:* [Enviando funciones por postMessage](./tets-functionSerialization/test.js)
 
 *Resultado:*
-Como puede verse en esta [imagen](./tets-functionSerialization/result.png), se observa que estamos imposibilitados a enviar Function's por medio de postMessage.
+Como puede verse en esta [imagen](./tets-functionSerialization/results.png), se observa que estamos imposibilitados a enviar Function's por medio de postMessage.
 El error que recibimos fue:
 ```
 DOMException: Failed to execute 'postMessage' on 'Worker': An object could not be cloned.
