@@ -1,8 +1,4 @@
-// http://jsperf.com/pjs-encoding
-// sending code by copy
+// http://jsperf.com/pjs-serialization-comparison/2
+// manual deco
 
-var data = {
-  elements: generateElements(),
-  code: fStringified
-};
-copyWorker.postMessage(data, [data.elements.buffer]);
+withManual();

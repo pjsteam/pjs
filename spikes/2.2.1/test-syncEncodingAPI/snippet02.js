@@ -1,8 +1,4 @@
-// http://jsperf.com/pjs-encoding
-// sending code by transferrable objects
+// http://jsperf.com/pjs-serialization-comparison/2
+// api deco
 
-var data = {
-  elements: generateElements2(),
-  code: encoder.encode(fStringified)
-};
-transferrableWorker.postMessage(data, [data.code.buffer, data.elements.buffer]);
+withEncodeAPI();
