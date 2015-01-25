@@ -9,4 +9,4 @@ El test para ver cual es la mejor forma de serializar código entre blobs-serial
 
 El test para ver que forma de serializacion es mejor:
 - http://jsperf.com/pjs-serialization-comparison
-- Gana el no-uso de TextEncoder
+- http://jsperf.com/pjs-serialization-comparison-long-func
