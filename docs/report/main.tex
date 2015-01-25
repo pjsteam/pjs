@@ -2,10 +2,17 @@
 \usepackage{lingmacros}
 \usepackage{tree-dvips}
 \usepackage{cite}
+\usepackage{graphicx}
+\input{js_lang.tex}
 \begin{document}
+\graphicspath{{./img/}}
 \input{title.tex}
 
 \input{intro.tex}
+
+\input{micro_benchmarks.tex}
+
+\pagebreak
 
 \bibliography{main.bib}{}
 \bibliographystyle{IEEEtran}

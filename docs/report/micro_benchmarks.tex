@@ -1,0 +1,83 @@
+\section*{About Microbenchmmarks}
+A common practice to measure the performance of a fragment of code, or to compare it to the performance of some other code fragment is to create a micro benchmark. Throughout this document, there are multiple references to benchmarks of this kind since their results helped us make decision about how to implement some specific library features.
+
+A micro benchmark usually involves wrapping the code under evaluation inside a loop, to:
+
+\begin{description}
+\item[First] Be able to evalute the time it takes to perform the operation multiple times (a single one could either be too small or an outlier and the measurement could have to much variance/error).
+\item[Second] Allow JIT optimizations to kick in.
+\end{description}
+
+The first point is applicable to all programming languages but the second one is only important in engines/VMs that perform such optimizations. Since this document discussed the performance of JavaScript and in particular v8, the second point does affect our benchmarks.
+
+\subsection{A small example\protect\footnote{The example is based on \cite{mraleph-bc}.}}
+Let's assume that we want to profile to the following function:
+\begin{lstlisting}[caption=Function to benchmark]
+function between(a, b, c){
+  return a <= b <= c;
+}
+\end{lstlisting}
+
+A naive benchmark for it could be:
+\begin{lstlisting}[caption=Naive benchmark]
+// begin setup
+function between(a, b, c){
+  return a <= b && b <= c;
+}
+var a = Math.round(Math.random()*100);
+var b = Math.round(Math.random()*100) + a;
+var c = Math.round(Math.random()*100) + b;
+//end setup
+//start benchmark
+console.time('between');
+for (var i = 0; i < 100000; i++){
+  between(a, b, c);
+}
+console.timeEnd('between');
+//end benchmark
+\end{lstlisting}
+
+The problem with the above is that it does not consider optimizations. Let's assume that the executing engine is smart enough to:
+\begin{enumerate}
+  \item Inline functions
+  \item Detect loop invariants
+\end{enumerate}
+
+Then due to \#1 the above could result in:
+\begin{lstlisting}[caption=Naive benchmark after inlining]
+// begin setup
+var a = Math.round(Math.random()*100);
+var b = Math.round(Math.random()*100) + a;
+var c = Math.round(Math.random()*100) + b;
+//end setup
+//start benchmark
+console.time('between');
+for (var i = 0; i < 100000; i++){
+  var j = a <= b && b <= c;
+}
+console.timeEnd('between');
+//end benchmark
+\end{lstlisting}
+
+If it applies \#2 it realizes it does not need to perform the comparison in every iteration so it could extract it outside the loop, resulting in
+\begin{lstlisting}[caption=Naive benchmark after evaluating loop invariants]
+// begin setup
+var a = Math.round(Math.random()*100);
+var b = Math.round(Math.random()*100) + a;
+var c = Math.round(Math.random()*100) + b;
+//end setup
+//start benchmark
+console.time('between');
+var j = a <= b && b <= c;
+for (var i = 0; i < 100000; i++){
+}
+console.timeEnd('between');
+//end benchmark
+\end{lstlisting}
+
+Alternatively it could notice that the variable \textit{j} is not being used so it could just throw the line away. In any case, we would just be measuring how long it takes for JavaScript to execute the loop, which is not what we want. To verify that is not the case the tool IRHydra can be used \cite{ir-hydra}, which \textit{can display intermediate representations used by V8}. As shown in the following figure, v8 inline the function (the blue chevron marks that) but the loop invariant was not detected and optimized:
+\begin{figure}[h!]
+  \centering
+  \includegraphics[width=1\textwidth]{naive_benchmark_ir_hydra}
+  \caption{Optimized benchmark code with inlined function.}
+\end{figure}
