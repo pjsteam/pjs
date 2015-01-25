@@ -3,8 +3,23 @@
 
 En esta sección podemos encontrar las siguientes pruebas de concepto:
 
+
+**tets-functionSerialization:**
 -------------
+
+Prueba la posibilidad de enviar una Function de ECMAScript por medio de postMessage a un WW.
+
+*Prueba:* [Enviando funciones por postMessage](./tets-functionSerialization/test.js)
+
+*Resultado:*
+Como puede verse en esta [imagen](./tets-functionSerialization/result.png), se observa que estamos imposibilitados a enviar Function's por medio de postMessage.
+El error que recibimos fue:
+```
+DOMException: Failed to execute 'postMessage' on 'Worker': An object could not be cloned.
+```
+
 **test-howToSendCode:**
+-------------
 
 Prueba que verifica cúal es la forma más conveniente para enviar código ejecutable a los web workers.
 Entre las alternativas encontradas se probaron:
@@ -12,7 +27,7 @@ Entre las alternativas encontradas se probaron:
 * Uso de postMessage para enviar func.toString().
 * Transformación de func.toString() a transferrable object para enviarlo por postMessage.
 
-Pruebas:
+*Pruebas:*
 * [Enviando funciones cortas al WW](http://jsperf.com/pjs-serialization/2)
 * [Enviando funciones largas al WW](http://jsperf.com/pjs-serialization-long)
 
@@ -22,8 +37,10 @@ En ambos test, probados en chrome 40.X y 41.X, encontramos que:
 * El uso de blobs queda descartado por tener baja performance.
 * El uso del TextEncoder-TextDecoder para envio por uso de Transferrable Objects no es conveniente frente al simple copiado de Strings por postMessage.
 
--------------
+Podemos ver esto en la siguiente imagen para las [funciones cortas](./test-howToSendCode/short/results.png) y en la siguiente para las [funciones largas](./test-howToSendCode/long/results.png).
+
 **test-howToSendCodeWithData:**
+-------------
 
 Prueba que verifica cual es la formas más conveniente para enviar el código ejecutable junto a los datos a procesar a un web worker.
 Entre las alternativas se probaron las ganadoras del test **howToSendCode**:
@@ -36,9 +53,10 @@ En ambas siempre se envían los elementos por transferencia (Trasnferrable Objec
 *Resultados:*
 
 Se observa que no es conveniente el uso de la API nativa TextEncoder-TextDecoder para enviar el código ni aun en presencia de la transferencia de los elementos a ser procesados.
+Podemos ver esto en la siguiente [imagen](./test-howToSendCodeWithData/results.png).
 
--------------
 **test-syncEncodingAPI:**
+-------------
 
 Prueba que verifica si hay mejores alternativas que la API de enconding-decoding. A diferencia de las otras pruebas, esta es una prueba sincrónica. Esto se debe a la eliminación del WW para centrarnos en el encoding.
 
@@ -47,6 +65,7 @@ Prueba que verifica si hay mejores alternativas que la API de enconding-decoding
 *Resultado:*
 
 Encontramos que la API es mucho mas veloz tanto en Chrome 40.X como en 41.X frente al encodeo manual de los strings.
+Podemos ver esto en la siguiente [imagen](./test-syncEncodingAPI/results.png).
 
 *Verificación:*
 Para la correcta verificación de los resultados de esta prueba se utilizó [IRHydra](http://mrale.ph/irhydra/2/). Con esta herramienta logramos ver las representaciones intermedias del código luego de ser compilados por el motor V8 de chrome.
