@@ -1,8 +1,8 @@
-// http://jsperf.com/transferrable-vs-cloning
+// http://jsperf.com/longer-transferrable-vs-cloning
 
 // JavaScript setup
 function createElements() {
-  var total = 100000;
+  var total = 1024*768; // 786432
   var elements = new Uint32Array(total);
 
   for (var i = total; i > 0; i--){
