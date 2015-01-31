@@ -1,4 +1,4 @@
-\section*{Serialization and Transference}
+\section{Serialization and Transference}
 
 Let's assume that we have an array of \textit{N} elements on which we want to perform a particular transformation through the \textit{map} function. If we run in a single thread (no parallelism) and the average time to process is element is \textit{t} then we could approximate the total time \(T_{ser}\) for the operation as:
 \[T_{ser} = \sum_{i = 0}^{N}t = Nt\]
@@ -37,5 +37,27 @@ As the aforementioned interface states one can either send just a message or sen
 \textit{"Some objects support being copied and closed in one operation. This is called transferring the object, and is used in particular to transfer ownership of unsharable or expensive resources across worker boundaries."}
 
 Considering the definition of a \textit{Transferable} the latter seems like a good alternative to minimize both \(T_{s}\) and \(T_{s}\). Even more so when one considers that otherwise objects are copied using structured cloning(explained in section \textbf{2.7.5} of that same standard).
+
+\subsection{Benchmarks}
+To verify the above we put together two benchmarks that aim to verify the difference between invoking \textit{postMessage} with and without structured cloning for a \textit{TypedArray}. Both transfer a \textit{TypedArray} back and forth between the UI thread and a worker; the only difference between the two is that one has 100000 elements in the \textit{TypedArray} and the other one 1000000.
+
+\subsubsection{With 100000 elements}
+The following is the code for the benchmark:
+\bmcode{http://js-perf}{js_lang.tex}
+
+These were the results:
+\bmcode{Results with 100000 elements}{js_lang.tex}
+
+\subsubsection{With 1000000 elements}
+The following is the code for the benchmark:
+\bmcode{http://js-perf}{js_lang.tex}
+
+These were the results:
+\bmcode{Results with 1000000 elements}{js_lang.tex}
+
+\subsubsection{Conclusion}
+As we can see from the previous results increasing the amount of elements by 10x does not change the amount of operations that can be performed when using \textit{Transferable} objects, it scales. On the other hand, the amount of operations that can be performed with structure cloning greatly decreases.
+
+For that reason we will only work with \textit{Typed Arrays} and all of them will be passed to/from Web Workers by transferring their ownership.
 
 \pagebreak
