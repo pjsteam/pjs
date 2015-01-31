@@ -1,4 +1,4 @@
-// http://jsperf.com/worker-cold-start/4
+// http://jsperf.com/worker-cold-start/5
 
 // JavaScript setup
 function setupForPreExistentWorker(){
@@ -31,7 +31,6 @@ function postCode(worker, f){
 var worker = setupForPreExistentWorker();
 
 worker.onmessage = function(event){
-  // console.log('here');
   deferred.resolve();
 }
 
