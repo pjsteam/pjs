@@ -1,5 +1,9 @@
 // http://jsperf.com/pjs-serialization-comparison/2
 
+// HTML setup
+<script src="http://mrale.ph/irhydra/jsperf-renamer.js"></script>
+
+// JavaScript setup
 var fStringified = (function () {
   var n = 1000;
   var sum = 0;
@@ -53,3 +57,9 @@ var withEncodeAPI = function () {
     console.log('error');
   }
 };
+
+// Test case - Manual deco
+withManual();
+
+// Test case 2 - API deco
+withEncodeAPI();

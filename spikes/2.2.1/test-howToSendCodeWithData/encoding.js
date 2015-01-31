@@ -1,4 +1,4 @@
-//
+// http://jsperf.com/pjs-encoding
 
 // JsvaScript setup
 function setupCopyWorker(){
