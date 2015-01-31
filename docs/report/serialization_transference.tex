@@ -43,17 +43,17 @@ To verify the above we put together two benchmarks that aim to verify the differ
 
 \subsubsection{With 100000 elements}
 The following is the code for the benchmark:
-\bmcode{http://js-perf}{js_lang.tex}
+\bmcode{http://jsperf.com/transferrable-vs-cloning}{../../spikes/1.2/transferrableVsCloning.js}
 
 These were the results:
-\bmcode{Results with 100000 elements}{js_lang.tex}
+\bmchart{Results with 100000 elements}{../../spikes/1.2/transferrableVsCloning}
 
 \subsubsection{With 1000000 elements}
 The following is the code for the benchmark:
-\bmcode{http://js-perf}{js_lang.tex}
+\bmcode{http://jsperf.com/longer-transferrable-vs-cloning}{../../spikes/1.2/longerTransferrableVsCloning.js}
 
 These were the results:
-\bmcode{Results with 1000000 elements}{js_lang.tex}
+\bmchart{Results with 100000 elements}{../../spikes/1.2/longerTransferrableVsCloning}
 
 \subsubsection{Conclusion}
 As we can see from the previous results increasing the amount of elements by 10x does not change the amount of operations that can be performed when using \textit{Transferable} objects, it scales. On the other hand, the amount of operations that can be performed with structure cloning greatly decreases.
