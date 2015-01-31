@@ -1,4 +1,4 @@
-var total = 20000000;
+var total = 1000000;
 var typed = new Uint32Array(total);
 
 for (var i = total; i > 0; i--){

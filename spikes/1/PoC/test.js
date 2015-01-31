@@ -1,4 +1,4 @@
-var total = 20000000;
+var total = 1000000;
 var parts = navigator.hardwareConcurrency || 4;
 var typed = new Uint32Array(total);
 
@@ -7,8 +7,8 @@ for (var i = total; i > 0; i--){
 }
 
 var wCode = function(event){
-  console.log(event);
-  var startDate = new Date();
+  // console.log(event);
+  // var startDate = new Date();
 
   var buffer = event.data;
 
@@ -22,11 +22,11 @@ var wCode = function(event){
     + Math.floor(Math.random() * 10000);
   }
 
-  var end = new Date();
+  // var end = new Date();
 
   postMessage(result.buffer, [result.buffer]);
 
-  postMessage({ start: startDate, end: end });
+  // postMessage({ start: startDate, end: end });
 }
 
 var blob = new Blob([
@@ -56,25 +56,25 @@ setTimeout(function(){
   var bytesPerElement = typed.BYTES_PER_ELEMENT;
   workers.forEach(function(w, index){
     w.onmessage = function(event){
-      if (event.data.start){
-        doneTimes++;
-        times.push(event.data);
-        if (doneTimes === parts){
-          times.forEach(function(t){
-            console.log('worker start ' + t.start.toString() + '.' + t.start.getMilliseconds());
-            console.log('worker end  ' + t.end.toString() + '.' + t.end.getMilliseconds());
-          });
-        }
-        return;
-      }
+      // if (event.data.start){
+      //   doneTimes++;
+      //   times.push(event.data);
+      //   if (doneTimes === parts){
+      //     times.forEach(function(t){
+      //       console.log('worker start ' + t.start.toString() + '.' + t.start.getMilliseconds());
+      //       console.log('worker end  ' + t.end.toString() + '.' + t.end.getMilliseconds());
+      //     });
+      //   }
+      //   return;
+      // }
       // results.push(event.data);
 
       if (++done === parts){
         console.timeEnd('worker time');
-        var endDate = new Date();
-        console.log('overall start ' + startDate.toString() + '.' + startDate.getMilliseconds());
-        console.log('overall end ' + endDate.toString() + '.' + endDate.getMilliseconds());
-        console.log(endDate - startDate);
+        // var endDate = new Date();
+        // console.log('overall start ' + startDate.toString() + '.' + startDate.getMilliseconds());
+        // console.log('overall end ' + endDate.toString() + '.' + endDate.getMilliseconds());
+        // console.log(endDate - startDate);
         // results.forEach(function(p){
         //   console.log(new Uint32Array(p));
         // });
@@ -87,8 +87,8 @@ setTimeout(function(){
     var start = index * factor;
 
     // ideally we would just send parts of the same buffer
-    var sliced = typed.buffer.slice(start * bytesPerElement, (start + factor) * bytesPerElement);
+    var sliced = new Uint32Array(typed.subarray(start, (start + factor)));
 
-    w.postMessage(sliced, [sliced]);
+    w.postMessage(sliced.buffer, [sliced.buffer]);
   });
 }, 1000);
