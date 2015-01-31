@@ -58,8 +58,8 @@ transferrableWW.onmessage = function(event) {
   deferred.resolve();
 }
 
-// Test case 1
+// Test case 1 - Long cloning
 cloningWW.postMessage(elements);
 
-// Test case 2
+// Test case 2 - Long trasnferrable
 transferrableWW.postMessage(elements, [elements.buffer]);

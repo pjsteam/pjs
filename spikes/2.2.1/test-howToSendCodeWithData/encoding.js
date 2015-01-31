@@ -1,5 +1,6 @@
-// http://jsperf.com/pjs-encoding
+//
 
+// JsvaScript setup
 function setupCopyWorker(){
   var wCode = function(event){
     var code = event.data.code;
@@ -68,3 +69,17 @@ var generateElements2 = function () {
 var fStringified = (function () {
   postMessage(null);
 }).toString();
+
+// Test case 1 - Sending code by copy
+var data = {
+  elements: generateElements(),
+  code: fStringified
+};
+copyWorker.postMessage(data, [data.elements.buffer]);
+
+// Test case 2 - Sending code by transferrable objects
+var data = {
+  elements: generateElements2(),
+  code: encoder.encode(fStringified)
+};
+transferrableWorker.postMessage(data, [data.code.buffer, data.elements.buffer]);
