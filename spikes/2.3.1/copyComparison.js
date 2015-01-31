@@ -29,10 +29,6 @@ function bufferSliceCopy (xs) {
   return new Uint8Array(ysBuffer);
 };
 
-function constructorFromBufferCopy(xs) {
-  return new Uint8Array(xs.buffer, 0, xs.length);
-};
-
 function constructorFromArrayLikeCopy(xs) {
   return new Uint8Array(xs);
 };
