@@ -1,7 +1,6 @@
 // http://jsperf.com/worker-cold-start/4
 
-// begin setup
-
+// JavaScript setup
 function setupForPreExistentWorker(){
   var wCode = function(event){
     var codeBuffer = event.data;
@@ -35,8 +34,28 @@ worker.onmessage = function(event){
   // console.log('here');
   deferred.resolve();
 }
-// end setup
 
-// begin benchmark
+function setupForNewWorkerEachTime(){
+  var wCode = function(event){
+    postMessage(null);
+  };
+
+  var blob = new Blob([
+    "onmessage = " + wCode.toString()]);
+
+  var blobURL = window.URL.createObjectURL(blob);
+
+  return new Worker(blobURL);
+}
+
+// Test case 1 - Pre existent worker
 postCode(worker, function() { postMessage(null); });
-// end benchmark
+
+// Test case 2 - New workers
+var newWorker = setupForNewWorkerEachTime();
+
+newWorker.onmessage = function(event){
+  newWorker.terminate();
+  deferred.resolve();
+}
+newWorker.postMessage(null);
