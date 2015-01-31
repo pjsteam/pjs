@@ -2,7 +2,7 @@
 
 // JavaScript setup
 function createElements() {
-  var total = 1024*768; // 786432
+  var total = 10000000;
   var elements = new Uint32Array(total);
 
   for (var i = total; i > 0; i--){

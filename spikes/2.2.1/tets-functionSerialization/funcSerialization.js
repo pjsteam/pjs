@@ -1,4 +1,6 @@
-// Setup
+// Test runned at Chrome javascript console
+
+// JavaScript setup
 function setupFunctionWorker(){
   var wCode = function(event){
     var f = event.data;
@@ -19,6 +21,5 @@ functionWorker.onmessage = function(event) {
   }
 }
 
-// Begin test
+// Test case - Begin test
 functionWorker.postMessage(f);
-// End test

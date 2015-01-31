@@ -16,7 +16,7 @@ Also, the tests show that ArrayBuffer's size does not hit Transferable Objects p
 
 The same code is used by both test with one diference:
 * [Sending small amount of elements](http://jsperf.com/transferrable-vs-cloning)'s **createElements** function generates an ArrayBuffer with 100000 elements.
-* [Sending a larger amount of elements](http://jsperf.com/transferrable-vs-cloning)'s **createElements** function generates an ArrayBuffer with 786432 elements (almost 8 times the first one).
+* [Sending a larger amount of elements](http://jsperf.com/transferrable-vs-cloning)'s **createElements** function generates an ArrayBuffer with 1000000 elements (10 times the first one).
 
 We had to create 2 ArrayBuffers to test the Transferable Objects because we encounter that transferring repeatedly the same ArrayBuffer throws:
 ```
