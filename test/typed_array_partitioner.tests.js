@@ -11,41 +11,54 @@ describe('array partition', function(){
     }).to.throw(errors.InvalidArgumentsError);
   });
 
+  it ('should throw exception for not TypedArray instance of Partitioner.prototype.partition\'s argument', function () {
+    var partitioner = new Partitioner(4);
+    expect(function () {
+      partitioner.partition(null);
+    }).to.throw(errors.InvalidArgumentsError);
+    expect(function () {
+      partitioner.partition(undefined);
+    }).to.throw(errors.InvalidArgumentsError);
+    expect(function () {
+      partitioner.partition({});
+    }).to.throw(errors.InvalidArgumentsError);
+    expect(function () {
+      partitioner.partition(function () {});
+    }).to.throw(errors.InvalidArgumentsError);
+    expect(function () {
+      partitioner.partition([1,3,5]);
+    }).to.throw(errors.InvalidArgumentsError);
+  });
+  
+  it ('should not throw exception for supported TypedArrays when calling Partitioner.prototype.partition', function () {
+    var partitioner = new Partitioner(4);
+    [Uint8Array, Int8Array, Uint8ClampedArray, 
+    Uint16Array, Int16Array,
+    Uint32Array, Int32Array,
+    Float32Array, Float64Array].forEach(function (TypedArray) {
+      expect(function () {
+        partitioner.partition(new TypedArray([1, 2, 3, 4]));
+      }).to.not.throw();
+    });
+  });
+
+  it ('should create patitions of the same TypedArray type when calling Partitioner.prototype.partition', function () {
+    var partitioner = new Partitioner(4);
+    [Uint8Array, Int8Array, Uint8ClampedArray, 
+    Uint16Array, Int16Array,
+    Uint32Array, Int32Array,
+    Float32Array, Float64Array].forEach(function (TypedArray) {
+      var arrays = partitioner.partition(new TypedArray([1, 2, 3, 4]));
+      arrays.forEach(function (p) {
+        expect(p instanceof TypedArray).to.equal(true);
+      });
+    });
+  });
+
   [1, 2, 3, 4, 6, 8, 16].forEach(function (parts) {
     it('should be initialized with ' + parts + ' parts.', function () {
       var partitioner = new Partitioner(parts);
       expect(partitioner.parts).to.equal(parts);
-    });
-
-    it ('should throw exception for not TypedArray instance of Partitioner.prototype.partition\'s argument', function () {
-      var partitioner = new Partitioner(parts);
-      expect(function () {
-        partitioner.partition(null);
-      }).to.throw(errors.InvalidArgumentsError);
-      expect(function () {
-        partitioner.partition(undefined);
-      }).to.throw(errors.InvalidArgumentsError);
-      expect(function () {
-        partitioner.partition({});
-      }).to.throw(errors.InvalidArgumentsError);
-      expect(function () {
-        partitioner.partition(function () {});
-      }).to.throw(errors.InvalidArgumentsError);
-      expect(function () {
-        partitioner.partition([1,3,5]);
-      }).to.throw(errors.InvalidArgumentsError);
-    });
-
-    it ('should not throw exception for supported TypedArrays when calling Partitioner.prototype.partition', function () {
-      var partitioner = new Partitioner(parts);
-      [Uint8Array, Int8Array, Uint8ClampedArray, 
-      Uint16Array, Int16Array,
-      Uint32Array, Int32Array,
-      Float32Array, Float64Array].forEach(function (TypedArray) {
-        expect(function () {
-          partitioner.partition(new TypedArray([1, 2, 3, 4]));
-        }).to.not.throw();
-      });
     });
 
     it('should partition empty array in ' + parts + ' empty arrays.', function () {
@@ -124,19 +137,6 @@ describe('array partition', function(){
           totalElements += part.length;
         });
         expect(elements.length).to.equal(totalElements);
-      });
-    });
-
-    it ('should create patitions of the same TypedArray type when calling Partitioner.prototype.partition', function () {
-      var partitioner = new Partitioner(parts);
-      [Uint8Array, Int8Array, Uint8ClampedArray, 
-      Uint16Array, Int16Array,
-      Uint32Array, Int32Array,
-      Float32Array, Float64Array].forEach(function (TypedArray) {
-        var arrays = partitioner.partition(new TypedArray([1, 2, 3, 4]));
-        arrays.forEach(function (p) {
-          expect(p instanceof TypedArray).to.equal(true);
-        });
       });
     });
   });
