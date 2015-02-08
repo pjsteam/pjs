@@ -34,6 +34,17 @@ splitComparison
 
 Verifies which is the best alternative to split a TypedArray in multiple sub arrays.
 The following alternatives were tested:
-* @todo
+* Manual
+* Buffer slice
+* Buffer subarray
+* TypedArray set
+Here we contruct a number of TypedArrays using the best alternatives from the previous test.
 
 *Test:* [Typed Array split comparison](http://jsperf.com/arraybuffer-split)
+
+*Results:*
+We run the tests both on Chrome 40.X and Chrome 41.X. This time we find that:
+* Manual test case is not up to the other alternatives.
+* The other alternatives had no diference, but it seams that subarray is getting more performant with new Chrome releases.
+
+Here you can see the results for [spliting TypedArrays](./splitComparison.png)
