@@ -1,7 +1,6 @@
 'use strict';
 
 describe('array partition', function(){
-  
   var Partitioner = require('../src/typed_array_partitioner.js');
   var errors = require('../src/errors.js');
 
@@ -29,7 +28,7 @@ describe('array partition', function(){
       partitioner.partition([1,3,5]);
     }).to.throw(errors.InvalidArgumentsError);
   });
-  
+
   it ('should not throw exception for supported TypedArrays when calling Partitioner.prototype.partition', function () {
     var partitioner = new Partitioner(4);
     [Uint8Array, Int8Array, Uint8ClampedArray, 
