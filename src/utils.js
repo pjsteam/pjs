@@ -31,3 +31,12 @@ utils.isTypedArray = function (array) {
       return false;
   }
 };
+
+utils.format = function (template) {
+  var toReplace = Array.prototype.slice.call(arguments, 1);
+  var current = template;
+  for (var i = 0; i < toReplace.length; i++) {
+    current = current.replace('{' + i + '}', toReplace[i]);
+  }
+  return current;
+};

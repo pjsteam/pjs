@@ -5,30 +5,16 @@ describe('array partition', function(){
   var Partitioner = require('../src/typed_array_partitioner.js');
   var errors = require('../src/errors.js');
 
+  it('should not be posible to initialize partitioner with not numeric parts argument.', function () {
+    expect(function () {
+      var partitioner = new Partitioner();
+    }).to.throw(errors.InvalidArgumentsError);
+  });
+
   [1, 2, 3, 4, 6, 8, 16].forEach(function (parts) {
     it('should be initialized with ' + parts + ' parts.', function () {
       var partitioner = new Partitioner(parts);
       expect(partitioner.parts).to.equal(parts);
-    });
-
-    it('should not be possible to override parts property', function () {
-      var partitioner = new Partitioner(parts);
-      expect(function () {
-        partitioner.parts = 2;
-      }).to.throw();
-    });
-
-    it('should initialize parts correctly', function () {
-      [0, 1, 2, 3, 4, 6, 8].forEach(function (p) {
-        var partitioner = new Partitioner(p);
-        expect(partitioner.parts).to.equal(p);
-      });
-    });
-
-    it('should not be posible to initialize partitioner with not numeric parts argument.', function () {
-      expect(function () {
-        var partitioner = new Partitioner();
-      }).to.throw(errors.InvalidArgumentsError);
     });
 
     it ('should throw exception for not TypedArray instance of Partitioner.prototype.partition\'s argument', function () {

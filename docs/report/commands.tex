@@ -2,10 +2,25 @@
   \lstinputlisting[caption=Benchmark at #1, escapechar=]{#2}
 }
 
-\newcommand{\bmchart}[2] {
-  \begin{figure}[h!]
-    \centering
+\newcommand{\img}[3] {
+  \begin{center}
     \includegraphics[width=1\textwidth]{#2}
-    \caption{#1}
-  \end{figure}
+    \captionof{figure}{#1}\label{#3}
+  \end{center}
 }
+
+\newcommand\todo[1]{\textcolor{red}{#1}}
+
+\newcommand{\note}[1]{
+  \fbox{
+    \parbox{\textwidth}{
+      \textbf{Note:} #1
+    }
+  }
+}
+
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\tstring}[0]{\code{String}}
+\newcommand{\tabuffer}[0]{\code{ArrayBuffer}}
+\newcommand{\tfunction}[0]{\code{Function}}
+\newcommand{\ttarray}[0]{\code{TypedArray}}

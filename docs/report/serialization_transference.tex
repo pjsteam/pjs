@@ -1,16 +1,16 @@
 \section{Serialization and Transference}
 
-Let's assume that we have an array of \textit{N} elements on which we want to perform a particular transformation through the \textit{map} function. If we run in a single thread (no parallelism) and the average time to process is element is \textit{t} then we could approximate the total time \(T_{ser}\) for the operation as:
+Let's assume that we have an array of \code{N} elements on which we want to perform a particular transformation through the \code{map} function. If we run in a single thread (no parallelism) and the average time to process is element is \code{t} then we could approximate the total time \(T_{ser}\) for the operation as:
 \[T_{ser} = \sum_{i = 0}^{N}t = Nt\]
 
-When trying to parallelize this operation using \textit{K} threads the ideal goal is to reach a total time \(T_{par}\) that is:
+When trying to parallelize this operation using \code{K} threads the ideal goal is to reach a total time \(T_{par}\) that is:
 \[T_{par} = \frac{T_{ser}}{K}\]
 
 Nevertheless, there are additional time consuming tasks other than the main computation that need to be considered when performing the operation in parallel in programs with no shared memory. These are:
 \begin{itemize}
   \item Partitioning or joining the elements to transfer.
   \item Serializing/deserializing the elements to transfer.
-  \item Transferring the elements between the master and the slaves.
+  \item Transferring the elements between the main thread and the workers.
 \end{itemize}
 
 All of the above happens twice, once when starting the computation and once when it ends, since the resulting need to be put together.
@@ -33,31 +33,31 @@ interface Worker : EventTarget {
 Worker implements AbstractWorker;
 \end{lstlisting}
 
-As the aforementioned interface states one can either send just a message or send a message with a sequence of transferable objects. From section \textbf{2.7.4} of the HTML Standard \cite{html}:
+As the aforementioned interface states one can either send just a message or send a message with a sequence of transferable objects. From section \textbf{2.7.5} of the HTML Standard \cite{html-whatwg}:
 \textit{"Some objects support being copied and closed in one operation. This is called transferring the object, and is used in particular to transfer ownership of unsharable or expensive resources across worker boundaries."}
 
-Considering the definition of a \textit{Transferable} the latter seems like a good alternative to minimize both \(T_{s}\) and \(T_{s}\). Even more so when one considers that otherwise objects are copied using structured cloning(explained in section \textbf{2.7.5} of that same standard).
+Considering the definition of a \code{Transferable} the latter seems like a good alternative to minimize both \(T_{s}\) and \(T_{s}\). Even more so when one considers that otherwise objects are copied using structured cloning(explained in section \textbf{2.7.5} of that same standard).
 
 \subsection{Benchmarks}
-To verify the above we put together two benchmarks that aim to verify the difference between invoking \textit{postMessage} with and without structured cloning for a \textit{TypedArray}. Both transfer a \textit{TypedArray} back and forth between the UI thread and a worker; the only difference between the two is that one has 100000 elements in the \textit{TypedArray} and the other one 1000000.
+To verify the above we put together two benchmarks that aim to verify the difference between invoking \code{postMessage} with and without structured cloning for a \ttarray{}. Both transfer a \ttarray{} back and forth between the UI thread and a worker; the only difference between the two is that one has 100000 elements in the \ttarray{} and the other one 1000000.
 
 \subsubsection{With 100000 elements}
 The following is the code for the benchmark:
 \bmcode{http://jsperf.com/transferrable-vs-cloning}{../../spikes/1.2/transferrableVsCloning.js}
 
-These were the results:
-\bmchart{Results with 100000 elements}{../../spikes/1.2/transferrableVsCloning}
+The results for it are displayed in Figure~\ref{fig:transferrable-vs-cloning}.
+\img{Results with 100000 elements}{../../spikes/1.2/transferrableVsCloning}{fig:transferrable-vs-cloning}
 
 \subsubsection{With 1000000 elements}
 The following is the code for the benchmark:
 \bmcode{http://jsperf.com/longer-transferrable-vs-cloning}{../../spikes/1.2/longerTransferrableVsCloning.js}
 
-These were the results:
-\bmchart{Results with 100000 elements}{../../spikes/1.2/longerTransferrableVsCloning}
+The results for it are displayed in Figure~\ref{fig:long-transferrable-vs-cloning}.
+\img{Results with 100000 elements}{../../spikes/1.2/longerTransferrableVsCloning}{fig:long-transferrable-vs-cloning}
 
 \subsubsection{Conclusion}
-As we can see from the previous results increasing the amount of elements by 10x does not change the amount of operations that can be performed when using \textit{Transferable} objects, it scales. On the other hand, the amount of operations that can be performed with structure cloning greatly decreases.
+As we can see from the previous results increasing the amount of elements by 10x does not change the amount of operations that can be performed when using \code{Transferable} objects, it scales. On the other hand, the amount of operations that can be performed with structure cloning greatly decreases.
 
-For that reason we will only work with \textit{Typed Arrays} and all of them will be passed to/from Web Workers by transferring their ownership.
+For that reason we will only work with {\ttarray{}}s and all of them will be passed to/from Web Workers by transferring their ownership.
 
 \pagebreak

@@ -1,4 +1,4 @@
-// Test runned at Chrome javascript console
+// Test ran using Chrome javascript console
 
 // JavaScript setup
 function setupFunctionWorker(){

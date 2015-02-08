@@ -2,7 +2,7 @@ var Partitioner = module.exports = function (parts) {
   if (undefined === parts) {
     throw new errors.InvalidArgumentsError(errors.messages.PARTITIONER_MISSING_PARTS); 
   }
-  utils.getter(this, 'parts', parts);
+  this.parts = parts;
 };
 
 var utils = require('./utils.js');
@@ -17,22 +17,32 @@ Partitioner.prototype.partition = function (array) {
 
 Partitioner.prototype.validateTypedArray = function (array) {
   if (!utils.isTypedArray(array)) {
-    throw new errors.InvalidArgumentsError('Invalid Type: ' + array + '. ' + errors.messages.PARTITIONER_ARGUMENT_IS_NOT_TYPED_ARRAY);
+    var message = utils.format('Invalid type {0}. {1}', array, errors.messages.PARTITIONER_ARGUMENT_IS_NOT_TYPED_ARRAY);
+    throw new errors.InvalidArgumentsError(message);
   };
 };
 
 Partitioner.prototype.doPartition = function (array) {
   var parts = this.parts;
-  var subElementsCount = parseInt(array.length / parts);
-  var arrays = [];
+  var elementsCount = array.length;
+  var subElementsCount = (elementsCount / parts) | 0;
+  var from = 0;
+  var to = 0;
+
+  var arrays = new Array(parts);
   for (var i = 0; i < parts; i++) {
-    var begin = i * subElementsCount;
-    var end = i * subElementsCount + subElementsCount;
     if (parts - 1 === i) {
-      end = array.length;
+      to = elementsCount;
+    } else {
+      to += subElementsCount;  
     }
-    var subXs = array.subarray(begin, end);
-    arrays.push(new array.constructor(subXs));
+    arrays[i] = typedArraySlice(array, from, to);
+    from += subElementsCount;
   }
   return arrays;
 };
+
+var typedArraySlice = function (array, from, to) {
+  var subXs = array.subarray(from, to);
+  return new array.constructor(subXs);
+}
