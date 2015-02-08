@@ -55,31 +55,31 @@ function blobCopy (xs, callback) {
 // Test case 1 - Manual
 var r = manualCopy(elements);
 if (elementsCount !== r.length || r.buffer === elements.buffer) {
-  console.log('ups manual');
+  console.log('error manual');
 }
 
 // Test case 2 - Buffer slice
 var r = bufferSliceCopy(elements);
 if (elementsCount !== r.length || r.buffer === elements.buffer) {
-  console.log('ups slice');
+  console.log('error slice');
 }
 
 // Test case 3 - Constructor
 var r = constructorFromArrayLikeCopy(elements);
 if (elementsCount !== r.length || r.buffer === elements.buffer) {
-  console.log('ups constructor');
+  console.log('error constructor');
 }
 
 // Test case 4 - TypedArray set
 var r = typedSetCopy(elements);
 if (elementsCount !== r.length || r.buffer === elements.buffer) {
-  console.log('ups set');
+  console.log('error set');
 }
 
 // Test case 5 - Buffer subarray
 var r = bufferSubarrayCopy(elements);
 if (elementsCount !== r.length || r.buffer === elements.buffer) {
-  console.log('ups subarray');
+  console.log('error subarray');
 }
 
 // Test case 6 - Blob
@@ -87,6 +87,6 @@ blobCopy(elements, function (result) {
   if (elementsCount === result.length) {
     deferred.resolve();
   } else {
-    console.log('ups blob');
+    console.log('error blob');
   }
 });

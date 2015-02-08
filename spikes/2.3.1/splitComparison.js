@@ -62,23 +62,23 @@ function typedSetSplit (xs) {
 // Test case 1 - Manual
 var r = manualSplit(elements);
 if (parts !== r.length) {
-  console.log('ups manual');
+  console.log('error manual');
 }
 
 // Test case 2 - Buffer slice
 var r = bufferSliceSplit(elements);
 if (parts !== r.length) {
-  console.log('ups slice');
+  console.log('error slice');
 }
 
 // Test case 3 - Buffer subarray
 var r = bufferSubarraySplit(elements);
 if (parts !== r.length) {
-  console.log('ups subarray');
+  console.log('error subarray');
 }
 
 // Test case 4 - TypedArray set
 var r = typedSetSplit(elements);
 if (parts !== r.length) {
-  console.log('ups set');
+  console.log('error set');
 }

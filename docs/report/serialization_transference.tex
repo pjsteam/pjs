@@ -1,4 +1,5 @@
 \section{Serialization and Transference}
+\label{sec:serialization-and-transference}
 
 Let's assume that we have an array of \code{N} elements on which we want to perform a particular transformation through the \code{map} function. If we run in a single thread (no parallelism) and the average time to process is element is \code{t} then we could approximate the total time \(T_{ser}\) for the operation as:
 \[T_{ser} = \sum_{i = 0}^{N}t = Nt\]
@@ -34,7 +35,7 @@ Worker implements AbstractWorker;
 \end{lstlisting}
 
 As the aforementioned interface states one can either send just a message or send a message with a sequence of transferable objects. From section \textbf{2.7.5} of the HTML Standard \cite{html-whatwg}:
-\textit{"Some objects support being copied and closed in one operation. This is called transferring the object, and is used in particular to transfer ownership of unsharable or expensive resources across worker boundaries."}
+\textit{``Some objects support being copied and closed in one operation. This is called transferring the object, and is used in particular to transfer ownership of unsharable or expensive resources across worker boundaries."}
 
 Considering the definition of a \code{Transferable} the latter seems like a good alternative to minimize both \(T_{s}\) and \(T_{s}\). Even more so when one considers that otherwise objects are copied using structured cloning(explained in section \textbf{2.7.5} of that same standard).
 
