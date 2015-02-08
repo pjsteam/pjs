@@ -1,30 +1,19 @@
 2.4.1 - Investigar alternativas para consolidar los resultados
 -----------------------
 
-@todo (mati)
+**merge.js**
+-----------------------
 
+Verifies which is the best way to merge multiple TypedArrays into an unique Typed Array containing every element in order and without holes.
+The following alternatives were tested:
+* Non-native function: it creates a TypedArray with the total count of elements and the we iterate all the arrays to copy them into the target.
+* TypedArray set function: it creates a TypedArray with the total count of elements and then inserts all the parts typed arrays using [TypedArray's set function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypedArray/set)
+* DataView set function: it creates a TypedArray with the total count of elements and the we iterate all the arrays to copy them into the target using [DataView's set function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView) for 8 bit element.
+* Array like function: it creates a native Array object with the total count of elements and the we iterate all the arrays to copy them into the target. Finally this array is used to creare the final ArrayBuffer.
 
-borrador:
+*Test:* [Typed Arrays Merge](http://jsperf.com/typedarray-merge)
 
-Alternativa A:
+*Result:*
+We run the tests both on Chrome 40.X and Chrome 41.X. Each one thrown the same result: TypedArray's set function is the best choice of all. No other test case is up to it. That is why we will use it as our TypedArray merging method.
 
-  var a = new Int8Array( [ 1, 2, 3 ] );
-  var b = new Int8Array( [ 4, 5, 6 ] );
-
-  var c = new Int8Array(a.length + b.length);
-  c.set(a);
-  c.set(b, a.length);
-
-  console.log(a);
-  console.log(b);
-  console.log(c);
-
-
-
-Alternativa B:
-
-  DataView:
-    https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/DataView
-
-Alternativa C:
-  
+Here you can see the results for [merging TypedArrays](./merge.png)
