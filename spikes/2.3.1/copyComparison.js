@@ -52,6 +52,15 @@ function blobCopy (xs, callback) {
   fileReader.readAsArrayBuffer(b);
 };
 
+function dataViewCopy(xs) {
+  var buffer = new ArrayBuffer(xs.length);
+  var dv = new DataView(buffer);
+  for (var i = 0; i < xs.length; i++) {
+    dv.setInt8(xs[i]);
+  }
+  return new Uint8Array(buffer));
+}
+
 // Test case 1 - Manual
 var r = manualCopy(elements);
 if (elementsCount !== r.length || r.buffer === elements.buffer) {
