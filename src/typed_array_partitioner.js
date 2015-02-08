@@ -34,7 +34,7 @@ Partitioner.prototype.doPartition = function (array) {
     if (parts - 1 === i) {
       to = elementsCount;
     } else {
-      to += subElementsCount;  
+      to += subElementsCount;
     }
     arrays[i] = typedArraySlice(array, from, to);
     from += subElementsCount;
