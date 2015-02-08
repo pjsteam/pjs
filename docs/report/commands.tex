@@ -3,11 +3,10 @@
 }
 
 \newcommand{\img}[3] {
-  \begin{figure}[h!]
-    \centering
+  \begin{center}
     \includegraphics[width=1\textwidth]{#2}
-    \caption{#1\label{#3}}
-  \end{figure}
+    \captionof{figure}{#1}\label{#3}
+  \end{center}
 }
 
 \newcommand\todo[1]{\textcolor{red}{#1}}

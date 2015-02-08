@@ -8,7 +8,7 @@ A naive approach would be trying to send the function to be executed directly to
 When executed in the Google Chrome console the error shown in Figure~\ref{fig:func-serialization} is thrown.
 \img{Error when trying to send a Function object to a Web Worker}{../../spikes/2.2.1/test-functionSerialization/funcSerialization.png}{fig:func-serialization}
 
-That is an expected error as explained in section 9.5.3 of the HTML standard \cite{html-whatwg}, the value being sent must support the structured clone algorithm and a Function does not meet that requirement as explained in section 2.7.5 of that same standard. It could be assumed that this is because of the challenges of serializing function closures \cite{cloud-haskell} \cite{distributed-scheme}.
+That is an expected error as explained in section 9.5.3 of the HTML standard \cite{html-whatwg}, the value being sent must support the structured clone algorithm and a Function does not meet that requirement as explained in section 2.7.5 of that same standard. It could be assumed that this is because of the challenges of serializing function closures\cite{cloud-haskell}\cite{distributed-scheme}.
 
 \subsection{Serializing functions}
 Considering the fact that \tfunction{} objects cannot be directly transferred a different serialization approach is to be considered. Since function closures will not be transferrable a possible alternative is to:
@@ -30,7 +30,7 @@ One possible way of passing serialized \tfunction{} to workers would be to encod
 We created a benchmark to understand the difference between each approach:
 \bmcode{http://jsperf.com/pjs-serialization-comparison/2}{../../spikes/2.2.1/test-syncEncodingAPI/encodingAPI.js}
 
-These were the results:
+The results for it are displayed in Figure~\ref{fig:string-encode-decode}.
 \img{Comparing string encoding/decoding approaches}{../../spikes/2.2.1/test-syncEncodingAPI/encodingAPI}{fig:string-encode-decode}
 
 \subsubsection{Conclusion}
@@ -38,5 +38,39 @@ The native implementation was faster than the non-native one and the difference 
 
 \subsection{Transferring strings}
 Function's code not only needs to be serialized but also transferred. For that reason it was also worth comparing the time it takes to encode/decode a \tstring{} and tranfer the resulting \tabuffer{} to the worker against just passing the \tstring{} to the worker.
+
+Additionally, in most scenarios code would have to be sent along with a \ttarray{} so it would also be interesting to see if the transfer time was affected by this fact.
+
+\subsubsection{\tstring{} serialization and tranfer benchmarks}
+We created a benchmark using two functions of different length to see if the function's length affected the serialization and transfer time. We measured three approaches to transfer the string:
+\begin{enumerate}
+  \item Encoding the \tstring{} into a \tabuffer{} and sending it as a \code{Tranferable} and decoding it on the Web Worker.
+  \item Sending the string directly
+  \item Using a \code{Blob} to store the stream and retrieving that in the Worker.
+\end{enumerate}
+
+The benchmark with the short function was the following one:
+\bmcode{http://jsperf.com/pjs-serialization/2}{../../spikes/2.2.1/test-howToSendCode/shortSerialization.js}
+
+The results for it are displayed in Figure~\ref{fig:short-serialization}.
+\img{Comparing string encoding/decoding approaches}{../../spikes/2.2.1/test-howToSendCode/shortSerialization}{fig:short-serialization}
+
+The benchmark with the long function was the following one:
+\bmcode{http://jsperf.com/pjs-serialization-long}{../../spikes/2.2.1/test-howToSendCode/longSerialization.js}
+
+The results for it are displayed in Figure~\ref{fig:long-serialization}.
+\img{Comparing string encoding/decoding approaches}{../../spikes/2.2.1/test-howToSendCode/longSerialization}{fig:long-serialization}
+
+\subsubsection{\tstring{} and \ttarray{} serialization and tranfer benchmarks}
+We created a benchmark that tranfers a \ttarray{} and \tstring{} back and forth between the main thread an a worker to understand if transferring additional objects affected the transfer time when comparing it with just tranferring a \tstring{}.
+
+The benchmark's code is the following one:
+\bmcode{http://jsperf.com/pjs-encoding}{../../spikes/2.2.1/test-howToSendCodeWithData/encoding.js}
+
+The results for it are displayed in Figure~\ref{fig:code-with-data}.
+\img{Comparing string encoding/decoding approaches}{../../spikes/2.2.1/test-howToSendCodeWithData/encoding}{fig:code-with-data}
+
+\subsubsection{Conclusion}
+As the benchmarks show, the fastest way to tranfer the \tstring{} between the UI thread and workers is by directly sending it.
 
 \pagebreak
