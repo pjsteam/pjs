@@ -21,7 +21,7 @@ var fStringified = (function () {
   return sum;
 }).toString();
 
-var manualEncode = function (str) {
+var nonNativeEncode = function (str) {
   var strLength = str.length;
   var buf = new ArrayBuffer(strLength * 2);
   var bufView = new Uint16Array(buf);
@@ -30,17 +30,17 @@ var manualEncode = function (str) {
   }
   return bufView;
 };
-var manualDecode = function (ab) {
+var nonNativeDecode = function (ab) {
   return String.fromCharCode.apply(null, ab);
 };
 
 var encoder = new TextEncoder();
 var decoder = new TextDecoder();
 
-// ---
-var withManual = function () {
-  var encodedF = manualEncode(fStringified);
-  var decodedF = manualDecode(encodedF);
+//
+var withNonNativeFunction = function () {
+  var encodedF = nonNativeEncode(fStringified);
+  var decodedF = nonNativeDecode(encodedF);
   if (decodedF === fStringified) {
     console.log(decodedF);
   } else {
@@ -48,7 +48,7 @@ var withManual = function () {
   }
 }
 
-var withEncodeAPI = function () {
+var withEncodingAPI = function () {
   var encodedF = encoder.encode(fStringified);
   var decodedF = decoder.decode(encodedF);
   if (decodedF === fStringified) {
@@ -58,8 +58,8 @@ var withEncodeAPI = function () {
   }
 };
 
-// Test case 1 - Manual deco
-withManual();
+// Test case 1 - Non-native function
+withNonNativeFunction();
 
-// Test case 2 - API deco
-withEncodeAPI();
+// Test case 2 - Native encoding API
+withEncodingAPI();
