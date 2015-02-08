@@ -1,4 +1,4 @@
-// http://jsperf.com/pjs-serialization-comparison/2
+// http://jsperf.com/pjs-serialization-comparison/3
 
 // HTML setup
 <script src="http://mrale.ph/irhydra/jsperf-renamer.js"></script>
