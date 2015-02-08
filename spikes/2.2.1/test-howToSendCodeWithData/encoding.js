@@ -1,6 +1,6 @@
 // http://jsperf.com/pjs-encoding
 
-// JsvaScript setup
+// JavaScript setup
 function setupCopyWorker(){
   var wCode = function(event){
     var code = event.data.code;

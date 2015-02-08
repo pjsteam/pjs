@@ -1,0 +1,42 @@
+\section{Code sharing}
+
+One of the aspects that must be handled by the library is the distribution of the code between the different workers when a skeleton is created.
+
+A naive approach would be trying to send the function to be executed directly to the worker. The following code fragment attempts to do so:
+\lstinputlisting[caption=Trying to send a function to a worker, escapechar=]{../../spikes/2.2.1/test-functionSerialization/funcSerialization.js}
+
+When executed in the Google Chrome console the error shown in Figure~\ref{fig:func-serialization} is thrown.
+\img{Error when trying to send a Function object to a Web Worker}{../../spikes/2.2.1/test-functionSerialization/funcSerialization.png}{fig:func-serialization}
+
+That is an expected error as explained in section 9.5.3 of the HTML standard \cite{html-whatwg}, the value being sent must support the structured clone algorithm and a Function does not meet that requirement as explained in section 2.7.5 of that same standard. It could be assumed that this is because of the challenges of serializing function closures \cite{cloud-haskell} \cite{distributed-scheme}.
+
+\subsection{Serializing functions}
+Considering the fact that \tfunction{} objects cannot be directly transferred a different serialization approach is to be considered. Since function closures will not be transferrable a possible alternative is to:
+\begin{enumerate}
+  \item Serialize the function to a \tstring{}.
+  \item Transfer the \tstring{} to the worker.
+  \item Create a new function on the worker from that \tstring{}.
+\end{enumerate}
+
+\note{An approach to provide contextual data to worker functions is explored in \todo{link to section}.}
+
+\subsubsection{\tstring{} serialization benchmarks}
+One possible way of passing serialized \tfunction{} to workers would be to encode them as binary and transfer them as an \tabuffer{}. To encode the strings there are two possible approaches:
+\begin{itemize}
+  \item Using the Encoding API\cite{encoding-api}
+  \item Implementing non native encoding/decoding functions
+\end{itemize}
+
+We created a benchmark to understand the difference between each approach:
+\bmcode{http://jsperf.com/pjs-serialization-comparison/2}{../../spikes/2.2.1/test-syncEncodingAPI/encodingAPI.js}
+
+These were the results:
+\img{Comparing string encoding/decoding approaches}{../../spikes/2.2.1/test-syncEncodingAPI/encodingAPI}{fig:string-encode-decode}
+
+\subsubsection{Conclusion}
+The native implementation was faster than the non-native one and the difference increased between Chrome versions, which seems to indicate that some extra optimizations could be expected in the future.
+
+\subsection{Transferring strings}
+Function's code not only needs to be serialized but also transferred. For that reason it was also worth comparing the time it takes to encode/decode a \tstring{} and tranfer the resulting \tabuffer{} to the worker against just passing the \tstring{} to the worker.
+
+\pagebreak

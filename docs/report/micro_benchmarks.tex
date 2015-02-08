@@ -75,7 +75,7 @@ console.timeEnd('between');
 //end benchmark
 \end{lstlisting}
 
-Alternatively it could notice that the variable \textit{j} is not being used so it could just throw the line away. In any case, we would just be measuring how long it takes for JavaScript to execute the loop, which is not what we want. To verify that is not the case the tool IRHydra can be used \cite{ir-hydra}, which \textit{can display intermediate representations used by V8}. As shown in the following figure, v8 inline the function (the blue chevron marks that) but the loop invariant was not detected and optimized:
+Alternatively it could notice that the variable \code{j} is not being used so it could just throw the line away. In any case, we would just be measuring how long it takes for JavaScript to execute the loop, which is not what we want. To verify that is not the case the tool IRHydra can be used \cite{ir-hydra}, which \textit{can display intermediate representations used by V8}. As shown in the following figure, v8 inline the function (the blue chevron marks that) but the loop invariant was not detected and optimized:
 \begin{figure}[h!]
   \centering
   \includegraphics[width=1\textwidth]{naive_benchmark_ir_hydra}

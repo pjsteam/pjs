@@ -37,7 +37,7 @@ var manualDecode = function (ab) {
 var encoder = new TextEncoder();
 var decoder = new TextDecoder();
 
-//
+// ---
 var withManual = function () {
   var encodedF = manualEncode(fStringified);
   var decodedF = manualDecode(encodedF);
@@ -58,7 +58,7 @@ var withEncodeAPI = function () {
   }
 };
 
-// Test case - Manual deco
+// Test case 1 - Manual deco
 withManual();
 
 // Test case 2 - API deco

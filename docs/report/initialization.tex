@@ -17,7 +17,7 @@ The following is the code for the benchmark:
 \bmcode{http://jsperf.com/worker-cold-start/5}{../../spikes/2.1.1/newVsPreExistent.js}
 
 These were the results:
-\bmchart{Evaluating the inefficiency of cold starting a Web Worker}{../../spikes/2.1.1/newVsPreExistent}
+\img{Evaluating the inefficiency of cold starting a Web Worker}{../../spikes/2.1.1/newVsPreExistent}{fig:new-vs-pre}
 
 \subsubsection{Conclusion}
 The previous benchmark shows a huge difference between the time required to process a message on a pre-existent Web Worker and that necessary to start Web Worker and process a message. For that reason, we decided to initialize a pool of Web Workers when the library is initialized.
