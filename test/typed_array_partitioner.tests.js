@@ -73,7 +73,7 @@ describe('array partition', function(){
       var partitioner = new Partitioner(parts);
       var elements = [1];
       var arrays = partitioner.partition(new Uint32Array(elements));
-      
+
       expect(arrays.length).to.equal(parts);
     });
 
@@ -81,7 +81,7 @@ describe('array partition', function(){
       var partitioner = new Partitioner(parts);
       var elements = [1];
       var arrays = partitioner.partition(new Uint32Array(elements));
-      
+
       arrays.forEach(function (part) {
         expect(0 === part.length || 1 === part.length).to.equal(true);
       });
@@ -91,7 +91,7 @@ describe('array partition', function(){
       var partitioner = new Partitioner(parts);
       var elements = [1];
       var arrays = partitioner.partition(new Uint32Array(elements));
-      
+
       var totalElements = 0;
       arrays.forEach(function (part) {
         totalElements += part.length;
@@ -106,9 +106,9 @@ describe('array partition', function(){
         elements.push(e);
       }
       var arrays = partitioner.partition(new Uint32Array(elements));
-      
+
       expect(arrays.length).to.equal(parts);
-      
+
       arrays.forEach(function (part) {
         expect(1 === part.length).to.equal(true);
       });
@@ -128,9 +128,9 @@ describe('array partition', function(){
           elements.push(e);
         }
         var arrays = partitioner.partition(new Uint32Array(elements));
-        
+
         expect(arrays.length).to.equal(parts);
-        
+
         var totalElements = 0;
         arrays.forEach(function (part) {
           totalElements += part.length;

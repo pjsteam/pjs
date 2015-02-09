@@ -2,8 +2,8 @@ var utils = require('./utils.js');
 var errors = require('./errors.js');
 
 var Partitioner = module.exports = function (parts) {
-  if (undefined === parts) {
-    throw new errors.InvalidArgumentsError(errors.messages.PARTITIONER_MISSING_PARTS); 
+  if (!parts) {
+    throw new errors.InvalidArgumentsError(errors.messages.INVALID_PARTS);
   }
   this.parts = parts;
 };
