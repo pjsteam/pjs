@@ -1,5 +1,6 @@
 var errors = require('./errors.js');
 var utils = require('./utils.js');
+var Partitioner = require('./typed_array_partitioner.js');
 
 var JobPackager = module.exports = function (parts, code, elements) {
   if (!parts) {
@@ -14,6 +15,7 @@ var JobPackager = module.exports = function (parts, code, elements) {
   this.parts = parts;
   this.code = code;
   this.elements = elements;
+  this.partitioner = new Partitioner(parts);
 };
 
 JobPackager.prototype.packageForIndex = function (index) {
@@ -29,10 +31,11 @@ JobPackager.prototype.generatePackages = function () {
   var elements = this.elements;
   var packageCode = this.code.toString();
   var elementsType = utils.typeFromTypedArray(elements);
+  var partitionedElements = this.partitioner.partition(elements);
 
   var packages = new Array(parts);
   for (var index = 0; index < parts; index++) {
-    packages[index] = generatePackage(index, packageCode, elements, elementsType);
+    packages[index] = generatePackage(index, packageCode, partitionedElements[index], elementsType);
   }
   this.packages = packages;
 };

@@ -106,4 +106,17 @@ describe.only('job packager', function(){
     });
   });
 
+  it('should generate correct buffer on al packages', function () {
+    var elementsConstructor = elements.constructor;
+    var packager = new JobPackager(parts, code, elements);
+    packager.generatePackages();
+
+    var index = 0;
+    packager.packages.forEach(function (jobPackage) {
+      var packagedElements = new elementsConstructor(jobPackage.buffer);
+      for (var i = 0; i < packagedElements.length; i++, index++) {
+        expect(packagedElements[i]).to.equal(elements[index]);
+      }
+    });
+  });
 });
