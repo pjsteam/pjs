@@ -1,10 +1,10 @@
 \section{About Microbenchmmarks}
-A common practice to measure the performance of a fragment of code, or to compare it to the performance of some other code fragment is to create a micro benchmark. Throughout this document, there are multiple references to benchmarks of this kind since their results helped us make decision about how to implement some specific library features.
+A common practice to measure the performance of a fragment of code, or to compare it to the performance of some other code fragment is to create a micro benchmark. Throughout this document, there are multiple references to benchmarks of this kind since their results helped us make decisions about how to best implement some specific library features.
 
 A micro benchmark usually involves wrapping the code under evaluation inside a loop, to:
 
 \begin{description}
-\item[First] Be able to evalute the time it takes to perform the operation multiple times (a single one could either be too small or an outlier and the measurement could have to much variance/error).
+\item[First] Be able to evalute the time it takes to perform the operation multiple times (a single execution could either be too small or an outlier and the measurement could have too much variance/error).
 \item[Second] Allow JIT optimizations to kick in.
 \end{description}
 
@@ -75,7 +75,7 @@ console.timeEnd('between');
 //end benchmark
 \end{lstlisting}
 
-Alternatively it could notice that the variable \code{j} is not being used so it could just throw the line away. In any case, we would just be measuring how long it takes for JavaScript to execute the loop, which is not what we want. To verify that is not the case the tool IRHydra can be used \cite{ir-hydra}, which \textit{can display intermediate representations used by V8}. As shown in the following figure, v8 inline the function (the blue chevron marks that) but the loop invariant was not detected and optimized:
+Alternatively it could notice that the variable \code{j} is not being used so it could just throw the line away. In any case, we would just be measuring how long it takes for JavaScript to execute the loop, which is not what we originally intended to do. To verify that is not the case the tool IRHydra\cite{ir-hydra} can be used , which \textit{can display intermediate representations used by V8}. As shown in the following figure, v8 inline the function (the blue chevron marks that) but the loop invariant was not detected and optimized:
 \begin{figure}[h!]
   \centering
   \includegraphics[width=1\textwidth]{naive_benchmark_ir_hydra}

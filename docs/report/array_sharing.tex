@@ -2,9 +2,10 @@
 
 As explained in section~\ref{sec:serialization-and-transference} of this document transferring \ttarray{} objects to and from workers requires the use of \code{Transferable}s to achieve acceptable performance. Since our library will receive \ttarray{} objects to be partiotioned and handled between multiple workers, it is important that it takes as little time as possible for the partitioning of the arrays.
 
-If the library is configured to use \(N\) workers then the original data in the \ttarray{} will copied into \(N\) smaller \ttarray{}s. For ideal performance it would be nice to be able to pass a pointer into the array and an amount of elements to process, but since there's no shared memory and element ownership is tranferred to the Web Workers the elements have to be copied to the sub-arrays.
+If the library is configured to use \(N\) workers then the original data in the \ttarray{} will copied into \(N\) smaller \ttarray{}s. For ideal performance it would be nice to be able to pass a pointer into the array and an amount of elements to process, but since there's no shared memory and element ownership is tranferred to the Web Workers the elements must be copied to the sub-arrays.
 
 \subsection{Copying \ttarray{}s}
+\label{subsec:copying-typed-arrays}
 Sections 22.2 and 24.1 of the ECMAScript 6 draft \cite{es6} specify the API for \ttarray{} and \tabuffer{} objects respectively. Some of the exposed operations provide a way to copy the contents of an \tabuffer{} into another \tabuffer{}, so they are to be considered as viable alternatives for the copy operation. Other alternatives to consider are:
 \begin{itemize}
   \item Implementing a non-native function that copies the array elements one by one
@@ -20,7 +21,7 @@ The results for it are displayed in Figure~\ref{fig:typed-array-copy}.
 
 Based on those results we can discard the \code{Blob} approach for splitting \ttarray{}s.
 
-\note{Alternatives \textit{Buffer subarray} and \textit{Constructor} do the same thing in the case of copying an entire \ttarray{}. However, \textit{Constructor} is not a viable alternative for copying part of an array}.
+\note{Alternatives \textit{Buffer subarray} and \textit{Constructor} do the same thing in the case of copying an entire \ttarray{}. However, \textit{Constructor} is not a viable alternative for copying part of an array}
 
 \subsubsection{\ttarray{} split benchmark}
 Based on the result from the previous benchmark we created a new benchmark to understand which alternative is better to partition an array into parts:

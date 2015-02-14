@@ -6,9 +6,9 @@ A naive approach would be trying to send the function to be executed directly to
 \lstinputlisting[caption=Trying to send a function to a worker, escapechar=]{../../spikes/2.2.1/test-functionSerialization/funcSerialization.js}
 
 When executed in the Google Chrome console the error shown in Figure~\ref{fig:func-serialization} is thrown.
-\img{Error when trying to send a Function object to a Web Worker}{../../spikes/2.2.1/test-functionSerialization/funcSerialization.png}{fig:func-serialization}
+\img{Error when trying to send a \code{Function} object to a Web Worker}{../../spikes/2.2.1/test-functionSerialization/funcSerialization.png}{fig:func-serialization}
 
-That is an expected error as explained in section 9.5.3 of the HTML standard \cite{html-whatwg}, the value being sent must support the structured clone algorithm and a Function does not meet that requirement as explained in section 2.7.5 of that same standard. It could be assumed that this is because of the challenges of serializing function closures\cite{cloud-haskell}\cite{distributed-scheme}.
+That is an expected error as explained in section 9.5.3 of the HTML standard \cite{html-whatwg}, the value being sent must support the structured clone algorithm and a \code{Function} does not meet that requirement as explained in section 2.7.5 of that same standard. It could be assumed that this is because of the challenges of serializing function closures\cite{cloud-haskell}\cite{distributed-scheme}.
 
 \subsection{Serializing functions}
 Considering the fact that \tfunction{} objects cannot be directly transferred a different serialization approach is to be considered. Since function closures will not be transferrable a possible alternative is to:
@@ -42,9 +42,9 @@ Function's code not only needs to be serialized but also transferred. For that r
 Additionally, in most scenarios code would have to be sent along with a \ttarray{} so it would also be interesting to see if the transfer time was affected by this fact.
 
 \subsubsection{\tstring{} serialization and tranfer benchmarks}
-We created a benchmark using two functions of different length to see if the function's length affected the serialization and transfer time. We measured three approaches to transfer the string:
+We created a benchmark using two functions whose string representation has different lengths to see if the function's length affected the serialization and transfer time. We measured three approaches to transfer the string:
 \begin{enumerate}
-  \item Encoding the \tstring{} into a \tabuffer{} and sending it as a \code{Tranferable} and decoding it on the Web Worker.
+  \item Encoding the \tstring{} into an \tabuffer{}, sending it as a \code{Tranferable} and decoding it on the Web Worker.
   \item Sending the string directly
   \item Using a \code{Blob} to store the stream and retrieving that in the Worker.
 \end{enumerate}
@@ -62,7 +62,7 @@ The results for it are displayed in Figure~\ref{fig:long-serialization}.
 \img{Comparing string encoding/decoding approaches}{../../spikes/2.2.1/test-howToSendCode/longSerialization}{fig:long-serialization}
 
 \subsubsection{\tstring{} and \ttarray{} serialization and tranfer benchmarks}
-We created a benchmark that tranfers a \ttarray{} and \tstring{} back and forth between the main thread an a worker to understand if transferring additional objects affected the transfer time when comparing it with just tranferring a \tstring{}.
+We created a benchmark that tranfers a \ttarray{} and a \tstring{} that are properties of the same object back and forth between the main thread an a worker to understand if transferring additional objects affected the transfer time when comparing it with just tranferring a \tstring{}.
 
 The benchmark's code is the following one:
 \bmcode{http://jsperf.com/pjs-encoding}{../../spikes/2.2.1/test-howToSendCodeWithData/encoding.js}
@@ -71,6 +71,6 @@ The results for it are displayed in Figure~\ref{fig:code-with-data}.
 \img{Comparing string encoding/decoding approaches}{../../spikes/2.2.1/test-howToSendCodeWithData/encoding}{fig:code-with-data}
 
 \subsubsection{Conclusion}
-As the benchmarks show, the fastest way to tranfer the \tstring{} between the UI thread and workers is by directly sending it.
+As the benchmarks show, the fastest way to tranfer the \tstring{} between the UI thread and workers is by sending it directly.
 
 \pagebreak
