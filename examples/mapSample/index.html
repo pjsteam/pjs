@@ -1,0 +1,56 @@
+<html>
+  <head>
+    <script src="../../dist/p-j-s.min.js"></script>
+    <script>
+    var pjs = require('p-j-s');
+    pjs.init();
+    function mapper (e) { 
+      return e * 4;
+    };
+
+    function generateElements(count) {
+      var xs = new Uint32Array(count);
+      for (var i = 0; i < count; i++) {
+        xs[i] = i;
+      }
+      return xs;
+    };
+
+    function arrayToString(array, max) {
+      max = max || array.length;
+      var result = '[';
+      for (var i = 0; i < max && i < array.length; i++) {
+        if (0 === i) {
+          result += ' ' + array[i] + ' ';
+        } else {
+          result += ' , ' + array[i] + ' ';
+        }
+      }
+      return result + ']';
+    };
+
+    var map = function (count) {
+      document.getElementById("xs").innerHTML = '';
+      document.getElementById("mapper").innerHTML = '';
+      document.getElementById("ys").innerHTML = '';
+      var xs = generateElements(count);
+      pjs(xs).map(mapper, function (ys) {
+        document.getElementById("xs").innerHTML = 'xs = ' + arrayToString(xs, 150);
+        document.getElementById("mapper").innerHTML = 'mapper = ' + mapper.toString();
+        document.getElementById("ys").innerHTML = 'ys = ' + arrayToString(ys, 150);
+      });
+    };
+
+    </script>
+    <title>Map Sample</title>
+  </head>
+  <body>
+    <button onclick="map(10)">Run pjs.map for 10 elements</button><br/>
+    <button onclick="map(100)">Run pjs.map for 100 elements</button><br/>
+    <button onclick="map(10000)">Run pjs.map for 10000 elements</button><br/>
+    <button onclick="map(1000000)">Run pjs.map for 1000000 elements</button><br/>
+    <p id="xs"></p>
+    <p id="mapper"></p>
+    <p id="ys"></p>
+  </body>
+</html>
