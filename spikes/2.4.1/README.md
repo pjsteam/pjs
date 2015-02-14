@@ -14,6 +14,6 @@ The following alternatives were tested:
 *Test:* [Typed Arrays Merge](http://jsperf.com/typedarray-merge)
 
 *Result:*
-We run the tests both on Chrome 40.X and Chrome 41.X. Each one thrown the same result: TypedArray's set function is the best choice of all. No other test case is up to it. That is why we will use it as our TypedArray merging method.
+We run the tests both on Chrome 40.X and Chrome 41.X. Each one yields the same result: TypedArray's set function is the best choice of all. No other test case is up to it. That is why we will use it as our TypedArray merging method.
 
 Here you can see the results for [merging TypedArrays](./merge.png)

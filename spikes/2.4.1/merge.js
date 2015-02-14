@@ -10,7 +10,7 @@ function generateElements() {
   for (var i = 0; i < arraysCount; i++) {
     arrays[i] = new Uint8Array(arraySize);
   }
-  
+
   for (var j = 0; j < arraySize; j++) {
     for (var i = 0; i < arrays.length; i++) {
       arrays[i][j] = j + i * arraySize;
