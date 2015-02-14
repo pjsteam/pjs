@@ -32,18 +32,18 @@ describe('job packager', function(){
 
   it('should generate ' + parts + ' packages', function () {
     var packager = new JobPackager(parts, code, elements);
-    packager.generatePackages();
+    var packages = packager.generatePackages();
 
-    expect(packager.packages).to.not.equal(undefined);
-    expect(packager.packages.length).to.equal(parts);
+    expect(packages).to.not.equal(undefined);
+    expect(packages.length).to.equal(parts);
   });
 
   it('should return a package for each valid index', function () {
     var packager = new JobPackager(parts, code, elements);
-    packager.generatePackages();
+    var packages = packager.generatePackages();
 
     for (var i = 0; i < parts; i++) {
-      expect(packager.packageForIndex(i)).to.not.equal(undefined);
+      expect(packages[i]).to.not.equal(undefined);
     }
   });
 
@@ -51,57 +51,53 @@ describe('job packager', function(){
     var invalidIndex = parts;
     var negativeIndex = -1;
     var packager = new JobPackager(parts, code, elements);
-    packager.generatePackages();
+    var packages = packager.generatePackages();
 
-    expect(function () {
-      packager.packageForIndex(invalidIndex);
-    }).to.throw(errors.InvalidArgumentsError);
-    expect(function () {
-      packager.packageForIndex(negativeIndex);
-    }).to.throw(errors.InvalidArgumentsError);
+    expect(packages[invalidIndex]).to.equal(undefined);
+    expect(packages[negativeIndex]).to.equal(undefined);
   });
   
   it('should track order on all packages', function () {
     var packager = new JobPackager(parts, code, elements);
-    packager.generatePackages();
+    var packages = packager.generatePackages();
 
-    packager.packages.forEach(function (jobPackage, index) {
+    packages.forEach(function (jobPackage, index) {
       expect(jobPackage.index).to.equal(index);
     });
   });
 
   it('should generate packaged code on all packages', function () {
     var packager = new JobPackager(parts, code, elements);
-    packager.generatePackages();
+    var packages = packager.generatePackages();
 
-    packager.packages.forEach(function (jobPackage) {
+    packages.forEach(function (jobPackage) {
       expect(jobPackage.code).to.not.equal(undefined);
     });
   });
 
   it('should generate packaged buffer on all packages', function () {
     var packager = new JobPackager(parts, code, elements);
-    packager.generatePackages();
+    var packages = packager.generatePackages();
 
-    packager.packages.forEach(function (jobPackage) {
+    packages.forEach(function (jobPackage) {
       expect(jobPackage.buffer).to.not.equal(undefined);
     });
   });
 
   it('should track elements type on all packages', function () {
     var packager = new JobPackager(parts, code, elements);
-    packager.generatePackages();
+    var packages = packager.generatePackages();
 
-    packager.packages.forEach(function (jobPackage, index) {
+    packages.forEach(function (jobPackage, index) {
       expect(jobPackage.elementsType).to.equal(utils.getTypedArrayType(elements));
     });
   });
 
   it('should not package elements buffer on the packages', function () {
     var packager = new JobPackager(parts, code, elements);
-    packager.generatePackages();
+    var packages = packager.generatePackages();
 
-    packager.packages.forEach(function (jobPackage) {
+    packages.forEach(function (jobPackage) {
       expect(jobPackage.buffer).to.not.equal(elements.buffer);
     });
   });
@@ -109,10 +105,10 @@ describe('job packager', function(){
   it('should not lose or duplicate data on packaged buffers', function () {
     var elementsConstructor = elements.constructor;
     var packager = new JobPackager(parts, code, elements);
-    packager.generatePackages();
+    var packages = packager.generatePackages();
 
     var index = 0;
-    packager.packages.forEach(function (jobPackage) {
+    packages.forEach(function (jobPackage) {
       var packagedElements = new elementsConstructor(jobPackage.buffer);
       for (var i = 0; i < packagedElements.length; i++, index++) {
         expect(packagedElements[i]).to.equal(elements[index]);
