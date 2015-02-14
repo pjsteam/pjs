@@ -24,14 +24,15 @@ function createTypedArray(type, param){
 
 module.exports = function(event){
   var pack = event.data;
-  var code = 'var __code = ' + pack.code + ';';
-  eval(code);
+  var arg = pack.arg;
+  var code = pack.code;
+  var f = new Function(arg, code);
   var array = createTypedArray(pack.elementsType, pack.buffer);
 
   var i = array.length;
 
   for ( ; i--; ){
-    array[i] = __code(array[i]);
+    array[i] = f(array[i]);
   }
 
   return {

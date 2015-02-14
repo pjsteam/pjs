@@ -18,7 +18,11 @@ var JobPackager = module.exports = function (parts, code, elements) {
 };
 
 JobPackager.prototype.generatePackages = function () {
-  var packageCode = this.code.toString();
+  var reg = /function[^(]+\(([^)]+)\)[^{]\{([\s\S]*)\}/
+  var functionString = this.code.toString();
+  var match = functionString.match(reg);
+  var packageCodeArg = match[1].split(',')[0].trim();
+  var packageCode = match[2];
   var elementsType = utils.getTypedArrayType(this.elements);
   var partitioner = new Partitioner(this.parts);
   var partitionedElements = partitioner.partition(this.elements);
@@ -26,6 +30,7 @@ JobPackager.prototype.generatePackages = function () {
   return partitionedElements.map(function (partitionedElement, index) {
     return {
       index: index,
+      arg: packageCodeArg,
       code: packageCode,
       buffer: partitionedElement.buffer,
       elementsType: elementsType
