@@ -29,9 +29,6 @@
     "karma-bro": "^0.8.0"
   },
   "repository": "pjsteam/pjs",
-  "engines": {
-    "node": ">=0.8.0"
-  },
   "scripts": {
     "test": "gulp test",
     "build": "gulp build"

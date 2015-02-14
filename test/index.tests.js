@@ -97,13 +97,13 @@ describe('initialization', function(){
       pjs.init({maxWorkers:4});
     });
 
-    it('should not wrap undefined array', function () {
+    it('should require at least one parameter to wrap', function () {
       expect(function () {
         pjs();
       }).to.throw(errors.InvalidArgumentsError);
     });
 
-    it('should not wrap not typed array type', function () {
+    it('should throw if object to wrap is not typed array', function () {
       expect(function () {
         pjs([1,6,8,9,14]);
       }).to.throw(errors.InvalidArgumentsError);
@@ -121,7 +121,7 @@ describe('initialization', function(){
     Uint32Array, Int32Array,
     Float32Array, Float64Array].forEach(function (TypedArray) {
       var sourceArray = new TypedArray([1,2,3,4,5]);
-      it(utils.format('should return mapped elements of type {0} in callback', utils.getTypedArrayType(sourceArray)), function(done){
+      it(utils.format('should return mapped elements for array of type {0} in callback', utils.getTypedArrayType(sourceArray)), function(done){
         pjs(sourceArray).map(function(e){
           return e * 2;
         }, function(result){
@@ -135,7 +135,7 @@ describe('initialization', function(){
       });
 
       var emptySourceArray = new TypedArray([]);
-      it(utils.format('should return empty mapped elements of type {0} in callback', utils.getTypedArrayType(emptySourceArray)), function(done){
+      it(utils.format('should return no elements for empty array of type {0} in callback', utils.getTypedArrayType(emptySourceArray)), function(done){
         pjs(emptySourceArray).map(function(e){
           return e * 2;
         }, function(result){
@@ -146,7 +146,7 @@ describe('initialization', function(){
       });
 
       var singleElementSourceArray = new TypedArray([4]);
-      it(utils.format('should return single element mapped elements of type {0} in callback', utils.getTypedArrayType(singleElementSourceArray)), function(done){
+      it(utils.format('should return mapped elements for single element array of type {0} in callback', utils.getTypedArrayType(singleElementSourceArray)), function(done){
         pjs(singleElementSourceArray).map(function(e){
           return e * 2;
         }, function(result){
