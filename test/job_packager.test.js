@@ -8,95 +8,65 @@ describe('job packager', function(){
   var parts = 4;
   var code = function (a) { return a + 1; };
   var elements = new Uint32Array([1,2,3,4,5,6,7,8]);
+  var packager = new JobPackager(parts, code, elements);
+  var packages = packager.generatePackages();
 
   it('should not be initialized without parts, code and elements', function () {
     expect(function () {
-      var packager = new JobPackager();
+      var p = new JobPackager();
     }).to.throw(errors.InvalidArgumentsError);
     expect(function () {
-      var packager = new JobPackager(parts);
+      var p = new JobPackager(parts);
     }).to.throw(errors.InvalidArgumentsError);
     expect(function () {
-      var packager = new JobPackager(parts, code);
+      var p = new JobPackager(parts, code);
     }).to.throw(errors.InvalidArgumentsError);
     expect(function () {
-      var packager = new JobPackager(parts, code, elements);
+      var p = new JobPackager(parts, code, elements);
     }).to.not.throw(errors.InvalidArgumentsError);
   });
 
-  it('should not generate packages on initialization', function () {
-    var packager = new JobPackager(parts, code, elements);
-
-    expect(packager.packages).to.equal(undefined);
-  });
-
   it('should generate ' + parts + ' packages', function () {
-    var packager = new JobPackager(parts, code, elements);
-    var packages = packager.generatePackages();
-
-    expect(packages).to.not.equal(undefined);
+    expect(packages).to.not.be.undefined;
     expect(packages.length).to.equal(parts);
   });
 
   it('should return a package for each valid index', function () {
-    var packager = new JobPackager(parts, code, elements);
-    var packages = packager.generatePackages();
-
-    for (var i = 0; i < parts; i++) {
-      expect(packages[i]).to.not.equal(undefined);
-    }
-  });
-
-  it('should not return a package for invalid index', function () {
     var invalidIndex = parts;
     var negativeIndex = -1;
-    var packager = new JobPackager(parts, code, elements);
-    var packages = packager.generatePackages();
 
-    expect(packages[invalidIndex]).to.equal(undefined);
-    expect(packages[negativeIndex]).to.equal(undefined);
+    for (var i = 0; i < parts; i++) {
+      expect(packages[i]).to.not.be.undefined;
+    }
+    expect(packages[invalidIndex]).to.be.undefined;
+    expect(packages[negativeIndex]).to.be.undefined;
   });
-  
-  it('should track order on all packages', function () {
-    var packager = new JobPackager(parts, code, elements);
-    var packages = packager.generatePackages();
 
+  it('should track order on all packages', function () {
     packages.forEach(function (jobPackage, index) {
       expect(jobPackage.index).to.equal(index);
     });
   });
 
   it('should generate packaged code on all packages', function () {
-    var packager = new JobPackager(parts, code, elements);
-    var packages = packager.generatePackages();
-
     packages.forEach(function (jobPackage) {
-      expect(jobPackage.code).to.not.equal(undefined);
+      expect(jobPackage.code).to.not.be.undefined;
     });
   });
 
   it('should generate packaged buffer on all packages', function () {
-    var packager = new JobPackager(parts, code, elements);
-    var packages = packager.generatePackages();
-
     packages.forEach(function (jobPackage) {
-      expect(jobPackage.buffer).to.not.equal(undefined);
+      expect(jobPackage.buffer).to.not.be.undefined;
     });
   });
 
   it('should track elements type on all packages', function () {
-    var packager = new JobPackager(parts, code, elements);
-    var packages = packager.generatePackages();
-
     packages.forEach(function (jobPackage, index) {
       expect(jobPackage.elementsType).to.equal(utils.getTypedArrayType(elements));
     });
   });
 
   it('should not package elements buffer on the packages', function () {
-    var packager = new JobPackager(parts, code, elements);
-    var packages = packager.generatePackages();
-
     packages.forEach(function (jobPackage) {
       expect(jobPackage.buffer).to.not.equal(elements.buffer);
     });
@@ -104,8 +74,6 @@ describe('job packager', function(){
 
   it('should not lose or duplicate data on packaged buffers', function () {
     var elementsConstructor = elements.constructor;
-    var packager = new JobPackager(parts, code, elements);
-    var packages = packager.generatePackages();
 
     var index = 0;
     packages.forEach(function (jobPackage) {

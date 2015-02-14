@@ -29,7 +29,7 @@ describe('result collector', function(){
 
     expect(collector.collected.length).to.equal(parts);
     collector.collected.forEach(function (part) {
-      expect(part).to.be(undefined);
+      expect(part).to.be.undefined;
     });
   });
 
