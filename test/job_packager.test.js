@@ -1,6 +1,6 @@
 'use strict';
 
-describe.only('job packager', function(){
+describe('job packager', function(){
   var JobPackager = require('../src/job_packager.js');
   var errors = require('../src/errors.js');
   var utils = require('../src/utils.js');

@@ -15,7 +15,6 @@ var JobPackager = module.exports = function (parts, code, elements) {
   this.parts = parts;
   this.code = code;
   this.elements = elements;
-  this.partitioner = new Partitioner(parts);
 };
 
 JobPackager.prototype.packageForIndex = function (index) {
@@ -27,17 +26,14 @@ JobPackager.prototype.packageForIndex = function (index) {
 };
 
 JobPackager.prototype.generatePackages = function () {
-  var parts = this.parts;
-  var elements = this.elements;
   var packageCode = this.code.toString();
-  var elementsType = utils.getTypedArrayType(elements);
-  var partitionedElements = this.partitioner.partition(elements);
+  var elementsType = utils.getTypedArrayType(this.elements);
+  var partitioner = new Partitioner(this.parts);
+  var partitionedElements = partitioner.partition(this.elements);
 
-  var packages = new Array(parts);
-  for (var index = 0; index < parts; index++) {
-    packages[index] = generatePackage(index, packageCode, partitionedElements[index], elementsType);
-  }
-  this.packages = packages;
+  this.packages = partitionedElements.map(function (partitionedElement, index) {
+    return generatePackage(index, packageCode, partitionedElement, elementsType);
+  });
 };
 
 function generatePackage(index, code, elements, elementsType) {
