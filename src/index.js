@@ -1,12 +1,3 @@
-var pjs = module.exports = function wrap(typedArray){
-	if (!utils.isTypedArray(typedArray)) {
-		throw new errors.InvalidArgumentsError(errors.messages.INVALID_TYPED_ARRAY);
-	}
-	return {
-		map: map.bind(null, pjs, typedArray)
-	};
-};
-
 var errors = require('./errors.js');
 var utils = require('./utils.js');
 var JobPackager = require('./job_packager.js');
@@ -17,32 +8,42 @@ var work = require('webworkify');
 var initialized = false;
 var workers = [];
 
-function map(pjs, typedArray, mapper, done){
-	var parts = pjs.config.workers;
+var WrappedTypedArray = function(source, parts){
+	this.source = source;
+	this.parts = parts;
+};
 
-	var packager = new JobPackager(parts, mapper, typedArray);
+WrappedTypedArray.prototype.map = function(mapper, done) {
+	var packager = new JobPackager(this.parts, mapper, this.source);
 	var packs = packager.generatePackages();
-	var TypedArrayConstructor = typedArray.constructor;
+	var TypedArrayConstructor = this.source.constructor;
 
-	var collector = new ResultCollector(parts, function(buffers){
+	var collector = new ResultCollector(this.parts, function(buffers){
 		var partial_results = buffers.map(function(buffer){
 			return new TypedArrayConstructor(buffer);
 		});
 
-		var result = merge_typed_arrays(partial_results);
-		return done(result);
+		return done(merge_typed_arrays(partial_results));
 	});
 
 	packs.forEach(function(pack, index){
-		workers[index].addEventListener('message', function(event){
+		utils.listenOnce(workers[index], 'message', function(event){
 			collector.onPart(event.data);
 		});
 
 		workers[index].postMessage(pack, [ pack.buffer ]);
 	});
-}
+};
 
-pjs.init = function (options) {
+function wrap(typedArray){
+	if (!utils.isTypedArray(typedArray)) {
+		throw new errors.InvalidArgumentsError(errors.messages.INVALID_TYPED_ARRAY);
+	}
+
+	return new WrappedTypedArray(typedArray, pjs.config.workers);
+};
+
+function init(options) {
 	if (initialized) {
 		throw new errors.InvalidOperationError(errors.messages.CONSECUTIVE_INITS);
 	}
@@ -68,7 +69,7 @@ pjs.init = function (options) {
 	initialized = true;
 };
 
-pjs.terminate = function() {
+function terminate() {
 	if (!initialized) {
 		throw new errors.InvalidOperationError(errors.messages.TERMINATE_WITHOUT_INIT);
 	}
@@ -79,3 +80,8 @@ pjs.terminate = function() {
 
 	initialized = false;
 };
+
+var pjs = module.exports = wrap;
+
+pjs.init = init;
+pjs.terminate = terminate;
