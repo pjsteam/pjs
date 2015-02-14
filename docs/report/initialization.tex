@@ -1,6 +1,6 @@
 \section{Initialization}
 
-As explained in the standard \cite{w3c-ww} \textit{``Generally, workers are expected to be long-lived, have a high start-up performance cost, and a high per-instance memory cost."}.
+As explained in the Web Workers standard \cite{w3c-ww} \textit{``Generally, workers are expected to be long-lived, have a high start-up performance cost, and a high per-instance memory cost."}.
 
 There are two factors to consider from the above sentence regarding the library's implementation:
 
@@ -20,13 +20,13 @@ The results for it are displayed in Figure~\ref{fig:new-vs-pre}.
 \img{Evaluating the inefficiency of cold starting a Web Worker}{../../spikes/2.1.1/newVsPreExistent}{fig:new-vs-pre}
 
 \subsubsection{Conclusion}
-The previous benchmark shows a huge difference between the time required to process a message on a pre-existent Web Worker and that necessary to start Web Worker and process a message. For that reason, we decided to initialize a pool of Web Workers when the library is initialized.
+The previous benchmark shows a huge difference between the time required to process a message on a pre-existent Web Worker and that necessary to start Web Worker and process a message. For that reason, we decided to create a pool of Web Workers when the library is initialized.
 
 \subsection{High per-instance memory cost}
-The first factor makes it important that users can control/limit the amount of web workers that the library instantiates. For that reason the library allows users to specify a maximum amount of workers to be instantiated, and also provide through its API a way to terminate all workers in existance.
+The second factor makes it important for users to be able to control/limit the amount of web workers that the library instantiates. For that reason the library allows users to specify a maximum amount of workers to be instantiated, and also provide through its API a way to terminate all workers in existance.
 
 \subsection{Maximum amount of workers}
-Since the work being done is CPU intensive (i.e.: the workers' goal is not to perform I/O operations), the maximum amount of workers to be created should not be greater than the amount of cores in the machine \(W_{cores}\), otherwise interleaving will start to affect performance. Additionally, considering the necessity of users to control how many workers are created, an upper bound can be specified \(W_{upper bound}\). If no upper bound is specified, the user upper bound for workers is assumed to be infinite (because the user is not providing a restriction). To summarize, the number of workers to be instantiated is:
+Since the work being done is CPU intensive (i.e.: the workers' goal is not to perform I/O operations), the maximum amount of workers to be created should not be greater than the amount of cores in the machine \(W_{cores}\), otherwise interleaving would start to affect performance. Additionally, considering the necessity of users to control how many workers are created, an upper bound can be specified \(W_{upper bound}\). If no upper bound is specified, the user upper bound for workers is assumed to be infinite (because the user is not providing a restriction). To summarize, the number of workers to be instantiated is:
 \[W = min(W_{cores}, W_{upper bound})\]
 
 \pagebreak
