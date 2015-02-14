@@ -5,7 +5,10 @@
     var pjs = require('p-j-s');
     pjs.init();
     function mapper (e) { 
-      return e * 4;
+      return e + Math.floor(Math.random() * 10000)
+        + Math.floor(Math.random() * 10000)
+        + Math.floor(Math.random() * 10000)
+        + Math.floor(Math.random() * 10000);  
     };
 
     function generateElements(count) {
@@ -21,36 +24,76 @@
       var result = '[';
       for (var i = 0; i < max && i < array.length; i++) {
         if (0 === i) {
-          result += ' ' + array[i] + ' ';
+          result += array[i];
         } else {
-          result += ' , ' + array[i] + ' ';
+          result += ' , ' + array[i];
         }
       }
       return result + ']';
     };
 
-    var map = function (count) {
-      document.getElementById("xs").innerHTML = '';
-      document.getElementById("mapper").innerHTML = '';
-      document.getElementById("ys").innerHTML = '';
-      var xs = generateElements(count);
+    var xs;
+
+    function generate () {
+      var count = document.getElementById("select").value;
+      xs = generateElements(count);
+      document.getElementById("xs").innerHTML = 'xs = ' + arrayToString(xs, 150);
+      document.getElementById("mapper").innerHTML = 'mapper = ' + mapper.toString();
+    }
+
+    function pjsmap () {
+      initIfNeeded();
+
+      console.time('pjs');
+      var s = new Date();
       pjs(xs).map(mapper, function (ys) {
-        document.getElementById("xs").innerHTML = 'xs = ' + arrayToString(xs, 150);
-        document.getElementById("mapper").innerHTML = 'mapper = ' + mapper.toString();
-        document.getElementById("ys").innerHTML = 'ys = ' + arrayToString(ys, 150);
+        console.timeEnd('pjs');
+        finish(ys, s, 'pjs(xs).map');
       });
+    };
+
+    function formap () {
+      initIfNeeded();
+
+      console.time('for');
+      var s = new Date();
+      var l = xs.length;
+      var ys = new Uint32Array(l);
+      for (var i = 0; i < l; i++){
+        ys[i] = mapper(xs[i]);
+      }
+      console.timeEnd('for');
+      finish(ys, s, 'for map');
+    };
+
+    function initIfNeeded () {
+      if (!xs) {
+        generate();
+      }
+    };
+
+    function finish(ys, s, m) {
+      var e = new Date();
+      document.getElementById("ys").innerHTML = 'ys = ' + arrayToString(ys, 150);
+      document.getElementById("time").innerHTML = m + ' time = ' + (e - s) + ' ms';
     };
 
     </script>
     <title>Map Sample</title>
   </head>
   <body>
-    <button onclick="map(10)">Run pjs.map for 10 elements</button><br/>
-    <button onclick="map(100)">Run pjs.map for 100 elements</button><br/>
-    <button onclick="map(10000)">Run pjs.map for 10000 elements</button><br/>
-    <button onclick="map(1000000)">Run pjs.map for 1000000 elements</button><br/>
+    <select id="select">
+      <option value="10">10 elements</option>
+      <option value="100">100 elements</option>
+      <option value="10000">10.000 elements</option>
+      <option value="1000000">1.000.000 elements</option>
+    </select>
+    <button onclick="generate()">generate</button><br/>
+    <button onclick="pjsmap()">pjs.map</button><br/>
+    <button onclick="formap()">for map</button><br/>
     <p id="xs"></p>
     <p id="mapper"></p>
     <p id="ys"></p>
+    <p id="time"></p>
   </body>
 </html>
