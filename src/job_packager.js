@@ -30,7 +30,7 @@ JobPackager.prototype.generatePackages = function () {
   var parts = this.parts;
   var elements = this.elements;
   var packageCode = this.code.toString();
-  var elementsType = utils.typeFromTypedArray(elements);
+  var elementsType = utils.getTypedArrayType(elements);
   var partitionedElements = this.partitioner.partition(elements);
 
   var packages = new Array(parts);

@@ -93,7 +93,7 @@ describe.only('job packager', function(){
     packager.generatePackages();
 
     packager.packages.forEach(function (jobPackage, index) {
-      expect(jobPackage.elementsType).to.equal(utils.typeFromTypedArray(elements));
+      expect(jobPackage.elementsType).to.equal(utils.getTypedArrayType(elements));
     });
   });
 
@@ -106,7 +106,7 @@ describe.only('job packager', function(){
     });
   });
 
-  it('should generate correct buffer on al packages', function () {
+  it('should not lose or duplicate data on packaged buffers', function () {
     var elementsConstructor = elements.constructor;
     var packager = new JobPackager(parts, code, elements);
     packager.generatePackages();
@@ -118,5 +118,6 @@ describe.only('job packager', function(){
         expect(packagedElements[i]).to.equal(elements[index]);
       }
     });
+    expect(index).to.equal(elements.length);
   });
 });

@@ -14,7 +14,7 @@ utils.isTypedArray = function (array) {
   if (!array) {
     return false;
   }
-  type = typedArrayType(array);
+  var type = utils.getTypedArrayType(array)
   switch(type){
     case 'Uint8Array':
     case 'Int8Array':
@@ -31,14 +31,7 @@ utils.isTypedArray = function (array) {
   }
 };
 
-utils.typeFromTypedArray = function(array) {
-  if (!utils.isTypedArray(array)) {
-    return ;
-  }
-  return typedArrayType(array);
-}
-
-function typedArrayType (array) {
+utils.getTypedArrayType = function(array) {
   var temp = array.toString();
   return temp.substring('[object '.length, temp.length - 1);
 }
