@@ -31,7 +31,7 @@ describe('array partition', function(){
 
   it ('should not throw exception for supported TypedArrays when calling Partitioner.prototype.partition', function () {
     var partitioner = new Partitioner(4);
-    [Uint8Array, Int8Array, Uint8ClampedArray, 
+    [Uint8Array, Int8Array, Uint8ClampedArray,
     Uint16Array, Int16Array,
     Uint32Array, Int32Array,
     Float32Array, Float64Array].forEach(function (TypedArray) {
@@ -43,7 +43,7 @@ describe('array partition', function(){
 
   it ('should create patitions of the same TypedArray type when calling Partitioner.prototype.partition', function () {
     var partitioner = new Partitioner(4);
-    [Uint8Array, Int8Array, Uint8ClampedArray, 
+    [Uint8Array, Int8Array, Uint8ClampedArray,
     Uint16Array, Int16Array,
     Uint32Array, Int32Array,
     Float32Array, Float64Array].forEach(function (TypedArray) {

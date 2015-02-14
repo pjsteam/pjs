@@ -2,6 +2,7 @@ var pjs = module.exports = {};
 
 var errors = require('./errors.js');
 var utils = require('./utils.js');
+var work = require('webworkify');
 
 var initialized = false;
 var workers = [];
@@ -16,11 +17,8 @@ function init(options) {
 	var maxWorkers = options.maxWorkers || cpus;
 	var workersCount = Math.min(maxWorkers, cpus);
 
-	var wCode = function (event) {};
-	var blob = new Blob(["onmessage = " + wCode.toString()]);
-	var blobURL = window.URL.createObjectURL(blob);
 	while (workersCount--) {
-		var worker = new Worker(blobURL);
+		var worker = work(require('./worker'));
 		workers.push(worker);
 	}
 

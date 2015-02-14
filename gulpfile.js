@@ -40,8 +40,6 @@ gulp.task('build-standalone', function() {
     .pipe(gulp.dest('./dist'))
 });
 
-
-
 /**
  * Run test once and exit
  */
