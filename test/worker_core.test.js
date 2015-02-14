@@ -31,11 +31,11 @@ describe('worker core', function(){
       it('should add transferables to result object', function () {
         expect(result.transferables).to.not.be.undefined;
         expect(result.transferables.length).to.equal(1);
-        expect(result.transferables[0]).to.equal(result.message.buffer);
+        expect(result.transferables[0]).to.equal(result.message.value);
       });
 
       it('should transform array elements', function () {
-        var transformedElements = new TypedArray(result.message.buffer);
+        var transformedElements = new TypedArray(result.message.value);
         expect(transformedElements.length).to.equal(expectedElements.length);
         for (var i = 0; i < expectedElements.length; i++) {
           expect(transformedElements[i]).to.equal(expectedElements[i]);

@@ -37,7 +37,7 @@ module.exports = function(event){
   return {
     message: {
       index: pack.index,
-      buffer: array.buffer
+      value: array.buffer
     },
     transferables: [ array.buffer ]
   };

@@ -45,12 +45,12 @@ describe('result collector', function(){
     var parts = 2;
     var collector = new Collector(parts, function () {});
 
-    collector.onPart({index: 0, elements: new Uint8Array([0,1])});
+    collector.onPart({index: 0, value: new Uint8Array([0,1])});
 
     expect(collector.completed).to.equal(1);
     expect(collector.completed).to.not.equal(parts);
 
-    collector.onPart({index: 1, elements: new Uint8Array([2,3])});
+    collector.onPart({index: 1, value: new Uint8Array([2,3])});
 
     expect(collector.completed).to.equal(parts);
   });
@@ -59,13 +59,13 @@ describe('result collector', function(){
     var parts = 2;
     var collector = new Collector(parts, function () {});
 
-    collector.onPart({index: 0, elements: new Uint8Array([0,1])});
+    collector.onPart({index: 0, value: new Uint8Array([0,1])});
 
     expect(collector.completed).to.equal(1);
     expect(collector.completed).to.not.equal(parts);
 
     expect(function(){
-      collector.onPart({index: 0, elements: new Uint8Array([2,3])});
+      collector.onPart({index: 0, value: new Uint8Array([2,3])});
     }).to.throw();
   });
 
@@ -77,13 +77,13 @@ describe('result collector', function(){
       result = res;
     });
 
-    collector.onPart({index: 2, elements: new Uint8Array([4,5])});
+    collector.onPart({index: 2, value: new Uint8Array([4,5])});
     expect(callback_invoked).to.equal(false);
 
-    collector.onPart({index: 0, elements: new Uint8Array([0,1])});
+    collector.onPart({index: 0, value: new Uint8Array([0,1])});
     expect(callback_invoked).to.equal(false);
 
-    collector.onPart({index: 1, elements: new Uint8Array([2,3])});
+    collector.onPart({index: 1, value: new Uint8Array([2,3])});
     expect(callback_invoked).to.equal(true);
 
     expect(result[0][0]).to.equal(0);

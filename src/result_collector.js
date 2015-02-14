@@ -22,7 +22,7 @@ Collector.prototype.onPart = function (data){
       utils.format(errors.messages.PART_ALREADY_COLLECTED, data.index));
   }
 
-  this.collected[data.index] = data.elements;
+  this.collected[data.index] = data.value;
   if (++this.completed === this.parts) {
     return this.cb(this.collected);
   }

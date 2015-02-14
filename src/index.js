@@ -1,13 +1,48 @@
-var pjs = module.exports = {};
+var pjs = module.exports = function wrap(typedArray){
+	if (!utils.isTypedArray(typedArray)) {
+		throw new errors.InvalidArgumentsError(errors.messages.INVALID_TYPED_ARRAY);
+	}
+	return {
+		map: map.bind(null, pjs, typedArray)
+	};
+};
 
 var errors = require('./errors.js');
 var utils = require('./utils.js');
+var JobPackager = require('./job_packager.js');
+var ResultCollector = require('./result_collector.js');
+var merge_typed_arrays = require('./typed_array_merger.js');
 var work = require('webworkify');
 
 var initialized = false;
 var workers = [];
 
-function init(options) {
+function map(pjs, typedArray, mapper, done){
+	var parts = pjs.config.workers;
+
+	var packager = new JobPackager(parts, mapper, typedArray);
+	var packs = packager.generatePackages();
+	var TypedArrayConstructor = typedArray.constructor;
+
+	var collector = new ResultCollector(parts, function(buffers){
+		var partial_results = buffers.map(function(buffer){
+			return new TypedArrayConstructor(buffer);
+		});
+
+		var result = merge_typed_arrays(partial_results);
+		return done(result);
+	});
+
+	packs.forEach(function(pack, index){
+		workers[index].addEventListener('message', function(event){
+			collector.onPart(event.data);
+		});
+
+		workers[index].postMessage(pack, [ pack.buffer ]);
+	});
+}
+
+pjs.init = function (options) {
 	if (initialized) {
 		throw new errors.InvalidOperationError(errors.messages.CONSECUTIVE_INITS);
 	}
@@ -18,7 +53,7 @@ function init(options) {
 	var workersCount = Math.min(maxWorkers, cpus);
 
 	while (workersCount--) {
-		var worker = work(require('./worker'));
+		var worker = work(require('./worker.js'));
 		workers.push(worker);
 	}
 
@@ -31,9 +66,9 @@ function init(options) {
   utils.getter(pjs, 'config', config);
 
 	initialized = true;
-}
+};
 
-function terminate() {
+pjs.terminate = function() {
 	if (!initialized) {
 		throw new errors.InvalidOperationError(errors.messages.TERMINATE_WITHOUT_INIT);
 	}
@@ -44,6 +79,3 @@ function terminate() {
 
 	initialized = false;
 };
-
-pjs.init = init;
-pjs.terminate = terminate;

@@ -10,11 +10,11 @@ utils.getter = function (obj, name, value) {
   });
 };
 
-utils.isTypedArray = function (array) {
-  if (!array) {
+utils.isTypedArray = function (obj) {
+  if (!obj) {
     return false;
   }
-  var type = utils.getTypedArrayType(array)
+  var type = utils.getTypedArrayType(obj);
   switch(type){
     case 'Uint8Array':
     case 'Int8Array':
