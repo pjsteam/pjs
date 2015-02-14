@@ -23,5 +23,8 @@ errors.messages = {
   PARTITIONER_ARGUMENT_IS_NOT_TYPED_ARRAY: 'Expected TypedArray argument.',
   ZERO_ARRAYS_TO_MERGE: 'Zero arrays to merge. Provide at least one.',
   INVALID_PARTS: 'Invalid number of parts.',
-  PART_ALREADY_COLLECTED: 'Tried to collect part {0} more than once'
+  PART_ALREADY_COLLECTED: 'Tried to collect part {0} more than once',
+  INVALID_CODE: 'Invalid code argument to package.',
+  INVALID_ELEMENTS: 'Invalid number of elements to package.',
+  INVALID_PACKAGE_INDEX: 'Package index should be not negative and less than {0}.'
 };

@@ -14,8 +14,7 @@ utils.isTypedArray = function (array) {
   if (!array) {
     return false;
   }
-  var temp = array.toString();
-  type = temp.substring('[object '.length, temp.length - 1);
+  type = typedArrayType(array);
   switch(type){
     case 'Uint8Array':
     case 'Int8Array':
@@ -31,6 +30,18 @@ utils.isTypedArray = function (array) {
       return false;
   }
 };
+
+utils.typeFromTypedArray = function(array) {
+  if (!utils.isTypedArray(array)) {
+    return ;
+  }
+  return typedArrayType(array);
+}
+
+function typedArrayType (array) {
+  var temp = array.toString();
+  return temp.substring('[object '.length, temp.length - 1);
+}
 
 utils.format = function (template) {
   var toReplace = Array.prototype.slice.call(arguments, 1);
