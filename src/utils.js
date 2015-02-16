@@ -34,7 +34,7 @@ utils.isTypedArray = function (obj) {
 utils.getTypedArrayType = function(array) {
   var temp = array.toString();
   return temp.substring('[object '.length, temp.length - 1);
-}
+};
 
 utils.format = function (template) {
   var toReplace = Array.prototype.slice.call(arguments, 1);

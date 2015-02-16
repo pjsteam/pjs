@@ -1,6 +1,5 @@
 var errors = require('./errors.js');
 var utils = require('./utils.js');
-var merge  = require('./typed_array_merger.js');
 
 var Collector = module.exports = function (parts, cb) {
   if (!parts) {
@@ -26,4 +25,4 @@ Collector.prototype.onPart = function (data){
   if (++this.completed === this.parts) {
     return this.cb(this.collected);
   }
-}
+};

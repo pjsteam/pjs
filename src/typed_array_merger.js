@@ -21,4 +21,4 @@ module.exports = function merge(arrays){
   }
 
   return result;
-}
+};
