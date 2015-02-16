@@ -24,18 +24,24 @@ function createTypedArray(type, param){
 
 module.exports = function(event){
   var pack = event.data;
+  console.time('ww-' + pack.index + '-total');
+  console.time('ww-' + pack.index + '-init');
   var arg = pack.arg;
   var code = pack.code;
+  console.time('ww-' + pack.index + '-genFunc');
   /*jslint evil: true */
   var f = new Function(arg, code);
+  console.timeEnd('ww-' + pack.index + '-genFunc');
   var array = createTypedArray(pack.elementsType, pack.buffer);
 
   var i = array.length;
-
+  console.timeEnd('ww-' + pack.index + '-init');
+  console.time('ww-' + pack.index + '-map');
   for ( ; i--; ){
     array[i] = f(array[i]);
   }
-
+  console.timeEnd('ww-' + pack.index + '-map');
+  console.timeEnd('ww-' + pack.index + '-total');
   return {
     message: {
       index: pack.index,
