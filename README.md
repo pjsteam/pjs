@@ -8,52 +8,77 @@ npm i p-j-s
 ```
 
 ## Usage
-
-### Initialization
-The first thing you need to do before using the library is to initialize it.
-
 It's as simple as:
-```javascript
+```js
 var pjs = require('p-j-s');
 
-pjs.init();
-```
+pjs.init(); // initialize the library
 
-The above code automatically detects the amount of cores available in your machine, which provides an upper bound on the amount of workers to be created.
-
-If you want to further restrict the amount of workers to be created you can use:
-```javascript
-pjs.init({
-  maxWorkers: 2
+pjs(new Uint32Array([1,2,3,4])).map(function(e){
+    return e * 2;
+}, function(result){
+    // use result...
+    
+    // if we are not using the library any more cleanup once we are done
+    pjs.terminate();
 });
 ```
 
-After calling `init`, a pool of workers will be available for use by the library.
+## API
 
-### Termination
-When you are done using **p-j-s** you should terminate it so the resources it is using (such as workers) are cleaned up.
+### pjs(typedArray)
+Returns a `WrappedTypedArray` for the `typedArray` parameter.
 
-```javascript
+__Arguments__
+
+* `typedArray` - The `TypedArray` to wrap.
+
+__Example__
+```js
+var pjs = require('p-j-s');
+var array = new Uint32Array([1,2,3,4]);
+var wrappedArray = pjs(array);
+```
+
+### pjs.init([options])
+Initializes the library using the provided `options`.
+
+__Arguments__
+
+* `options` - optional configuration.
+  * `maxWorkers` - Maximum amount of Web Workers that the library can use. Defaults to the amount of cores in the machine.
+
+__Example__
+```js
+var array = new Uint32Array([1,2,3,4]);
+var wrappedArray = pjs(array);
+```
+
+### pjs.terminate()
+Terminates all workers and resets the library configuration.
+
+__Example__
+```js
 pjs.terminate();
 ```
 
-### map
-If you want to apply a transformation to all the elements in an array you can use the `map` function.
+### WrappedTypedArray.prototype.map(mapper, done)
+Invokes the `mapper` function on each element of the wrapped `TypedArray`. Returns a new array of the same type where each element is the result of the `mapper` function.
 
-The map function has the following signature: `function map(mapper, done)`:
+__Arguments__
 
-* `mapper`: A function to be invoked for each element of the source array and must return an element in the target array. It takes one argument: `element`.
-* `done`: A function to be invoked when the asynchronous map operation has completed. It takes one parameter: `result`.
+* `mapper(element)` - the function to invoke for each element. Must return the mapped element.
+* `done(result)` - the function invoked when the asynchronous computation is completed. Receives `result` which is the new `TypedArray` with the resulting elements.
 
-#### Example
-```javascript
-var array = new Uint32Array([1,2,3,4,5]);
-pjs(array).map(function(e){
-  return e * 2;
+__Example__
+```js
+pjs(new Uint32Array([1,2,3,4])).map(function(e){
+    return e * 2;
 }, function(result){
-  console.log(result); // [2,4,6,8,10]
+    // result is a Uint32Array with values [2,4,6,8]
 });
 ```
 
-### Acknowledgements
-* Using [this great seed](https://github.com/mgonto/gulp-browserify-library-seed) project from @mgonto.
+## Acknowledgements
+* Using [this great seed](https://github.com/mgonto/gulp-browserify-library-seed) project from [@mgonto](https://twitter.com/mgonto).
+* [@mraleph](https://twitter.com/mraleph) for [IR Hydra](https://github.com/mraleph/irhydra) and the help he provided to use it.
