@@ -20,12 +20,13 @@ function createTypedArray(type, param){
     case 'Float64Array':
       return new Float64Array(param);
   }
-};
+}
 
 module.exports = function(event){
   var pack = event.data;
   var arg = pack.arg;
   var code = pack.code;
+  /*jslint evil: true */
   var f = new Function(arg, code);
   var array = createTypedArray(pack.elementsType, pack.buffer);
 

@@ -3,6 +3,7 @@ var gulp = require('gulp'),
     uglify = require('gulp-uglify'),
     browserify = require('browserify'),
     rename = require('gulp-rename'),
+    jshint = require('gulp-jshint'),
     transform = require('vinyl-transform'),
     projectName = require('./package.json').name
     sourceFile = ['./src/index.js'];
@@ -19,6 +20,13 @@ var browserified = function(standalone) {
    return b.bundle();
  });
 }
+
+gulp.task('lint', function() {
+  return gulp.src('./src/*.js')
+    .pipe(jshint())
+    .pipe(jshint.reporter('default'))
+    .pipe(jshint.reporter('fail'));
+});
 
 gulp.task('build-browserify', function() {
   gulp.src(sourceFile)
@@ -43,7 +51,7 @@ gulp.task('build-standalone', function() {
 /**
  * Run test once and exit
  */
-gulp.task('test', function (done) {
+gulp.task('test',  ['lint'], function (done) {
   karma.start({
     configFile: __dirname + '/karma-src.conf.js',
     singleRun: true

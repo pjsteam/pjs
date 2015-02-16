@@ -4,6 +4,7 @@ var JobPackager = require('./job_packager.js');
 var ResultCollector = require('./result_collector.js');
 var merge_typed_arrays = require('./typed_array_merger.js');
 var work = require('webworkify');
+var pjs;
 
 var initialized = false;
 var workers = [];
@@ -41,7 +42,7 @@ function wrap(typedArray){
 	}
 
 	return new WrappedTypedArray(typedArray, pjs.config.workers);
-};
+}
 
 function init(options) {
 	if (initialized) {
@@ -67,7 +68,7 @@ function init(options) {
   utils.getter(pjs, 'config', config);
 
 	initialized = true;
-};
+}
 
 function terminate() {
 	if (!initialized) {
@@ -79,9 +80,9 @@ function terminate() {
 	delete pjs.config;
 
 	initialized = false;
-};
+}
 
-var pjs = module.exports = wrap;
+pjs = module.exports = wrap;
 
 pjs.init = init;
 pjs.terminate = terminate;

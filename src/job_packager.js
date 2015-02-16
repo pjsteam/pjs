@@ -2,7 +2,7 @@ var errors = require('./errors.js');
 var utils = require('./utils.js');
 var Partitioner = require('./typed_array_partitioner.js');
 
-var FUNCTION_REGEX = /^function[^(]*\(([^)]*)\)[^{]*\{([\s\S]*)\}$/
+var FUNCTION_REGEX = /^function[^(]*\(([^)]*)\)[^{]*\{([\s\S]*)\}$/;
 
 var JobPackager = module.exports = function (parts, code, elements) {
   if (!parts) {

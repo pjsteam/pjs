@@ -1,18 +1,20 @@
 var errors = module.exports = {};
 
-InvalidOperationError = function InvalidOperationError(message) {
+var InvalidOperationError = function InvalidOperationError(message) {
 	this.name = 'InvalidOperationError';
 	this.message = message || 'Invalid Operation';
-}
+};
+
 InvalidOperationError.prototype = new Error();
 InvalidOperationError.prototype.constructor = InvalidOperationError;
 errors.InvalidOperationError = InvalidOperationError;
 
 
-InvalidArgumentsError = function InvalidArgumentsError(message) {
+var InvalidArgumentsError = function InvalidArgumentsError(message) {
   this.name = 'InvalidArgumentsError';
   this.message = message || 'Invalid Arguments';
-}
+};
+
 InvalidArgumentsError.prototype = new Error();
 InvalidArgumentsError.prototype.constructor = InvalidArgumentsError;
 errors.InvalidArgumentsError = InvalidArgumentsError;
