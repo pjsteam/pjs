@@ -1,13 +1,17 @@
 ﻿"use strict";
 
+var run;
+
 (function () {
     var pjs = require('p-j-s');
     pjs.init();
     var source = document.getElementById("source");
-
-    source.onload = function () {
+    var runButton = document.getElementById("runButton");
+    run = function () {
         var start = new Date();
+        log.innerHTML = "Processing...";
 
+        runButton.style.visibility = "hidden"; 
         var canvas = document.getElementById("target");
         canvas.width = source.clientWidth;
         canvas.height = source.clientHeight;
@@ -24,6 +28,7 @@
 
         var canvasData = tempContext.getImageData(0, 0, canvas.width, canvas.height);
 
+        console.time('pjs');
         pjs(new Uint32Array(canvasData.data.buffer)).map(function(pixel){
             function noise() {
                 return Math.random() * 0.5 + 0.5;
@@ -47,12 +52,14 @@
 
             return (pixel & 0xFF000000) + (new_b << 16) + (new_g << 8) + (new_r & 0xFF);
         }, function(result){
+            console.timeEnd('pjs');
             canvasData.data.set(new Uint8ClampedArray(result.buffer));
             tempContext.putImageData(canvasData, 0, 0);
             var diff = new Date() - start;
             log.innerHTML = "Process done in " + diff + " ms";
+            runButton.style.visibility = "visible";
         });
     };
 
-    source.src = "pic.jpg";
+    source.src = "mop.jpg";
 })();
