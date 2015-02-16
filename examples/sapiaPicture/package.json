@@ -1,0 +1,13 @@
+{
+  "name": "sapiaPicture",
+  "version": "0.0.0",
+  "description": "The idea and some source code for this sample was taken from [here](http://blogs.msdn.com/b/eternalcoding/archive/2012/09/20/using-web-workers-to-improve-performance-of-image-manipulation.aspx)",
+  "scripts": {
+    "start": "./node_modules/serve/bin/serve"
+  },
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "serve": "^1.4.0"
+  }
+}
