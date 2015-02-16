@@ -41,5 +41,5 @@ var run;
         console.timeEnd('serial-total');
     };
 
-    source.src = "mop.jpg";
+    source.src = "pic.jpg";
 })();

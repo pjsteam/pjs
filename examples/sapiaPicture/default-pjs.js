@@ -49,5 +49,5 @@ var run;
         });
     };
 
-    source.src = "mop.jpg";
+    source.src = "pic.jpg";
 })();
