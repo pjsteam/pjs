@@ -1,0 +1,36 @@
+\section{Array merging}
+
+Once all the workers have executed the function provided to them on each element of their respective \ttarray{}s they are to notify the main thread and provide the resulting \ttarray{}.
+
+At this point the main thread must consolidate the results into a new \ttarray{} that represents the result for the entire operation. This means copying all the elements of each partial result into a larger \ttarray{} while maintaining the original order.
+
+\subsection{\ttarray{} merge benchmark}
+Unlike the case for \ttarray{} splitting (\ref{subsec:copying-typed-arrays}) there aren't that many native alternatives to create a \ttarray{} from smaller ones.
+
+The benchmark presented only has one alternative that uses a method with a native implementation:
+\bmcode{http://jsperf.com/typedarray-merge}{../../spikes/2.4.1/merge.js}
+
+The results for the benchmark are displayed in Figure~\ref{fig:typed-array-merge}.
+\img{Comparing \ttarray{} merge approaches}{../../spikes/2.4.1/merge}{fig:typed-array-merge}
+
+\subsection{Conclusion}
+The benchmark shows that the best alternative to merge small \ttarray{}s into a larger one is using \code{TypedArray::Set} method.
+
+For illustrative purposes, a naive implementation (without optimizations or error checking) would be similar to the following one:
+\begin{lstlisting}[caption=Simple \ttarray{} merge function]
+function merge(arrays){
+  var first = arrays[0];
+  var total = arrays.reduce(function(c,a) { return c + a.length; }, 0);
+  var result = new first.constructor(total);
+  var start = 0;
+
+  arrays.forEach(function(a){
+    result.set(array, start);
+    start += array.length;
+  });
+
+  return result;
+}
+\end{lstlisting}
+
+\pagebreak
