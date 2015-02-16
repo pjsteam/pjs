@@ -4,13 +4,10 @@ The idea and some source code for this sample was taken from [here](http://blogs
 
 To run the sample you must serve the **default*.html** file using a local server. Otherwise a CORS error is thrown when manipulating the image inside the canvas.
 
-## Serve steps
-
-1. If you don't have `serve` installed:
-  * Run the command `npm install -g serve`
-2. Open terminal and `cm` to this directory.
-3. Run serve .
-4. Open Chrome and browse `http://127.0.0.1:3000/`
+## Running the sample
+1. Run `npm i && npm start`.
+2. Open Chrome and browse to `http://127.0.0.1:3000/default-pjs.html`.
+3. Click **Run**.
 
 ## Sample description
 
