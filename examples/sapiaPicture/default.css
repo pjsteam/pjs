@@ -16,13 +16,13 @@ body {
 #sourceDiv {
     position: absolute;
     left: 10px;
-    top: 10px;
+    top: 50px;
 }
 
 #targetDiv {
     position: absolute;
     right: 10px;
-    top: 10px;
+    top: 50px;
 }
 
 #source {

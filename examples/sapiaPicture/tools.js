@@ -6,18 +6,6 @@ function colorDistance(scale, dest, src) {
     return Math.max(Math.min(255, scale * dest + (1 - scale) * src), 0);
 };
 
-var processBW = function (binaryData, l) {
-    for (var i = 0; i < l; i += 4) {
-        var r = binaryData[i];
-        var g = binaryData[i + 1];
-        var b = binaryData[i + 2];
-        var luminance = r * 0.21 + g * 0.71 + b * 0.07;
-        binaryData[i] = luminance;
-        binaryData[i + 1] = luminance;
-        binaryData[i + 2] = luminance;
-    }
-};
-
 var processSepia = function (binaryData, l) {
     for (var i = 0; i < l; i += 4) {
         var r = binaryData[i];

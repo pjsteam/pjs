@@ -15,7 +15,6 @@ var WrappedTypedArray = function(source, parts){
 };
 
 WrappedTypedArray.prototype.map = function(mapper, done) {
-	console.time('pjs-map-init');
 	var packager = new JobPackager(this.parts, mapper, this.source);
 	var packs = packager.generatePackages();
 	var TypedArrayConstructor = this.source.constructor;
@@ -24,15 +23,10 @@ WrappedTypedArray.prototype.map = function(mapper, done) {
 		var partial_results = buffers.map(function(buffer){
 			return new TypedArrayConstructor(buffer);
 		});
-		console.time('pjs-map-merging');
 		var m = merge_typed_arrays(partial_results);
-		console.timeEnd('pjs-map-merging');
-		console.timeEnd('pjs-map-do');
 		return done(m);
 	});
 
-	console.timeEnd('pjs-map-init');
-	console.time('pjs-map-do');
 	packs.forEach(function(pack, index){
 		utils.listenOnce(workers[index], 'message', function(event){
 			collector.onPart(event.data);
