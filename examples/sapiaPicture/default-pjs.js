@@ -8,8 +8,8 @@ var run;
     var source = document.getElementById("source");
     var runButton = document.getElementById("runButton");
     run = function () {
-        console.time('pjs-total');
-        console.time('pjs-data-init');
+        console.time('sample-total');
+        console.time('sample-data-init');
         var start = new Date();
         log.innerHTML = "Processing...";
 
@@ -29,38 +29,29 @@ var run;
         tempContext.drawImage(source, 0, 0, canvas.width, canvas.height);
 
         var canvasData = tempContext.getImageData(0, 0, canvas.width, canvas.height);
-        console.timeEnd('pjs-data-init');
-        console.time('pjs');
+        console.timeEnd('sample-data-init');
+        console.time('sample-process');
         pjs(new Uint32Array(canvasData.data.buffer)).map(function(pixel){
-            function noise() {
-                return Math.random() * 0.5 + 0.5;
-            };
+          var r = pixel & 0xFF;
+          var g = (pixel & 0xFF00) >> 8;
+          var b = (pixel & 0xFF0000) >> 16;
+          var noiser = Math.random() * 0.5 + 0.5;
+          var noiseg = Math.random() * 0.5 + 0.5;
+          var noiseb = Math.random() * 0.5 + 0.5;
 
-            function clamp(component) {
-                return Math.max(Math.min(255, component), 0);
-            }
+          var new_r = Math.max(Math.min(255, noiser * ((r * 0.393) + (g * 0.769) + (b * 0.189)) + (1 - noiser) * r), 0);
+          var new_g = Math.max(Math.min(255, noiseg * ((r * 0.349) + (g * 0.686) + (b * 0.168)) + (1 - noiseg) * g), 0);
+          var new_b = Math.max(Math.min(255, noiseb * ((r * 0.272) + (g * 0.534) + (b * 0.131)) + (1 - noiseb) * b), 0);
 
-            function colorDistance(scale, dest, src) {
-                return clamp(scale * dest + (1 - scale) * src);
-            };
-
-            var r = pixel & 0xFF;
-            var g = (pixel & 0xFF00) >> 8;
-            var b = (pixel & 0xFF0000) >> 16;
-
-            var new_r = colorDistance(noise(), (r * 0.393) + (g * 0.769) + (b * 0.189), r);
-            var new_g = colorDistance(noise(), (r * 0.349) + (g * 0.686) + (b * 0.168), g);
-            var new_b = colorDistance(noise(), (r * 0.272) + (g * 0.534) + (b * 0.131), b);
-
-            return (pixel & 0xFF000000) + (new_b << 16) + (new_g << 8) + (new_r & 0xFF);
+          return (pixel & 0xFF000000) + (new_b << 16) + (new_g << 8) + (new_r & 0xFF);
         }, function(result){
-            console.timeEnd('pjs');
+            console.timeEnd('sample-process');
             var diff = new Date() - start;
             canvasData.data.set(new Uint8ClampedArray(result.buffer));
             tempContext.putImageData(canvasData, 0, 0);
             log.innerHTML = "Process done in " + diff + " ms";
             runButton.style.visibility = "visible";
-            console.timeEnd('pjs-total');
+            console.timeEnd('sample-total');
         });
     };
 
