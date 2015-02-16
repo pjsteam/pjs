@@ -1,6 +1,11 @@
 var utils = require('./utils.js');
 var errors = require('./errors.js');
 
+var typedArraySlice = function (array, from, to) {
+  var subXs = array.subarray(from, to);
+  return new array.constructor(subXs);
+};
+
 var Partitioner = module.exports = function (parts) {
   if (!parts) {
     throw new errors.InvalidArgumentsError(errors.messages.INVALID_PARTS);
@@ -19,7 +24,7 @@ Partitioner.prototype.validateTypedArray = function (array) {
   if (!utils.isTypedArray(array)) {
     var message = utils.format('Invalid type {0}. {1}', array, errors.messages.PARTITIONER_ARGUMENT_IS_NOT_TYPED_ARRAY);
     throw new errors.InvalidArgumentsError(message);
-  };
+  }
 };
 
 Partitioner.prototype.doPartition = function (array) {
@@ -41,8 +46,3 @@ Partitioner.prototype.doPartition = function (array) {
   }
   return arrays;
 };
-
-var typedArraySlice = function (array, from, to) {
-  var subXs = array.subarray(from, to);
-  return new array.constructor(subXs);
-}

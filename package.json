@@ -26,7 +26,8 @@
     "sinon": "^1.10.3",
     "sinon-chai": "^2.5.0",
     "vinyl-transform": "0.0.1",
-    "karma-bro": "^0.8.0"
+    "karma-bro": "^0.8.0",
+    "gulp-jshint": "^1.9.2"
   },
   "repository": "pjsteam/pjs",
   "scripts": {
