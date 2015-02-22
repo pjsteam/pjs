@@ -1,0 +1,117 @@
+\section{The importance of function inlining}
+One of the things found while comparing the performance of the parallel and non-parallel implementations of \code{map} is that our parallel implementation performed a lot worse than what the one expected when considering the size of the \ttarray{} and the \code{mapper} function.
+
+\subsection{The scenario}
+An image tranformation to apply a sepia tone effect to pictures was used for the comparison. The core linear implementation was:
+\begin{lstlisting}[caption=Sepia tone linear implementation]
+function noise() {
+  return Math.random() * 0.5 + 0.5;
+};
+
+function clamp(component) {
+  return Math.max(Math.min(255, component), 0);
+}
+
+function colorDistance(scale, dest, src) {
+  return clamp(scale * dest + (1 - scale) * src);
+};
+
+function map(binaryData, len) {
+  for (var i = 0; i < len; i += 4) {
+      var r = binaryData[i];
+      var g = binaryData[i + 1];
+      var b = binaryData[i + 2];
+
+      binaryData[i] = colorDistance(noise(), (r * 0.393) + (g * 0.769) + (b * 0.189), r);
+      binaryData[i + 1] = colorDistance(noise(), (r * 0.349) + (g * 0.686) + (b * 0.168), g);
+      binaryData[i + 2] = colorDistance(noise(), (r * 0.272) + (g * 0.534) + (b * 0.131), b);
+  }
+};
+\end{lstlisting}
+
+\note{The serial works with a \code{Uint8ClampedArray} but accesses three elements at the same time. The parallel implementation uses a \code{Uint32Array} and works on one pixel (A,R,G,B) at a time.}
+
+Which was implemented as shown in the following listing for the parallel case:
+\begin{lstlisting}[caption=Sepia tone initial parallel implementation]
+pjs(new Uint32Array(canvasData.data.buffer)).map(function(pixel){
+  function noise() {
+      return Math.random() * 0.5 + 0.5;
+  };
+
+  function clamp(component) {
+      return Math.max(Math.min(255, component), 0);
+  }
+
+  function colorDistance(scale, dest, src) {
+      return clamp(scale * dest + (1 - scale) * src);
+  };
+
+  var r = pixel & 0xFF;
+  var g = (pixel & 0xFF00) >> 8;
+  var b = (pixel & 0xFF0000) >> 16;
+
+  var new_r = colorDistance(noise(), (r * 0.393) + (g * 0.769) + (b * 0.189), r);
+  var new_g = colorDistance(noise(), (r * 0.349) + (g * 0.686) + (b * 0.168), g);
+  var new_b = colorDistance(noise(), (r * 0.272) + (g * 0.534) + (b * 0.131), b);
+
+  return (pixel & 0xFF000000) + (new_b << 16) + (new_g << 8) + (new_r & 0xFF);
+}, function(result){
+  // work on result
+});
+\end{lstlisting}
+
+\subsection{The problem}
+Taking the experience from previous experiments into account we considered that the performance of the two implementation with a \code{Uint32Array} of about \(8E7\) (eight million) elements should be similar, even favoring the parallel one. The initial measurements showed that the linear implementation fared approximately four times better than the parallel one.
+
+\subsection{The hypothesis}
+As the two code samples were similar our hypothesis was that for some reason some v8 optimizations were not taking place. It was a definite possibility considering that the parallel implementation depends on the \tfunction constructor to create \tfunction objects in the Web Workers. Specifically we believed that the internal functions \code{noise}, \code{clamp} and \code{colorDistance} were not being inlined. Inlining could be the cause of both benefits\cite{inline-pro} and drawbacks\cite{inline-cons} but the belief was that performance was being affected because of lack of it
+
+Using IR Hydra it was easy to verify the hypothesis, as Figures \ref{fig:serial-clamp} through \ref{fig:parallel-noise} show.
+
+\note{The blue chevron indicates that a function has been inlined.}
+
+\subsubsection{Serial implementation generated code}
+Figures \ref{fig:serial-clamp} through \ref{fig:serial-processSepia} are related to the serial implementation. As it can be seen from them, all functions are being inlined.
+\img{\code{clamp} function - serial implementation}{../../spikes/3.1.3/irhydra-noworkers/inlined-clamp}{fig:serial-clamp}
+\img{\code{colorDistance} function - serial implementation}{../../spikes/3.1.3/irhydra-noworkers/inlined-colorDistance}{fig:serial-colorDistance}
+\img{\code{noise} function - serial implementation}{../../spikes/3.1.3/irhydra-noworkers/inlined-noise}{fig:serial-noise}
+\img{\code{processSepia} function - serial implementation}{../../spikes/3.1.3/irhydra-noworkers/inlined-processSepia}{fig:serial-processSepia}
+
+\subsubsection{Serial implementation generated code}
+Figures \ref{fig:parallel-clamp} through \ref{fig:parallel-noise} are related to the serial implementation. As it can be seen from them, only \code{Math.random} is being inlined.
+\img{\code{clamp} function - parallel implementation}{../../spikes/3.1.3/irhydra-pjs-noinlined/ww-clamp}{fig:parallel-clamp}
+\img{\code{colorDistance} function - parallel implementation}{../../spikes/3.1.3/irhydra-pjs-noinlined/ww-colorDistance}{fig:parallel-colorDistance}
+\img{\code{mapper} function - parallel implementation}{../../spikes/3.1.3/irhydra-pjs-noinlined/ww-mapper}{fig:parallel-mapper}
+\img{\code{noise} function - parallel implementation}{../../spikes/3.1.3/irhydra-pjs-noinlined/ww-noise}{fig:parallel-noise}
+
+\subsection{The solution}
+The way to solve the problem was to manually inline the functions. The resulting parallel implementation was:
+\begin{lstlisting}[caption=Sepia tone final parallel implementation]
+pjs(buff).map(function(pixel){
+  var r = pixel & 0xFF;
+  var g = (pixel & 0xFF00) >> 8;
+  var b = (pixel & 0xFF0000) >> 16;
+  var noiser = Math.random() * 0.5 + 0.5;
+  var noiseg = Math.random() * 0.5 + 0.5;
+  var noiseb = Math.random() * 0.5 + 0.5;
+
+  var new_r = Math.max(Math.min(255, noiser * ((r * 0.393) + (g * 0.769) + (b * 0.189)) + (1 - noiser) * r), 0);
+  var new_g = Math.max(Math.min(255, noiseg * ((r * 0.349) + (g * 0.686) + (b * 0.168)) + (1 - noiseg) * g), 0);
+  var new_b = Math.max(Math.min(255, noiseb * ((r * 0.272) + (g * 0.534) + (b * 0.131)) + (1 - noiseb) * b), 0);
+
+  return (pixel & 0xFF000000) + (new_b << 16) + (new_g << 8) + (new_r & 0xFF);
+}, function(result){
+  // work on result
+});
+\end{lstlisting}
+
+We created a benchmark to understand the difference between the initial version (the one in which functions were not inlined) and the final one (with inlining in charge of the developer):
+\bmcode{http://jsperf.com/pjs-map-inlining}{../../spikes/3.1.3/pjsMapInlining/pjsMapInlining.js}
+
+The results for it are displayed in Figure~\ref{fig:pjs-map-inlining}.
+\img{Comparing string encoding/decoding approaches}{../../spikes/3.1.3/pjsMapInlining/pjsMapInlining}{fig:pjs-map-inlining}
+
+\subsection{Conclusion}
+This section shows that in those cases in which the compiler inlines some operations that are executed as part of the skeleton, it is important for developers to explicitly inline those when using the library.
+
+\pagebreak
