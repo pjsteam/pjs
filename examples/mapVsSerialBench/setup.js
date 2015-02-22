@@ -8,7 +8,7 @@ var generateElements = function (total) {
   }
   return typed;
 };
-var xsLen = 100000;
+var xsLen = 10000;
 var xs = generateElements(xsLen);
 var wrappedXs = pjs(xs);
 
@@ -69,8 +69,32 @@ function runPjs() {
   console.time('pjs');
   wrappedXs.map(mapper, function (r) {
     console.timeEnd('pjs');
-    if (0 === r.length) {
-      console.log('error');
-    }
+  });
+}
+
+var samplesCount = 100;
+function runSerialInLoop() {
+  var n = samplesCount;
+  console.time('serial-loop-' + n);
+  for (var i = 0; i < n; i += 1) {
+    var r = serialMap(xs, xsLen);
+  }
+  console.timeEnd('serial-loop-' + n);
+};
+
+function runPjsInLoop() {
+  var n = samplesCount;
+  var it = n;
+  console.time('pjs-loop');
+  runInnerPjsInLoop(it);
+}
+
+function runInnerPjsInLoop (it) {
+  if (0 === it) {
+    console.timeEnd('pjs-loop');
+    return;
+  }
+  wrappedXs.map(mapper, function (r) {
+    runInnerPjsInLoop(it - 1);
   });
 }
