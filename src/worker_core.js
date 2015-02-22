@@ -22,12 +22,20 @@ function createTypedArray(type, param){
   }
 }
 
+var functionCache = new Map();
+
 module.exports = function(event){
   var pack = event.data;
   var arg = pack.arg;
   var code = pack.code;
-  /*jslint evil: true */
-  var f = new Function(arg, code);
+  var cacheKey = arg + code;
+  var f = functionCache[cacheKey];
+  if (!f){
+    /*jslint evil: true */
+    f = new Function(arg, code);
+    functionCache[cacheKey] = f;
+  }
+
   var array = createTypedArray(pack.elementsType, pack.buffer);
 
   var i = array.length;
