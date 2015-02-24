@@ -1,4 +1,4 @@
-# p-j-s ![build status](https://travis-ci.org/pjsteam/pjs.svg)
+# p-j-s ![build status](https://travis-ci.org/pjsteam/pjs.svg?branch=dev)
 
 A library to parallelize `map`, `filter` and `reduce` operations on typed arrays through the use of Web Workers.
 
