@@ -4,8 +4,8 @@
 Here you can find transferrableVsCloning.js which compares the use of transferrable objects against object cloning when you send elements throw Web Worker's postMessage function.
 
 *Tests:*
-* [Sending small amount of elements](http://jsperf.com/transferrable-vs-cloning)
-* [Sending a larger amount of elements](http://jsperf.com/long-transferrable-vs-cloning)
+* [Sending small amount of elements](http://jsperf.com/transferrable-vs-cloning/2)
+* [Sending a larger amount of elements](http://jsperf.com/long-transferrable-vs-cloning/2)
 
 *Results:*
 
@@ -15,8 +15,8 @@ Also, the tests show that ArrayBuffer's size does not hit Transferable Objects p
 *Notes:*
 
 The same code is used by both test with one diference:
-* [Sending small amount of elements](http://jsperf.com/transferrable-vs-cloning)'s **createElements** function generates an ArrayBuffer with 100000 elements.
-* [Sending a larger amount of elements](http://jsperf.com/transferrable-vs-cloning)'s **createElements** function generates an ArrayBuffer with 1000000 elements (10 times the first one).
+* [Sending small amount of elements](http://jsperf.com/transferrable-vs-cloning/2)'s **createElements** function generates an ArrayBuffer with 100000 elements.
+* [Sending a larger amount of elements](http://jsperf.com/transferrable-vs-cloning/2)'s **createElements** function generates an ArrayBuffer with 1000000 elements (10 times the first one).
 
 We had to create 2 ArrayBuffers to test the Transferable Objects because we encounter that transferring repeatedly the same ArrayBuffer throws:
 ```
