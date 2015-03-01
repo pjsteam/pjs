@@ -22,12 +22,36 @@ function createTypedArray(type, param){
   }
 }
 
+function getMapFactory(){
+  if (typeof Map === 'function'){
+    return function(){
+      /* jshint ignore:start */
+      return new Map();
+      /* jshint ignore:end */
+    };
+  } else {
+    return function(){
+      return Object.create(null);
+    };
+  }
+}
+
+var mapFactory = getMapFactory();
+
+var functionCache = mapFactory();
+
 module.exports = function(event){
   var pack = event.data;
   var arg = pack.arg;
   var code = pack.code;
-  /*jslint evil: true */
-  var f = new Function(arg, code);
+  var cacheKey = arg + code;
+  var f = functionCache[cacheKey];
+  if (!f){
+    /*jslint evil: true */
+    f = new Function(arg, code);
+    functionCache[cacheKey] = f;
+  }
+
   var array = createTypedArray(pack.elementsType, pack.buffer);
 
   var i = array.length;
