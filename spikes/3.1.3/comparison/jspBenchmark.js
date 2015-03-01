@@ -13,9 +13,16 @@
     }
     return typed;
   };
-  var xsLen = 8000000;
-  var xs = generateElements(xsLen);
-  var wrappedXs = pjs(xs);
+  var xs100 = generateElements(100);
+  var wrappedXs100 = pjs(xs100);
+  var xs1000 = generateElements(1000);
+  var wrappedXs1000 = pjs(xs1000);
+  var xs10000 = generateElements(10000);
+  var wrappedXs10000 = pjs(xs10000);
+  var xs100000 = generateElements(100000);
+  var wrappedXs100000 = pjs(xs100000);
+  var xs1000000 = generateElements(1000000);
+  var wrappedXs1000000 = pjs(xs1000000);
 
   function mapper(pixel) {
     var r = pixel & 0xFF;
@@ -54,14 +61,14 @@
     return result;
   };
 
-  function runSerial() {
+  function runSerial(xs) {
     var r = serialMap(xs, xs.length);
     if (0 === r.length) {
       console.log('ups serial');
     }
   };
 
-  function runPjs() {
+  function runPjs(wrappedXs) {
     wrappedXs.map(mapper, function (r) {
       __finish();
     });
@@ -73,8 +80,32 @@ __finish = function () {
   deferred.resolve();
 };
 
-// Test Case - serial
-runSerial();
+// Test Case - serial map 100
+runSerial(xs100);
 
-// Test Case - pjs
-runPjs();
+// Test Case - pjs map 100
+runPjs(wrappedXs100);
+
+// Test Case - serial map 1,000
+runSerial(xs1000);
+
+// Test Case - pjs map 1,000
+runPjs(wrappedXs1000);
+
+// Test Case - serial map 10,000
+runSerial(xs10000);
+
+// Test Case - pjs map 10,000
+runPjs(wrappedXs10000);
+
+// Test Case - serial map 100,000
+runSerial(xs100000);
+
+// Test Case - pjs map 100,000
+runPjs(wrappedXs100000);
+
+// Test Case - serial map 1,000,000
+runSerial(xs1000000);
+
+// Test Case - pjs map 1,000,000
+runPjs(wrappedXs1000000);
