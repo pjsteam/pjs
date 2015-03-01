@@ -1,84 +1,93 @@
-// http://jsperf.com/pjs-serialization-long
+// http://jsperf.com/pjs-serialization-long/2
+
+// HTML setup
+<script>
+  var __finish;
+
+  function setupCopyWorker(){
+    var wCode = function(event){
+      var code = event.data;
+      eval('var __f = ' + code);
+      postMessage(__f());
+    };
+
+    var blob = new Blob(["onmessage = " + wCode.toString()]);
+    var blobURL = window.URL.createObjectURL(blob);
+
+    return new Worker(blobURL);
+  };
+
+  var copyWorker = setupCopyWorker();
+  copyWorker.onmessage = function(event) {
+    __finish();
+  }
+
+  // ---
+
+  function setupTransferrableWorker(){
+    var wCode = function(event){
+      var codeBuffer = event.data;
+      var codeArray = new Uint8Array(codeBuffer);
+      var code = decoder.decode(codeArray);
+      eval('var __f = ' + code);
+      postMessage(__f());
+    };
+
+    var blob = new Blob(["var decoder = new TextDecoder(); onmessage = " + wCode.toString()]);
+    var blobURL = window.URL.createObjectURL(blob);
+
+    return new Worker(blobURL);
+  };
+
+  var transferrableWorker = setupTransferrableWorker();
+  transferrableWorker.onmessage = function(event) {
+    __finish();
+  }
+
+  var encoder = new TextEncoder();
+
+  // ------
+
+  function setupForBlobSerializationWorker(){
+    var wCode = function(event){
+      var blobURL = event.data;
+      importScripts(blobURL);
+      postMessage(__f());
+    };
+    
+    var blob = new Blob(["onmessage = " + wCode.toString()]);
+    var blobURL = window.URL.createObjectURL(blob);
+
+    return new Worker(blobURL);
+  }
+
+  var blobWorker = setupForBlobSerializationWorker();
+  blobWorker.onmessage = function(event) {
+    __finish();
+  }
+
+  var fStringified = (function () {
+    var n = 1000;
+    var sum = 0;
+    for (var i = 0; i < n; i++) {
+      sum = i + (n * 2 - (i * 3));
+      sum--;
+    }
+    var counter = ((function () { 
+      var safeCounter = 0;
+      return function () { safeCounter++; return safeCounter;};
+    })());
+    while (800 > counter()) {
+      sum--;
+    }
+    return sum;
+  }).toString();
+</script>
 
 // JavaScript setup
-function setupCopyWorker(){
-  var wCode = function(event){
-    var code = event.data;
-    eval('var __f = ' + code);
-    postMessage(__f());
-  };
-
-  var blob = new Blob(["onmessage = " + wCode.toString()]);
-  var blobURL = window.URL.createObjectURL(blob);
-
-  return new Worker(blobURL);
+__finish = function () {
+  deferred.resolve();
 };
-
-var copyWorker = setupCopyWorker();
-copyWorker.onmessage = function(event) {
-  deferred.resolve();
-}
-
-// ---
-
-function setupTransferrableWorker(){
-  var wCode = function(event){
-    var codeBuffer = event.data;
-    var codeArray = new Uint8Array(codeBuffer);
-    var code = decoder.decode(codeArray);
-    eval('var __f = ' + code);
-    postMessage(__f());
-  };
-
-  var blob = new Blob(["var decoder = new TextDecoder(); onmessage = " + wCode.toString()]);
-  var blobURL = window.URL.createObjectURL(blob);
-
-  return new Worker(blobURL);
-};
-
-var transferrableWorker = setupTransferrableWorker();
-transferrableWorker.onmessage = function(event) {
-  deferred.resolve();
-}
-
-var encoder = new TextEncoder();
-
-// ------
-
-function setupForBlobSerializationWorker(){
-  var wCode = function(event){
-    var blobURL = event.data;
-    importScripts(blobURL);
-    postMessage(__f());
-  };
-  
-  var blob = new Blob(["onmessage = " + wCode.toString()]);
-  var blobURL = window.URL.createObjectURL(blob);
-
-  return new Worker(blobURL);
-}
-
-var blobWorker = setupForBlobSerializationWorker();
-blobWorker.onmessage = function(event) {
-  deferred.resolve();
-}
-
-var fStringified = (function () {
-  var n = 1000;
-  var sum = 0;
-  for (var i = 0; i < n; i++) {
-    sum = i + (n * 2 - (i * 3));
-    sum--;
-  }
-  var counter = ((function () { 
-    var safeCounter = 0;
-    return function () { safeCounter++; return safeCounter;};
-  })());
-  while (800 > counter()) {
-    sum--;
-  }
-  return sum;
-}).toString();
 
 // Test case 1 - Sending code by blob
 var blob = new Blob(['__f = ' + fStringified], { type: 'application/javascript' });

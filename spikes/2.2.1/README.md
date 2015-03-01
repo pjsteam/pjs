@@ -30,8 +30,8 @@ Verifies the best alternative to send executable code to a web worker. Here you 
 * Use of ArrayBuffers to send encoded func.toString().
 
 *Tests:*
-* [Sending short functions to WW](http://jsperf.com/pjs-serialization/2)
-* [Sending large functions to WW](http://jsperf.com/pjs-serialization-long)
+* [Sending short functions to WW](http://jsperf.com/pjs-serialization/3)
+* [Sending large functions to WW](http://jsperf.com/pjs-serialization-long/2)
 
 *Results:*
 
@@ -51,7 +51,7 @@ Prueba que verifica cual es la formas más conveniente para enviar el código ej
 * Use of ArrayBuffers to send encoded func.toString().
 Data elements are always sent by Transferrable Objects.
 
-*Test:* [Sending code with elements](http://jsperf.com/pjs-encoding)
+*Test:* [Sending code with elements](http://jsperf.com/pjs-encoding/2)
 
 *Results:*
 
@@ -62,7 +62,7 @@ This test confirmed that it is not convenient the use of TextEncoder-TextDecoder
 
 Verifies if there is an alternative to the TextEncoder-TextDecoder API. The objective of this test is to prove if the lower TextEncoder-TextDecoder API's performance was not due to the presence of WW.
 
-*Test:* [alternatives to TextEncoder-TextDecoder](http://jsperf.com/pjs-serialization-comparison/2)
+*Test:* [alternatives to TextEncoder-TextDecoder](http://jsperf.com/pjs-serialization-comparison/4)
 
 *Results:*
 
@@ -87,5 +87,5 @@ We had to run the test with the following command on Terminal (Chrome should be 
 --code-comments \
 --hydrogen-track-positions \
 --redirect-code-traces" \
-http://jsperf.com/pjs-serialization-comparison/2
+http://jsperf.com/pjs-serialization-comparison/4
 ```
