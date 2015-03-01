@@ -17,7 +17,7 @@ The following alternatives were tested:
 * Buffer subarray: it creates a new TypedArray with [TypedArray's subarray function](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypedArray/subarray) and then uses the contrcutor to create the new TypedArray.
 * Blob: it creates a blob from a TypedArray and then uses a FileReader to obtein the elements and insert them into the target TypedArray.
 
-*Test:* [Typed Array copy comparison](http://jsperf.com/arraybuffer-copy)
+*Test:* [Typed Array copy comparison](http://jsperf.com/arraybuffer-copy/3)
 
 *Results:*
 We run the tests both on Chrome 40.X and Chrome 41.X. We find out that the best alternatives where:
@@ -40,7 +40,7 @@ The following alternatives were tested:
 * TypedArray set
 Here we contruct a number of TypedArrays using the best alternatives from the previous test.
 
-*Test:* [Typed Array split comparison](http://jsperf.com/arraybuffer-split)
+*Test:* [Typed Array split comparison](http://jsperf.com/arraybuffer-split/3)
 
 *Results:*
 We run the tests both on Chrome 40.X and Chrome 41.X. This time we find that:

@@ -1,63 +1,66 @@
-// http://jsperf.com/arraybuffer-split
+// http://jsperf.com/arraybuffer-split/3
 
-// JavaScript setup
-function createElements() {
-  var total = 1000000;
-  var elements = new Uint8Array(total);
+// HTML setup
+<script src="http://mrale.ph/irhydra/jsperf-renamer.js"></script>
+<script>
+  function createElements() {
+    var total = 1000000;
+    var elements = new Uint8Array(total);
 
-  for (var i = total; i > 0; i--){
-    elements[i - 1] = Math.floor(Math.random() * 10000);
-  }
-  return elements;
-};
-
-var parts = 4;
-var elements = createElements();
-var elementsCount = elements.length;
-var subElementsCount = elementsCount / parts;
-
-function manualSplit (xs) {
-  var ys = [];
-  for (var i = 0; i < parts; i++) {
-    ys.push(new Uint8Array(subElementsCount));
-  }
-
-  for (var i = 0; i < subElementsCount; i++) {
-    for (var p = 0; p < parts; p++) {
-      ys[p][i] = xs[i + p * subElementsCount];
+    for (var i = total; i > 0; i--){
+      elements[i - 1] = Math.floor(Math.random() * 10000);
     }
-  }
-  return ys;
-};
+    return elements;
+  };
 
-function bufferSliceSplit (xs) {
-  var ys = [];
-  for (var i = 0; i < parts; i++) {
-    var b = xs.buffer.slice(i * subElementsCount * xs.BYTES_PER_ELEMENT, (i * subElementsCount + subElementsCount) * xs.BYTES_PER_ELEMENT);
-    ys.push(new Uint8Array(b));
-  }
-  return ys;
-};
+  var parts = 4;
+  var elements = createElements();
+  var elementsCount = elements.length;
+  var subElementsCount = elementsCount / parts;
 
-function bufferSubarraySplit (xs) {
-  var ys = [];
-  for (var i = 0; i < parts; i++) {
-    var subXs = xs.subarray(i * subElementsCount, i * subElementsCount + subElementsCount);
-    ys.push(new Uint8Array(subXs));
-  }
-  return ys;
-};
+  function manualSplit (xs) {
+    var ys = [];
+    for (var i = 0; i < parts; i++) {
+      ys.push(new Uint8Array(subElementsCount));
+    }
 
-function typedSetSplit (xs) {
-  var ys = [];
-  for (var i = 0; i < parts; i++) {
-    var subXs = xs.subarray(i * subElementsCount, i * subElementsCount + subElementsCount);
-    var subYs = new Uint8Array(subElementsCount);
-    subYs.set(subXs);
-    ys.push(subYs);
-  }
-  return ys;
-};
+    for (var i = 0; i < subElementsCount; i++) {
+      for (var p = 0; p < parts; p++) {
+        ys[p][i] = xs[i + p * subElementsCount];
+      }
+    }
+    return ys;
+  };
+
+  function bufferSliceSplit (xs) {
+    var ys = [];
+    for (var i = 0; i < parts; i++) {
+      var b = xs.buffer.slice(i * subElementsCount * xs.BYTES_PER_ELEMENT, (i * subElementsCount + subElementsCount) * xs.BYTES_PER_ELEMENT);
+      ys.push(new Uint8Array(b));
+    }
+    return ys;
+  };
+
+  function bufferSubarraySplit (xs) {
+    var ys = [];
+    for (var i = 0; i < parts; i++) {
+      var subXs = xs.subarray(i * subElementsCount, i * subElementsCount + subElementsCount);
+      ys.push(new Uint8Array(subXs));
+    }
+    return ys;
+  };
+
+  function typedSetSplit (xs) {
+    var ys = [];
+    for (var i = 0; i < parts; i++) {
+      var subXs = xs.subarray(i * subElementsCount, i * subElementsCount + subElementsCount);
+      var subYs = new Uint8Array(subElementsCount);
+      subYs.set(subXs);
+      ys.push(subYs);
+    }
+    return ys;
+  };
+</script>
 
 // Test case 1 - Manual
 var r = manualSplit(elements);
