@@ -8,7 +8,7 @@ var generateElements = function (total) {
   }
   return typed;
 };
-var xsLen = 8000000;
+var xsLen = 10000000;
 var xs = generateElements(xsLen);
 var wrappedXs = pjs(xs);
 
