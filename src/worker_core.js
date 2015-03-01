@@ -22,7 +22,21 @@ function createTypedArray(type, param){
   }
 }
 
-var functionCache = new Map();
+function getMapFactory(){
+  if (typeof Map === 'function'){
+    return function(){
+      return new Map();
+    };
+  } else {
+    return function(){
+      return Object.create(null);
+    };
+  }
+}
+
+var mapFactory = getMapFactory();
+
+var functionCache = mapFactory();
 
 module.exports = function(event){
   var pack = event.data;
