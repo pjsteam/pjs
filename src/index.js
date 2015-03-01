@@ -14,15 +14,12 @@ var WrappedTypedArray = function(source, parts){
 	this.parts = parts;
 };
 
-WrappedTypedArray.prototype.map = function(mapper, done) {
-	var packager = new JobPackager(this.parts, mapper, this.source, 'map');
+WrappedTypedArray.prototype.__operationSkeleton = function (f, operation, collectorMapper, done) {
+	var packager = new JobPackager(this.parts, f, this.source, operation);
 	var packs = packager.generatePackages();
-	var TypedArrayConstructor = this.source.constructor;
 
 	var collector = new ResultCollector(this.parts, function(results){
-		var partial_results = results.map(function(result){
-			return new TypedArrayConstructor(result.value);
-		});
+		var partial_results = results.map(collectorMapper);
 		var m = merge_typed_arrays(partial_results);
 		return done(m);
 	});
@@ -36,26 +33,18 @@ WrappedTypedArray.prototype.map = function(mapper, done) {
 	});
 };
 
-WrappedTypedArray.prototype.filter = function(predicate, done) {
-	var packager = new JobPackager(this.parts, predicate, this.source, 'filter');
-	var packs = packager.generatePackages();
+WrappedTypedArray.prototype.map = function(mapper, done) {
 	var TypedArrayConstructor = this.source.constructor;
+	this.__operationSkeleton(mapper, 'map', function(result){
+		return new TypedArrayConstructor(result.value);
+	}, done);
+};
 
-	var collector = new ResultCollector(this.parts, function(results){
-		var partial_results = results.map(function(result){
-			return new TypedArrayConstructor(result.value).subarray(0, result.newLength);
-		});
-		var m = merge_typed_arrays(partial_results);
-		return done(m);
-	});
-
-	packs.forEach(function(pack, index){
-		utils.listenOnce(workers[index], 'message', function(event){
-			collector.onPart(event.data);
-		});
-
-		workers[index].postMessage(pack, [ pack.buffer ]);
-	});
+WrappedTypedArray.prototype.filter = function(predicate, done) {
+	var TypedArrayConstructor = this.source.constructor;
+	this.__operationSkeleton(predicate, 'filter', function(result){
+		return new TypedArrayConstructor(result.value).subarray(0, result.newLength);
+	}, done);
 };
 
 function wrap(typedArray){
