@@ -25,7 +25,9 @@ function createTypedArray(type, param){
 function getMapFactory(){
   if (typeof Map === 'function'){
     return function(){
+      /* jshint ignore:start */
       return new Map();
+      /* jshint ignore:end */
     };
   } else {
     return function(){
