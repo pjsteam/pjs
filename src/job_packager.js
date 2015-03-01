@@ -1,10 +1,13 @@
 var errors = require('./errors.js');
 var utils = require('./utils.js');
 var Partitioner = require('./typed_array_partitioner.js');
+var operation_names = require('./operation_names');
 
 var FUNCTION_REGEX = /^function[^(]*\(([^)]*)\)[^{]*\{([\s\S]*)\}$/;
 
-var operations = ['map', 'filter'];
+var operations = Object.keys(operation_names).map(function (k) {
+  return operation_names[k];
+});
 
 var JobPackager = module.exports = function (parts, code, elements, operation) {
   if (!parts) {

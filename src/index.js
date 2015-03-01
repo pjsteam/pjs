@@ -1,9 +1,10 @@
-var errors = require('./errors.js');
-var utils = require('./utils.js');
-var JobPackager = require('./job_packager.js');
-var ResultCollector = require('./result_collector.js');
-var merge_typed_arrays = require('./typed_array_merger.js');
+var errors = require('./errors');
+var utils = require('./utils');
+var JobPackager = require('./job_packager');
+var ResultCollector = require('./result_collector');
+var merge_typed_arrays = require('./typed_array_merger');
 var work = require('webworkify');
+var operation_names = require('./operation_names');
 var pjs;
 
 var initialized = false;
@@ -35,14 +36,14 @@ WrappedTypedArray.prototype.__operationSkeleton = function (f, operation, collec
 
 WrappedTypedArray.prototype.map = function(mapper, done) {
 	var TypedArrayConstructor = this.source.constructor;
-	this.__operationSkeleton(mapper, 'map', function(result){
+	this.__operationSkeleton(mapper, operation_names.MAP, function(result){
 		return new TypedArrayConstructor(result.value);
 	}, done);
 };
 
 WrappedTypedArray.prototype.filter = function(predicate, done) {
 	var TypedArrayConstructor = this.source.constructor;
-	this.__operationSkeleton(predicate, 'filter', function(result){
+	this.__operationSkeleton(predicate, operation_names.FILTER, function(result){
 		return new TypedArrayConstructor(result.value).subarray(0, result.newLength);
 	}, done);
 };
