@@ -4,7 +4,9 @@ var Partitioner = require('./typed_array_partitioner.js');
 
 var FUNCTION_REGEX = /^function[^(]*\(([^)]*)\)[^{]*\{([\s\S]*)\}$/;
 
-var JobPackager = module.exports = function (parts, code, elements) {
+var operations = ['map', 'filter'];
+
+var JobPackager = module.exports = function (parts, code, elements, operation) {
   if (!parts) {
     throw new errors.InvalidArgumentsError(errors.messages.INVALID_PARTS);
   }
@@ -14,9 +16,13 @@ var JobPackager = module.exports = function (parts, code, elements) {
   if (!elements) {
     throw new errors.InvalidArgumentsError(errors.messages.INVALID_ELEMENTS);
   }
+  if (!operation || -1 === operations.indexOf(operation)) {
+    throw new errors.InvalidArgumentsError(errors.messages.INVALID_OPERATION);
+  }
   this.parts = parts;
   this.code = code;
   this.elements = elements;
+  this.operation = operation;
 };
 
 JobPackager.prototype.generatePackages = function () {
@@ -27,6 +33,7 @@ JobPackager.prototype.generatePackages = function () {
   var elementsType = utils.getTypedArrayType(this.elements);
   var partitioner = new Partitioner(this.parts);
   var partitionedElements = partitioner.partition(this.elements);
+  var operation = this.operation;
 
   return partitionedElements.map(function (partitionedElement, index) {
     return {
@@ -34,7 +41,8 @@ JobPackager.prototype.generatePackages = function () {
       arg: packageCodeArg,
       code: packageCode,
       buffer: partitionedElement.buffer,
-      elementsType: elementsType
+      elementsType: elementsType,
+      operation: operation
     };
   });
 };

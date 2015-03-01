@@ -1,28 +1,58 @@
 'use strict';
 
 describe('job packager', function(){
-  var JobPackager = require('../src/job_packager.js');
-  var errors = require('../src/errors.js');
-  var utils = require('../src/utils.js');
+  var JobPackager = require('../src/job_packager');
+  var errors = require('../src/errors');
+  var utils = require('../src/utils');
 
   var parts = 4;
   var code = function (a) { return a + 1; };
   var elements = new Uint32Array([1,2,3,4,5,6,7,8]);
-  var packager = new JobPackager(parts, code, elements);
+  var operationFilter = 'filter';
+  var operationMap = 'map';
+  var packager = new JobPackager(parts, code, elements, operationFilter);
+  var invalidOperation = 'add';
   var packages = packager.generatePackages();
 
-  it('should not be initialized without parts, code and elements', function () {
+  it('should not support empty initialization', function () {
     expect(function () {
       var p = new JobPackager();
     }).to.throw(errors.InvalidArgumentsError);
+  });
+
+  it('should not support empty code initialization', function () {
     expect(function () {
       var p = new JobPackager(parts);
     }).to.throw(errors.InvalidArgumentsError);
+  });
+
+  it('should not support empty elements initialization', function () {
     expect(function () {
       var p = new JobPackager(parts, code);
     }).to.throw(errors.InvalidArgumentsError);
+  });
+
+  it('should not support empty operation initialization', function () {
     expect(function () {
       var p = new JobPackager(parts, code, elements);
+    }).to.throw(errors.InvalidArgumentsError);
+  });
+
+  it('should not support invalid operation initialization', function () {
+    expect(function () {
+      var p = new JobPackager(parts, code, elements, invalidOperation);
+    }).to.throw(errors.InvalidArgumentsError);
+  });
+
+  it('should support valid map operation initialization', function () {
+    expect(function () {
+      var p = new JobPackager(parts, code, elements, operationMap);
+    }).to.not.throw(errors.InvalidArgumentsError);
+  });
+
+  it('should support valid filter operation initialization', function () {
+    expect(function () {
+      var p = new JobPackager(parts, code, elements, operationFilter);
     }).to.not.throw(errors.InvalidArgumentsError);
   });
 
@@ -63,6 +93,20 @@ describe('job packager', function(){
   it('should track elements type on all packages', function () {
     packages.forEach(function (jobPackage, index) {
       expect(jobPackage.elementsType).to.equal(utils.getTypedArrayType(elements));
+    });
+  });
+
+  it('should track filter operation on all packages', function () {
+    packages.forEach(function (jobPackage, index) {
+      expect(jobPackage.operation).to.equal(operationFilter);
+    });
+  });
+
+  it('should track map operation on all packages', function () {
+    var mapPackager = new JobPackager(parts, code, elements, operationMap);
+    var mapPackages = mapPackager.generatePackages();
+    mapPackages.forEach(function (jobPackage, index) {
+      expect(jobPackage.operation).to.equal(operationMap);
     });
   });
 

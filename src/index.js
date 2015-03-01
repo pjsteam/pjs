@@ -15,13 +15,35 @@ var WrappedTypedArray = function(source, parts){
 };
 
 WrappedTypedArray.prototype.map = function(mapper, done) {
-	var packager = new JobPackager(this.parts, mapper, this.source);
+	var packager = new JobPackager(this.parts, mapper, this.source, 'map');
 	var packs = packager.generatePackages();
 	var TypedArrayConstructor = this.source.constructor;
 
-	var collector = new ResultCollector(this.parts, function(buffers){
-		var partial_results = buffers.map(function(buffer){
-			return new TypedArrayConstructor(buffer);
+	var collector = new ResultCollector(this.parts, function(results){
+		var partial_results = results.map(function(result){
+			return new TypedArrayConstructor(result.value);
+		});
+		var m = merge_typed_arrays(partial_results);
+		return done(m);
+	});
+
+	packs.forEach(function(pack, index){
+		utils.listenOnce(workers[index], 'message', function(event){
+			collector.onPart(event.data);
+		});
+
+		workers[index].postMessage(pack, [ pack.buffer ]);
+	});
+};
+
+WrappedTypedArray.prototype.filter = function(predicate, done) {
+	var packager = new JobPackager(this.parts, predicate, this.source, 'filter');
+	var packs = packager.generatePackages();
+	var TypedArrayConstructor = this.source.constructor;
+
+	var collector = new ResultCollector(this.parts, function(results){
+		var partial_results = results.map(function(result){
+			return new TypedArrayConstructor(result.value).subarray(0, result.newLength);
 		});
 		var m = merge_typed_arrays(partial_results);
 		return done(m);

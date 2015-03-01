@@ -86,11 +86,11 @@ describe('result collector', function(){
     collector.onPart({index: 1, value: new Uint8Array([2,3])});
     expect(callback_invoked).to.equal(true);
 
-    expect(result[0][0]).to.equal(0);
-    expect(result[0][1]).to.equal(1);
-    expect(result[1][0]).to.equal(2);
-    expect(result[1][1]).to.equal(3);
-    expect(result[2][0]).to.equal(4);
-    expect(result[2][1]).to.equal(5);
+    expect(result[0].value[0]).to.equal(0);
+    expect(result[0].value[1]).to.equal(1);
+    expect(result[1].value[0]).to.equal(2);
+    expect(result[1].value[1]).to.equal(3);
+    expect(result[2].value[0]).to.equal(4);
+    expect(result[2].value[1]).to.equal(5);
   });
 });

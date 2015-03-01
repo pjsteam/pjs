@@ -40,6 +40,27 @@ var mapFactory = getMapFactory();
 
 var functionCache = mapFactory();
 
+var operations = {
+  map: function (array, f) {
+    var i = array.length;
+    for ( ; i--; ){
+      array[i] = f(array[i]);
+    }
+    return array.length;
+  },
+  filter: function (array, f) {
+    var l = array.length;
+    var i = 0, newLength = 0;
+    for ( ; i < l; i += 1){
+      var e = array[i];
+      if (f(e)) {
+        array[newLength++] = e;
+      }
+    }
+    return newLength;
+  }
+};
+
 module.exports = function(event){
   var pack = event.data;
   var arg = pack.arg;
@@ -54,14 +75,13 @@ module.exports = function(event){
 
   var array = createTypedArray(pack.elementsType, pack.buffer);
 
-  var i = array.length;
-  for ( ; i--; ){
-    array[i] = f(array[i]);
-  }
+  var newLength = operations[pack.operation](array, f);
+  
   return {
     message: {
       index: pack.index,
-      value: array.buffer
+      value: array.buffer,
+      newLength: newLength
     },
     transferables: [ array.buffer ]
   };

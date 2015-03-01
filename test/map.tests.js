@@ -1,6 +1,6 @@
 'use strict';
 
-describe ('map tests', function(){
+describe('map tests', function(){
 
   var pjs;
   var utils = require('../src/utils.js');
