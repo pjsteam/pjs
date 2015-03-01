@@ -31,6 +31,11 @@ utils.isTypedArray = function (obj) {
   }
 };
 
+utils.getTypedArrayConstructorType = function(array) {
+  var temp = array.toString();
+  return temp.substring('function '.length, temp.length - '() { [native code] }'.length);
+};
+
 utils.getTypedArrayType = function(array) {
   var temp = array.toString();
   return temp.substring('[object '.length, temp.length - 1);

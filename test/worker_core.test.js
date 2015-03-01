@@ -1,15 +1,15 @@
 'use strict';
 
 describe('worker core', function(){
-  var worker = require('../src/worker_core.js');
-
-  var JobPackager = require('../src/job_packager.js');
+  var worker = require('../src/worker_core');
+  var utils = require('../src/utils');
+  var JobPackager = require('../src/job_packager');
 
   [Uint8Array, Int8Array, Uint8ClampedArray,
     Uint16Array, Int16Array,
     Uint32Array, Int32Array,
     Float32Array, Float64Array].forEach(function (TypedArray) {
-    describe('tests for ' + TypedArray.toString(), function(){
+    describe(utils.format('tests for {0}', utils.getTypedArrayConstructorType(TypedArray)), function(){
       var parts = 4;
       var code = function (a) { return a + 1; };
       var packageIndex = 3, result;
