@@ -87,17 +87,23 @@ errors.messages = {
   INVALID_CODE: 'Invalid code argument to package.',
   INVALID_ELEMENTS: 'Invalid number of elements to package.',
   INVALID_PACKAGE_INDEX: 'Package index should be not negative and less than {0}.',
-  INVALID_TYPED_ARRAY: 'Invalid argument. It should be of TypedArray'
+  INVALID_TYPED_ARRAY: 'Invalid argument. It should be of TypedArray',
+  INVALID_OPERATION: 'Invalid pjs operation. Possible values are \'filter\' or \'map\''
 };
 
 },{}],3:[function(require,module,exports){
 var errors = require('./errors.js');
 var utils = require('./utils.js');
 var Partitioner = require('./typed_array_partitioner.js');
+var operation_names = require('./operation_names');
 
 var FUNCTION_REGEX = /^function[^(]*\(([^)]*)\)[^{]*\{([\s\S]*)\}$/;
 
-var JobPackager = module.exports = function (parts, code, elements) {
+var operations = Object.keys(operation_names).map(function (k) {
+  return operation_names[k];
+});
+
+var JobPackager = module.exports = function (parts, code, elements, operation) {
   if (!parts) {
     throw new errors.InvalidArgumentsError(errors.messages.INVALID_PARTS);
   }
@@ -107,9 +113,13 @@ var JobPackager = module.exports = function (parts, code, elements) {
   if (!elements) {
     throw new errors.InvalidArgumentsError(errors.messages.INVALID_ELEMENTS);
   }
+  if (!operation || -1 === operations.indexOf(operation)) {
+    throw new errors.InvalidArgumentsError(errors.messages.INVALID_OPERATION);
+  }
   this.parts = parts;
   this.code = code;
   this.elements = elements;
+  this.operation = operation;
 };
 
 JobPackager.prototype.generatePackages = function () {
@@ -120,6 +130,7 @@ JobPackager.prototype.generatePackages = function () {
   var elementsType = utils.getTypedArrayType(this.elements);
   var partitioner = new Partitioner(this.parts);
   var partitionedElements = partitioner.partition(this.elements);
+  var operation = this.operation;
 
   return partitionedElements.map(function (partitionedElement, index) {
     return {
@@ -127,12 +138,18 @@ JobPackager.prototype.generatePackages = function () {
       arg: packageCodeArg,
       code: packageCode,
       buffer: partitionedElement.buffer,
-      elementsType: elementsType
+      elementsType: elementsType,
+      operation: operation
     };
   });
 };
 
-},{"./errors.js":2,"./typed_array_partitioner.js":6,"./utils.js":7}],4:[function(require,module,exports){
+},{"./errors.js":2,"./operation_names":4,"./typed_array_partitioner.js":7,"./utils.js":8}],4:[function(require,module,exports){
+module.exports = {
+  MAP: 'map',
+  FILTER: 'filter'
+};
+},{}],5:[function(require,module,exports){
 var errors = require('./errors.js');
 var utils = require('./utils.js');
 
@@ -156,12 +173,12 @@ Collector.prototype.onPart = function (data){
       utils.format(errors.messages.PART_ALREADY_COLLECTED, data.index));
   }
 
-  this.collected[data.index] = data.value;
+  this.collected[data.index] = {value: data.value, newLength: data.newLength} ;
   if (++this.completed === this.parts) {
     return this.cb(this.collected);
   }
 };
-},{"./errors.js":2,"./utils.js":7}],5:[function(require,module,exports){
+},{"./errors.js":2,"./utils.js":8}],6:[function(require,module,exports){
 var errors = require('./errors.js');
 
 module.exports = function merge(arrays){
@@ -186,7 +203,7 @@ module.exports = function merge(arrays){
 
   return result;
 };
-},{"./errors.js":2}],6:[function(require,module,exports){
+},{"./errors.js":2}],7:[function(require,module,exports){
 var utils = require('./utils.js');
 var errors = require('./errors.js');
 
@@ -236,7 +253,7 @@ Partitioner.prototype.doPartition = function (array) {
   return arrays;
 };
 
-},{"./errors.js":2,"./utils.js":7}],7:[function(require,module,exports){
+},{"./errors.js":2,"./utils.js":8}],8:[function(require,module,exports){
 var utils = module.exports = {};
 
 utils.getter = function (obj, name, value) {
@@ -270,6 +287,11 @@ utils.isTypedArray = function (obj) {
   }
 };
 
+utils.getTypedArrayConstructorType = function(array) {
+  var temp = array.toString();
+  return temp.substring('function '.length, temp.length - '() { [native code] }'.length);
+};
+
 utils.getTypedArrayType = function(array) {
   var temp = array.toString();
   return temp.substring('[object '.length, temp.length - 1);
@@ -291,7 +313,7 @@ utils.listenOnce = function(eventSource, eventName, callback){
   });
 };
 
-},{}],8:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 var worker_core = require('./worker_core');
 
 module.exports = function (self) {
@@ -301,7 +323,7 @@ module.exports = function (self) {
     self.postMessage(result.message, result.transferables);
   });
 };
-},{"./worker_core":9}],9:[function(require,module,exports){
+},{"./worker_core":10}],10:[function(require,module,exports){
 // param can be either length (number) or buffer
 function createTypedArray(type, param){
   switch(type){
@@ -344,6 +366,27 @@ var mapFactory = getMapFactory();
 
 var functionCache = mapFactory();
 
+var operations = {
+  map: function (array, f) {
+    var i = array.length;
+    for ( ; i--; ){
+      array[i] = f(array[i]);
+    }
+    return array.length;
+  },
+  filter: function (array, f) {
+    var l = array.length;
+    var i = 0, newLength = 0;
+    for ( ; i < l; i += 1){
+      var e = array[i];
+      if (f(e)) {
+        array[newLength++] = e;
+      }
+    }
+    return newLength;
+  }
+};
+
 module.exports = function(event){
   var pack = event.data;
   var arg = pack.arg;
@@ -358,26 +401,26 @@ module.exports = function(event){
 
   var array = createTypedArray(pack.elementsType, pack.buffer);
 
-  var i = array.length;
-  for ( ; i--; ){
-    array[i] = f(array[i]);
-  }
+  var newLength = operations[pack.operation](array, f);
+  
   return {
     message: {
       index: pack.index,
-      value: array.buffer
+      value: array.buffer,
+      newLength: newLength
     },
     transferables: [ array.buffer ]
   };
 };
 
 },{}],"p-j-s":[function(require,module,exports){
-var errors = require('./errors.js');
-var utils = require('./utils.js');
-var JobPackager = require('./job_packager.js');
-var ResultCollector = require('./result_collector.js');
-var merge_typed_arrays = require('./typed_array_merger.js');
+var errors = require('./errors');
+var utils = require('./utils');
+var JobPackager = require('./job_packager');
+var ResultCollector = require('./result_collector');
+var merge_typed_arrays = require('./typed_array_merger');
 var work = require('webworkify');
+var operation_names = require('./operation_names');
 var pjs;
 
 var initialized = false;
@@ -388,15 +431,12 @@ var WrappedTypedArray = function(source, parts){
 	this.parts = parts;
 };
 
-WrappedTypedArray.prototype.map = function(mapper, done) {
-	var packager = new JobPackager(this.parts, mapper, this.source);
+WrappedTypedArray.prototype.__operationSkeleton = function (f, operation, collectorMapper, done) {
+	var packager = new JobPackager(this.parts, f, this.source, operation);
 	var packs = packager.generatePackages();
-	var TypedArrayConstructor = this.source.constructor;
 
-	var collector = new ResultCollector(this.parts, function(buffers){
-		var partial_results = buffers.map(function(buffer){
-			return new TypedArrayConstructor(buffer);
-		});
+	var collector = new ResultCollector(this.parts, function(results){
+		var partial_results = results.map(collectorMapper);
 		var m = merge_typed_arrays(partial_results);
 		return done(m);
 	});
@@ -408,6 +448,20 @@ WrappedTypedArray.prototype.map = function(mapper, done) {
 
 		workers[index].postMessage(pack, [ pack.buffer ]);
 	});
+};
+
+WrappedTypedArray.prototype.map = function(mapper, done) {
+	var TypedArrayConstructor = this.source.constructor;
+	this.__operationSkeleton(mapper, operation_names.MAP, function(result){
+		return new TypedArrayConstructor(result.value);
+	}, done);
+};
+
+WrappedTypedArray.prototype.filter = function(predicate, done) {
+	var TypedArrayConstructor = this.source.constructor;
+	this.__operationSkeleton(predicate, operation_names.FILTER, function(result){
+		return new TypedArrayConstructor(result.value).subarray(0, result.newLength);
+	}, done);
 };
 
 function wrap(typedArray){
@@ -460,4 +514,4 @@ pjs = module.exports = wrap;
 
 pjs.init = init;
 pjs.terminate = terminate;
-},{"./errors.js":2,"./job_packager.js":3,"./result_collector.js":4,"./typed_array_merger.js":5,"./utils.js":7,"./worker.js":8,"webworkify":1}]},{},[]);
+},{"./errors":2,"./job_packager":3,"./operation_names":4,"./result_collector":5,"./typed_array_merger":6,"./utils":8,"./worker.js":9,"webworkify":1}]},{},[]);
