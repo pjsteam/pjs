@@ -79,6 +79,23 @@ pjs(new Uint32Array([1,2,3,4])).map(function(e){
 });
 ```
 
+### WrappedTypedArray.prototype.filter(predicate, done)
+Invokes the `predicate` function on each element of the wrapped `TypedArray`. Returns a new array of the same type which only includes the original elements for which the `predicate` function returns `true` (or a _truthy_ value).
+
+__Arguments__
+
+* `predicate(element)` - the function to invoke for each element. Must return `true` (or a [_truthy_ value](http://www.sitepoint.com/javascript-truthy-falsy/)) if the element is to be included in the resulting `TypedArray`, otherwise `false` (or a not _truthy_ value).
+* `done(result)` - the function invoked when the asynchronous computation is completed. Receives `result` which is the new `TypedArray` with the resulting elements.
+
+__Example__
+```js
+pjs(new Uint32Array([1,2,3,4])).filter(function(e){
+    return e % 2 === 0;
+}, function(result){
+    // result is a Uint32Array with values [2,4]
+});
+```
+
 ## Acknowledgements
 * Using [this great seed](https://github.com/mgonto/gulp-browserify-library-seed) project from [@mgonto](https://twitter.com/mgonto).
 * [@mraleph](https://twitter.com/mraleph) for [IR Hydra](https://github.com/mraleph/irhydra) and the help he provided to use it.
