@@ -1,7 +1,7 @@
 // http://jsperf.com/pjs-map-inlining/2
 
 // HTML setup
-<script src="http://cdn.rawgit.com/pjsteam/pjs/v0.1.0/dist/p-j-s.min.js"></script>
+<script src="https://rawgit.com/pjsteam/pjs/v0.1.1/dist/p-j-s.min.js"></script>
 <script>
   var pjs = require('p-j-s');
   pjs.init();

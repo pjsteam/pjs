@@ -22,10 +22,8 @@ var processSepia = function (binaryData, l) {
 
     var source = document.getElementById("source");
     var runButton = document.getElementById("runButton");
-    
+
     run = function () {
-        console.time('serial-total');
-        console.time('serial-data-init');
         var start = new Date();
         log.innerHTML = "Processing...";
         runButton.style.visibility = "hidden"; 
@@ -46,7 +44,6 @@ var processSepia = function (binaryData, l) {
 
         var canvasData = tempContext.getImageData(0, 0, canvas.width, canvas.height);
         var binaryData = canvasData.data;
-        console.timeEnd('serial-data-init');
         console.time('serial');
         processSepia(binaryData, len);
         console.timeEnd('serial');
@@ -54,7 +51,6 @@ var processSepia = function (binaryData, l) {
         var diff = new Date() - start;
         log.innerHTML = "Process done in " + diff + " ms (no web workers)";
         runButton.style.visibility = "visible"; 
-        console.timeEnd('serial-total');
     };
 
     source.src = "pic.jpg";
