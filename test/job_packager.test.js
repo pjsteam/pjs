@@ -14,7 +14,7 @@ describe('job packager', function(){
   var operationReduce = 'reduce';
   var packager = new JobPackager(parts, elements);
   var invalidOperation = 'add';
-  var packages = packager.generatePackages(code, operationFilter);
+  var packages = packager.generatePackages([{ code: code, name: operationFilter}]);
 
   it('should not support empty initialization', function () {
     expect(function () {
@@ -31,35 +31,35 @@ describe('job packager', function(){
   it('should not support empty operation for package generation', function () {
     expect(function () {
       var p = new JobPackager(parts, elements);
-      var ps = p.generatePackages(); 
+      var ps = p.generatePackages();
     }).to.throw(errors.InvalidArgumentsError);
   });
 
   it('should not support invalid operation for package generation', function () {
     expect(function () {
       var p = new JobPackager(parts, elements);
-      var ps = p.generatePackages(code, invalidOperation);
+      var ps = p.generatePackages([{code: code, name: invalidOperation}]);
     }).to.throw(errors.InvalidArgumentsError);
   });
 
   it('should support valid map operation for package generation', function () {
     expect(function () {
       var p = new JobPackager(parts, elements);
-      var ps = p.generatePackages(code, operationMap);
+      var ps = p.generatePackages([{code: code, name: operationMap}]);
     }).to.not.throw(errors.InvalidArgumentsError);
   });
 
   it('should support valid reduce operation for package generation', function () {
     expect(function () {
       var p = new JobPackager(parts, elements);
-      var ps = p.generatePackages(code, operationReduce);
+      var ps = p.generatePackages([{ code: code, name: operationReduce }]);
     }).to.not.throw(errors.InvalidArgumentsError);
   });
 
   it('should support valid filter operation for package generation', function () {
     expect(function () {
       var p = new JobPackager(parts, elements);
-      var ps = p.generatePackages(code, operationFilter);
+      var ps = p.generatePackages([{ code: code, name: operationFilter}]);
     }).to.not.throw(errors.InvalidArgumentsError);
   });
 
@@ -87,7 +87,10 @@ describe('job packager', function(){
 
   it('should generate packaged code on all packages', function () {
     packages.forEach(function (jobPackage) {
-      expect(jobPackage.code).to.not.be.undefined;
+      expect(jobPackage.operations).to.not.have.length(0);
+      jobPackage.operations.forEach(function(op){
+        expect(op.code).to.not.be.undefined;
+      });
     });
   });
 
@@ -105,23 +108,32 @@ describe('job packager', function(){
 
   it('should track filter operation on all packages', function () {
     packages.forEach(function (jobPackage, index) {
-      expect(jobPackage.operation).to.equal(operationFilter);
+      expect(jobPackage.operations).to.not.have.length(0);
+      jobPackage.operations.forEach(function(op){
+        expect(op.name).to.equal(operationFilter);
+      });
     });
   });
 
   it('should track map operation on all packages', function () {
     var mapPackager = new JobPackager(parts, elements);
-    var mapPackages = mapPackager.generatePackages(code, operationMap);
+    var mapPackages = mapPackager.generatePackages([ { code: code, name: operationMap }]);
     mapPackages.forEach(function (jobPackage, index) {
-      expect(jobPackage.operation).to.equal(operationMap);
+      expect(jobPackage.operations).to.not.have.length(0);
+      jobPackage.operations.forEach(function(op){
+        expect(op.name).to.equal(operationMap);
+      });
     });
   });
 
   it('should track reduce operation on all packages', function () {
     var mapPackager = new JobPackager(parts, elements);
-    var mapPackages = mapPackager.generatePackages(code, operationReduce);
+    var mapPackages = mapPackager.generatePackages([{ code: code, name: operationReduce }]);
     mapPackages.forEach(function (jobPackage, index) {
-      expect(jobPackage.operation).to.equal(operationReduce);
+      expect(jobPackage.operations).to.not.have.length(0);
+      jobPackage.operations.forEach(function(op){
+        expect(op.name).to.equal(operationReduce);
+      });
     });
   });
 

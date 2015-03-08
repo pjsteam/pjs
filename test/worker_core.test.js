@@ -15,7 +15,7 @@ describe('worker core', function(){
       var packageIndex = 3, result;
       var elements = new TypedArray([1,2,3,4,5,6,7,8]);
       var packager = new JobPackager(parts, elements);
-      var packages = packager.generatePackages(code, 'map');
+      var packages = packager.generatePackages([{ code: code, name: 'map'}]);
 
       var expectedElements = new TypedArray([8,9]);
 
