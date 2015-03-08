@@ -1,68 +1,17 @@
 var errors = require('./errors');
 var utils = require('./utils');
-var JobPackager = require('./job_packager');
-var ResultCollector = require('./result_collector');
-var merge_typed_arrays = require('./typed_array_merger');
 var work = require('webworkify');
-var operation_names = require('./operation_names');
+var WrappedTypedArray = require('./Wrapped_typed_array');
 var pjs;
 
 var initialized = false;
 var workers = [];
 
-var WrappedTypedArray = function(source, parts){
-	this.packager = new JobPackager(parts, source);
-	this.source = source;
-	this.parts = parts;
-};
-
-WrappedTypedArray.prototype.__operationSkeleton = function (f, operation, collectorMapper, done, identity) {
-	var packs = this.packager.generatePackages(f, operation, identity);
-	var collector = new ResultCollector(this.parts, function(results){
-		var partial_results = results.map(collectorMapper);
-		var m = merge_typed_arrays(partial_results);
-		return done(m);
-	});
-
-	packs.forEach(function(pack, index){
-		utils.listenOnce(workers[index], 'message', function(event){
-			collector.onPart(event.data);
-		});
-
-		workers[index].postMessage(pack, [ pack.buffer ]);
-	});
-};
-
-WrappedTypedArray.prototype.map = function(mapper, done) {
-	var TypedArrayConstructor = this.source.constructor;
-	this.__operationSkeleton(mapper, operation_names.MAP, function(result){
-		return new TypedArrayConstructor(result.value);
-	}, done);
-};
-
-WrappedTypedArray.prototype.filter = function(predicate, done) {
-	var TypedArrayConstructor = this.source.constructor;
-	this.__operationSkeleton(predicate, operation_names.FILTER, function(result){
-		return new TypedArrayConstructor(result.value).subarray(0, result.newLength);
-	}, done);
-};
-
-WrappedTypedArray.prototype.reduce = function(reducer, seed, identity, done) {
-	var TypedArrayConstructor = this.source.constructor;
-	this.__operationSkeleton(reducer, operation_names.REDUCE, function(result){
-		return new TypedArrayConstructor(result.value).subarray(0, result.newLength);
-	}, function (result) {
-		var r = Array.prototype.slice.call(result).reduce(reducer, seed);
-		done(r);
-	}, identity);
-};
-
 function wrap(typedArray){
 	if (!utils.isTypedArray(typedArray)) {
 		throw new errors.InvalidArgumentsError(errors.messages.INVALID_TYPED_ARRAY);
 	}
-
-	return new WrappedTypedArray(typedArray, pjs.config.workers);
+	return new WrappedTypedArray(typedArray, pjs.config.workers, workers);
 }
 
 function init(options) {
