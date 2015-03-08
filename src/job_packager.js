@@ -38,7 +38,7 @@ JobPackager.prototype.generatePackages = function (code, operation, identity) {
   return partitionedElements.map(function (partitionedElement, index) {
     return {
       index: index,
-      arg: packageCodeArgs,
+      args: packageCodeArgs,
       code: packageCode,
       buffer: partitionedElement.buffer,
       elementsType: elementsType,

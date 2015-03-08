@@ -50,8 +50,7 @@ WrappedTypedArray.prototype.filter = function(predicate, done) {
 WrappedTypedArray.prototype.reduce = function(reducer, seed, identity, done) {
 	var TypedArrayConstructor = this.source.constructor;
 	this.__operationSkeleton(reducer, operation_names.REDUCE, function(result){
-		var r = new TypedArrayConstructor(result.value).subarray(0, result.newLength);
-		return r;
+		return new TypedArrayConstructor(result.value).subarray(0, result.newLength);
 	}, function (result) {
 		var r = Array.prototype.slice.call(result).reduce(reducer, seed);
 		done(r);
