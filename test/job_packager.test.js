@@ -11,6 +11,7 @@ describe('job packager', function(){
   var elements = new Uint32Array([1,2,3,4,5,6,7,8]);
   var operationFilter = 'filter';
   var operationMap = 'map';
+  var operationReduce = 'reduce';
   var packager = new JobPackager(parts, elements);
   var invalidOperation = 'add';
   var packages = packager.generatePackages(code, operationFilter);
@@ -45,6 +46,13 @@ describe('job packager', function(){
     expect(function () {
       var p = new JobPackager(parts, elements);
       var ps = p.generatePackages(code, operationMap);
+    }).to.not.throw(errors.InvalidArgumentsError);
+  });
+
+  it('should support valid reduce operation for package generation', function () {
+    expect(function () {
+      var p = new JobPackager(parts, elements);
+      var ps = p.generatePackages(code, operationReduce);
     }).to.not.throw(errors.InvalidArgumentsError);
   });
 
@@ -106,6 +114,14 @@ describe('job packager', function(){
     var mapPackages = mapPackager.generatePackages(code, operationMap);
     mapPackages.forEach(function (jobPackage, index) {
       expect(jobPackage.operation).to.equal(operationMap);
+    });
+  });
+
+  it('should track reduce operation on all packages', function () {
+    var mapPackager = new JobPackager(parts, elements);
+    var mapPackages = mapPackager.generatePackages(code, operationReduce);
+    mapPackages.forEach(function (jobPackage, index) {
+      expect(jobPackage.operation).to.equal(operationReduce);
     });
   });
 
