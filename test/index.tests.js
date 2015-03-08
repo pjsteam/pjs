@@ -91,15 +91,16 @@ describe('initialization', function(){
   });
 });
 
-describe.only('wrap tests', function(){
+describe('wrap tests', function(){
 
   var pjs;
   var errors = require('../src/errors.js');
   var utils = require('../src/utils.js');
+  var parts = 4;
 
   beforeEach(function () {
     pjs = require('../src/index.js');
-    pjs.init({maxWorkers:4});
+    pjs.init({maxWorkers: parts});
   });
 
   afterEach(function(){
@@ -131,6 +132,23 @@ describe.only('wrap tests', function(){
           expect(function () {
             pjs(sourceArray);
           }).to.not.throw(errors.InvalidArgumentsError);
+        });
+
+        it('should initialize packager after wrap a typed array', function () {
+          var wrapped = pjs(sourceArray);
+          expect(wrapped.packager).to.not.be.undefined;
+        });
+
+        it('should have source after wrap a typed array', function () {
+          var wrapped = pjs(sourceArray);
+          expect(wrapped.source).to.not.be.undefined;
+          expect(wrapped.source).to.equal(sourceArray);
+        });
+
+        it('should have parts after wrap a typed array', function () {
+          var wrapped = pjs(sourceArray);
+          expect(wrapped.parts).to.not.be.undefined;
+          expect(wrapped.parts).to.equal(parts);
         });
       });
     });
