@@ -29,7 +29,7 @@ function map(binaryData, len) {
 };
 \end{lstlisting}
 
-\note{The serial works with a \code{Uint8ClampedArray} but accesses three elements at the same time. The parallel implementation uses a \code{Uint32Array} and works on one pixel (A,R,G,B) at a time.}
+\note{The serial code works with a \code{Uint8ClampedArray} but accesses three elements at the same time. The parallel implementation uses a \code{Uint32Array} and works on one pixel (A,R,G,B) at a time.}
 
 Which was implemented as shown in the following listing for the parallel case:
 \begin{lstlisting}[caption=Sepia tone initial parallel implementation]
@@ -61,7 +61,7 @@ pjs(new Uint32Array(canvasData.data.buffer)).map(function(pixel){
 \end{lstlisting}
 
 \subsection{The problem}
-Taking the experience from previous experiments into account we considered that the performance of the two implementation with a \code{Uint32Array} of about \(8E7\) (eight million) elements should be similar, even favoring the parallel one. The initial measurements showed that the linear implementation fared approximately four times better than the parallel one.
+Taking the experience from previous experiments into account we considered that the performance of the two implementations with a source \code{Uint32Array} of about \(8E7\) (eight million) elements should be similar, even favoring the parallel one. The initial measurements showed that the linear implementation fared approximately four times better than the parallel one.
 
 \subsection{The hypothesis}
 As the two code samples were similar our hypothesis was that for some reason some v8 optimizations were not taking place. It was a definite possibility considering that the parallel implementation depends on the \tfunction constructor to create \tfunction objects in the Web Workers. Specifically we believed that the internal functions \code{noise}, \code{clamp} and \code{colorDistance} were not being inlined. Inlining could be the cause of both benefits\cite{inline-pro} and drawbacks\cite{inline-cons} but the belief was that performance was being affected because of lack of it
@@ -77,7 +77,7 @@ Figures \ref{fig:serial-clamp} through \ref{fig:serial-processSepia} are related
 \img{\code{noise} function - serial implementation}{../../spikes/3.1.3/irhydra-noworkers/inlined-noise}{fig:serial-noise}
 \img{\code{processSepia} function - serial implementation}{../../spikes/3.1.3/irhydra-noworkers/inlined-processSepia}{fig:serial-processSepia}
 
-\subsubsection{Serial implementation generated code}
+\subsubsection{Parallel implementation generated code}
 Figures \ref{fig:parallel-clamp} through \ref{fig:parallel-noise} are related to the serial implementation. As it can be seen from them, only \code{Math.random} is being inlined.
 \img{\code{clamp} function - parallel implementation}{../../spikes/3.1.3/irhydra-pjs-noinlined/ww-clamp}{fig:parallel-clamp}
 \img{\code{colorDistance} function - parallel implementation}{../../spikes/3.1.3/irhydra-pjs-noinlined/ww-colorDistance}{fig:parallel-colorDistance}
