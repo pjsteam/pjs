@@ -1,7 +1,7 @@
-// 
+// http://jsperf.com/pjs-filter-vs-serial
 
 // HTML preparation
-<script src="https://rawgit.com/pjsteam/pjs/v0.2.0/dist/p-j-s.min.js"></script>
+<script src="https://rawgit.com/pjsteam/pjs/v0.2.1/dist/p-j-s.min.js"></script>
 <script>
   var pjs = require('p-j-s');
   pjs.init();
@@ -79,32 +79,32 @@ __finish = function () {
   deferred.resolve();
 };
 
-// Test Case - serial map 100
+// Test Case - serial filter 100
 runSerial(xs100);
 
-// Test Case - pjs map 100
+// Test Case - pjs filter 100
 runPjs(wrappedXs100);
 
-// Test Case - serial map 1,000
+// Test Case - serial filter 1,000
 runSerial(xs1000);
 
-// Test Case - pjs map 1,000
+// Test Case - pjs filter 1,000
 runPjs(wrappedXs1000);
 
-// Test Case - serial map 10,000
+// Test Case - serial filter 10,000
 runSerial(xs10000);
 
-// Test Case - pjs map 10,000
+// Test Case - pjs filter 10,000
 runPjs(wrappedXs10000);
 
-// Test Case - serial map 100,000
+// Test Case - serial filter 100,000
 runSerial(xs100000);
 
-// Test Case - pjs map 100,000
+// Test Case - pjs filter 100,000
 runPjs(wrappedXs100000);
 
-// Test Case - serial map 1,000,000
+// Test Case - serial filter 1,000,000
 runSerial(xs1000000);
 
-// Test Case - pjs map 1,000,000
+// Test Case - pjs filter 1,000,000
 runPjs(wrappedXs1000000);
