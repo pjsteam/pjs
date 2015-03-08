@@ -20,7 +20,7 @@ var JobPackager = module.exports = function (parts, elements) {
   this.elements = elements;
 };
 
-JobPackager.prototype.generatePackages = function (code, operation) {
+JobPackager.prototype.generatePackages = function (code, operation, identity) {
   if (!code) {
     throw new errors.InvalidArgumentsError(errors.messages.INVALID_CODE);
   }
@@ -29,7 +29,7 @@ JobPackager.prototype.generatePackages = function (code, operation) {
   }
   var functionString = code.toString();
   var match = functionString.match(FUNCTION_REGEX);
-  var packageCodeArg = match[1].split(',')[0].trim();
+  var packageCodeArgs = match[1].split(',').map(function (p) { return p.trim(); });
   var packageCode = match[2];
   var elementsType = utils.getTypedArrayType(this.elements);
   var partitioner = new Partitioner(this.parts);
@@ -38,11 +38,12 @@ JobPackager.prototype.generatePackages = function (code, operation) {
   return partitionedElements.map(function (partitionedElement, index) {
     return {
       index: index,
-      arg: packageCodeArg,
+      arg: packageCodeArgs,
       code: packageCode,
       buffer: partitionedElement.buffer,
       elementsType: elementsType,
-      operation: operation
+      operation: operation,
+      seed: identity
     };
   });
 };

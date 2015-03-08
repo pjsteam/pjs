@@ -1,4 +1,5 @@
 module.exports = {
   MAP: 'map',
-  FILTER: 'filter'
+  FILTER: 'filter',
+  REDUCE: 'reduce'
 };

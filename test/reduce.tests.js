@@ -1,6 +1,6 @@
 'use strict';
 
-describe.only('reduce tests', function(){
+describe('reduce tests', function(){
 
   var pjs;
   var utils = require('../src/utils.js');
@@ -23,12 +23,15 @@ describe.only('reduce tests', function(){
       describe(utils.format('tests for {0}', utils.getTypedArrayConstructorType(TypedArray)), function(){
 
         var reducer = function (p, e) { return p + e; };
+        var identitiy = 0;
 
         it('should return reduced element in callback', function(done) {
           var seed = 0;
-          var sourceArray = new TypedArray([1,2,3,4,5]);
-          var reducedSource = sourceArray.reduce(reducer, seed);
-          pjs(sourceArray).reduce(reducer, seed, function(result) {
+          var normalArray = [1,2,3,4,5];
+          var sourceArray = new TypedArray(normalArray);
+          var reducedSource = normalArray.reduce(reducer, seed);
+
+          pjs(sourceArray).reduce(reducer, seed, identitiy, function(result) {
             expect(result).to.equal(reducedSource);
             done();
           });
@@ -36,20 +39,20 @@ describe.only('reduce tests', function(){
 
         it('should return initial value for empty array in callback', function(done){
           var seed = 5;
-          var emptySourceArray = new TypedArray([]);
-          var reducedSource = sourceArray.reduce(reducer, seed);
-          pjs(emptySourceArray).reduce(reducer, seed, function(result){
+          var normalArray = [];
+          var sourceArray = new TypedArray(normalArray);
+          pjs(sourceArray).reduce(reducer, seed, identitiy, function(result){
             expect(result).to.equal(seed);
             done();
           });
         });
 
-        
         it('should return reduced element for single element array in callback', function(done){
           var seed = 9;
-          var emptySourceArray = new TypedArray([4]);
-          var reducedSource = sourceArray.reduce(reducer, seed);
-          pjs(emptySourceArray).reduce(reducer, seed, function(result){
+          var normalArray = [4];
+          var sourceArray = new TypedArray(normalArray);
+          var reducedSource = normalArray.reduce(reducer, seed);
+          pjs(sourceArray).reduce(reducer, seed, identitiy, function(result){
             expect(result).to.equal(reducedSource);
             done();
           });

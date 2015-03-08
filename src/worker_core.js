@@ -58,24 +58,40 @@ var operations = {
       }
     }
     return newLength;
+  },
+  reduce: function (array, f, seed) {
+    var i = 0;
+    var l = array.length;
+    var reduced = seed;
+    for ( ; i < l; i += 1){
+      var e = array[i];
+      reduced = f(reduced, e);
+    }
+    array[0] = reduced;
+    return 1;
   }
 };
 
 module.exports = function(event){
   var pack = event.data;
-  var arg = pack.arg;
+  var seed = pack.seed;
+  var args = pack.arg;
   var code = pack.code;
-  var cacheKey = arg + code;
+  var cacheKey = args.join(',') + code;
   var f = functionCache[cacheKey];
   if (!f){
     /*jslint evil: true */
-    f = new Function(arg, code);
+    if (undefined === args[1]) {
+      f = new Function(args[0], code);
+    } else {
+      f = new Function(args[0], args[1], code);
+    }
     functionCache[cacheKey] = f;
   }
 
   var array = createTypedArray(pack.elementsType, pack.buffer);
 
-  var newLength = operations[pack.operation](array, f);
+  var newLength = operations[pack.operation](array, f, seed);
   
   return {
     message: {

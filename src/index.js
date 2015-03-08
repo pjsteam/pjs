@@ -16,8 +16,8 @@ var WrappedTypedArray = function(source, parts){
 	this.parts = parts;
 };
 
-WrappedTypedArray.prototype.__operationSkeleton = function (f, operation, collectorMapper, done) {
-	var packs = this.packager.generatePackages(f, operation);
+WrappedTypedArray.prototype.__operationSkeleton = function (f, operation, collectorMapper, done, identity) {
+	var packs = this.packager.generatePackages(f, operation, identity);
 	var collector = new ResultCollector(this.parts, function(results){
 		var partial_results = results.map(collectorMapper);
 		var m = merge_typed_arrays(partial_results);
@@ -45,6 +45,17 @@ WrappedTypedArray.prototype.filter = function(predicate, done) {
 	this.__operationSkeleton(predicate, operation_names.FILTER, function(result){
 		return new TypedArrayConstructor(result.value).subarray(0, result.newLength);
 	}, done);
+};
+
+WrappedTypedArray.prototype.reduce = function(reducer, seed, identity, done) {
+	var TypedArrayConstructor = this.source.constructor;
+	this.__operationSkeleton(reducer, operation_names.REDUCE, function(result){
+		var r = new TypedArrayConstructor(result.value).subarray(0, result.newLength);
+		return r;
+	}, function (result) {
+		var r = Array.prototype.slice.call(result).reduce(reducer, seed);
+		done(r);
+	}, identity);
 };
 
 function wrap(typedArray){
