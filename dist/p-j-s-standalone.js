@@ -110,8 +110,8 @@ var WrappedTypedArray = function(source, parts){
 	this.parts = parts;
 };
 
-WrappedTypedArray.prototype.__operationSkeleton = function (f, operation, collectorMapper, done) {
-	var packs = this.packager.generatePackages(f, operation);
+WrappedTypedArray.prototype.__operationSkeleton = function (f, operation, collectorMapper, done, identity) {
+	var packs = this.packager.generatePackages(f, operation, identity);
 	var collector = new ResultCollector(this.parts, function(results){
 		var partial_results = results.map(collectorMapper);
 		var m = merge_typed_arrays(partial_results);
@@ -139,6 +139,16 @@ WrappedTypedArray.prototype.filter = function(predicate, done) {
 	this.__operationSkeleton(predicate, operation_names.FILTER, function(result){
 		return new TypedArrayConstructor(result.value).subarray(0, result.newLength);
 	}, done);
+};
+
+WrappedTypedArray.prototype.reduce = function(reducer, seed, identity, done) {
+	var TypedArrayConstructor = this.source.constructor;
+	this.__operationSkeleton(reducer, operation_names.REDUCE, function(result){
+		return new TypedArrayConstructor(result.value).subarray(0, result.newLength);
+	}, function (result) {
+		var r = Array.prototype.slice.call(result).reduce(reducer, seed);
+		done(r);
+	}, identity);
 };
 
 function wrap(typedArray){
@@ -214,7 +224,7 @@ var JobPackager = module.exports = function (parts, elements) {
   this.elements = elements;
 };
 
-JobPackager.prototype.generatePackages = function (code, operation) {
+JobPackager.prototype.generatePackages = function (code, operation, identity) {
   if (!code) {
     throw new errors.InvalidArgumentsError(errors.messages.INVALID_CODE);
   }
@@ -223,7 +233,7 @@ JobPackager.prototype.generatePackages = function (code, operation) {
   }
   var functionString = code.toString();
   var match = functionString.match(FUNCTION_REGEX);
-  var packageCodeArg = match[1].split(',')[0].trim();
+  var packageCodeArgs = match[1].split(',').map(function (p) { return p.trim(); });
   var packageCode = match[2];
   var elementsType = utils.getTypedArrayType(this.elements);
   var partitioner = new Partitioner(this.parts);
@@ -232,11 +242,12 @@ JobPackager.prototype.generatePackages = function (code, operation) {
   return partitionedElements.map(function (partitionedElement, index) {
     return {
       index: index,
-      arg: packageCodeArg,
+      args: packageCodeArgs,
       code: packageCode,
       buffer: partitionedElement.buffer,
       elementsType: elementsType,
-      operation: operation
+      operation: operation,
+      seed: identity
     };
   });
 };
@@ -244,7 +255,8 @@ JobPackager.prototype.generatePackages = function (code, operation) {
 },{"./errors.js":2,"./operation_names":5,"./typed_array_partitioner.js":8,"./utils.js":9}],5:[function(require,module,exports){
 module.exports = {
   MAP: 'map',
-  FILTER: 'filter'
+  FILTER: 'filter',
+  REDUCE: 'reduce'
 };
 },{}],6:[function(require,module,exports){
 var errors = require('./errors.js');
@@ -481,24 +493,36 @@ var operations = {
       }
     }
     return newLength;
+  },
+  reduce: function (array, f, seed) {
+    var i = 0;
+    var l = array.length;
+    var reduced = seed;
+    for ( ; i < l; i += 1){
+      var e = array[i];
+      reduced = f(reduced, e);
+    }
+    array[0] = reduced;
+    return 1;
   }
 };
 
 module.exports = function(event){
   var pack = event.data;
-  var arg = pack.arg;
+  var seed = pack.seed;
+  var args = pack.args;
   var code = pack.code;
-  var cacheKey = arg + code;
+  
+  var cacheKey = args.join(',') + code;
   var f = functionCache[cacheKey];
   if (!f){
-    /*jslint evil: true */
-    f = new Function(arg, code);
+    f = createFunction(args, code);
     functionCache[cacheKey] = f;
   }
 
   var array = createTypedArray(pack.elementsType, pack.buffer);
 
-  var newLength = operations[pack.operation](array, f);
+  var newLength = operations[pack.operation](array, f, seed);
   
   return {
     message: {
@@ -510,5 +534,15 @@ module.exports = function(event){
   };
 };
 
+function createFunction(args, code) {
+  if (1 === args.length) {
+    /*jslint evil: true */
+    return new Function(args[0], code);
+  }
+  if (2 === args.length) {
+    /*jslint evil: true */
+    return new Function(args[0], args[1], code);
+  }
+}
 },{}]},{},[3])(3)
 });

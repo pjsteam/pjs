@@ -77,6 +77,7 @@ module.exports = function(event){
   var seed = pack.seed;
   var args = pack.args;
   var code = pack.code;
+  
   var cacheKey = args.join(',') + code;
   var f = functionCache[cacheKey];
   if (!f){
