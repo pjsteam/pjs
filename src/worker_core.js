@@ -80,12 +80,7 @@ module.exports = function(event){
   var cacheKey = args.join(',') + code;
   var f = functionCache[cacheKey];
   if (!f){
-    /*jslint evil: true */
-    if (undefined === args[1]) {
-      f = new Function(args[0], code);
-    } else {
-      f = new Function(args[0], args[1], code);
-    }
+    f = createFunction(args, code);
     functionCache[cacheKey] = f;
   }
 
@@ -102,3 +97,14 @@ module.exports = function(event){
     transferables: [ array.buffer ]
   };
 };
+
+function createFunction(args, code) {
+  if (1 === args.length) {
+    /*jslint evil: true */
+    return new Function(args[0], code);
+  }
+  if (2 === args.length) {
+    /*jslint evil: true */
+    return new Function(args[0], args[1], code);
+  }
+}
