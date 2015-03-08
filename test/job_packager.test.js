@@ -6,13 +6,14 @@ describe('job packager', function(){
   var utils = require('../src/utils');
 
   var parts = 4;
+
   var code = function (a) { return a + 1; };
   var elements = new Uint32Array([1,2,3,4,5,6,7,8]);
   var operationFilter = 'filter';
   var operationMap = 'map';
-  var packager = new JobPackager(parts, code, elements, operationFilter);
+  var packager = new JobPackager(parts, elements);
   var invalidOperation = 'add';
-  var packages = packager.generatePackages();
+  var packages = packager.generatePackages(code, operationFilter);
 
   it('should not support empty initialization', function () {
     expect(function () {
@@ -20,39 +21,37 @@ describe('job packager', function(){
     }).to.throw(errors.InvalidArgumentsError);
   });
 
-  it('should not support empty code initialization', function () {
+  it('should not support empty elements initialization', function () {
     expect(function () {
       var p = new JobPackager(parts);
     }).to.throw(errors.InvalidArgumentsError);
   });
 
-  it('should not support empty elements initialization', function () {
+  it('should not support empty operation for package generation', function () {
     expect(function () {
-      var p = new JobPackager(parts, code);
+      var p = new JobPackager(parts, elements);
+      var ps = p.generatePackages(); 
     }).to.throw(errors.InvalidArgumentsError);
   });
 
-  it('should not support empty operation initialization', function () {
+  it('should not support invalid operation for package generation', function () {
     expect(function () {
-      var p = new JobPackager(parts, code, elements);
+      var p = new JobPackager(parts, elements);
+      var ps = p.generatePackages(code, invalidOperation);
     }).to.throw(errors.InvalidArgumentsError);
   });
 
-  it('should not support invalid operation initialization', function () {
+  it('should support valid map operation for package generation', function () {
     expect(function () {
-      var p = new JobPackager(parts, code, elements, invalidOperation);
-    }).to.throw(errors.InvalidArgumentsError);
-  });
-
-  it('should support valid map operation initialization', function () {
-    expect(function () {
-      var p = new JobPackager(parts, code, elements, operationMap);
+      var p = new JobPackager(parts, elements);
+      var ps = p.generatePackages(code, operationMap);
     }).to.not.throw(errors.InvalidArgumentsError);
   });
 
-  it('should support valid filter operation initialization', function () {
+  it('should support valid filter operation for package generation', function () {
     expect(function () {
-      var p = new JobPackager(parts, code, elements, operationFilter);
+      var p = new JobPackager(parts, elements);
+      var ps = p.generatePackages(code, operationFilter);
     }).to.not.throw(errors.InvalidArgumentsError);
   });
 
@@ -103,8 +102,8 @@ describe('job packager', function(){
   });
 
   it('should track map operation on all packages', function () {
-    var mapPackager = new JobPackager(parts, code, elements, operationMap);
-    var mapPackages = mapPackager.generatePackages();
+    var mapPackager = new JobPackager(parts, elements);
+    var mapPackages = mapPackager.generatePackages(code, operationMap);
     mapPackages.forEach(function (jobPackage, index) {
       expect(jobPackage.operation).to.equal(operationMap);
     });
@@ -128,4 +127,5 @@ describe('job packager', function(){
     });
     expect(index).to.equal(elements.length);
   });
+
 });

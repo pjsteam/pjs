@@ -11,14 +11,13 @@ var initialized = false;
 var workers = [];
 
 var WrappedTypedArray = function(source, parts){
+	this.packager = new JobPackager(parts, source);
 	this.source = source;
 	this.parts = parts;
 };
 
 WrappedTypedArray.prototype.__operationSkeleton = function (f, operation, collectorMapper, done) {
-	var packager = new JobPackager(this.parts, f, this.source, operation);
-	var packs = packager.generatePackages();
-
+	var packs = this.packager.generatePackages(f, operation);
 	var collector = new ResultCollector(this.parts, function(results){
 		var partial_results = results.map(collectorMapper);
 		var m = merge_typed_arrays(partial_results);

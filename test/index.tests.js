@@ -91,10 +91,11 @@ describe('initialization', function(){
   });
 });
 
-describe ('wrap tests', function(){
+describe.only('wrap tests', function(){
 
   var pjs;
   var errors = require('../src/errors.js');
+  var utils = require('../src/utils.js');
 
   beforeEach(function () {
     pjs = require('../src/index.js');
@@ -118,4 +119,19 @@ describe ('wrap tests', function(){
       pjs([1,6,8,9,14]);
     }).to.throw(errors.InvalidArgumentsError);
   });
+
+  [Uint8Array, Int8Array, Uint8ClampedArray,
+    Uint16Array, Int16Array,
+    Uint32Array, Int32Array,
+    Float32Array, Float64Array].forEach(function (TypedArray) {
+      describe(utils.format('tests for {0}', utils.getTypedArrayConstructorType(TypedArray)), function(){
+        var sourceArray = new TypedArray([1,2,3,4,5]);
+
+        it('should not throw if object to wrap is typed array', function () {
+          expect(function () {
+            pjs(sourceArray);
+          }).to.not.throw(errors.InvalidArgumentsError);
+        });
+      });
+    });
 });
