@@ -13,7 +13,7 @@ var WrappedTypedArray = function(source, parts, workers){
 
 WrappedTypedArray.prototype.__operationSkeleton = function (f, operation, collectorMapper, done, identity) {
   var workers = this.workers;
-  var packs = this.packager.generatePackages(f, operation, identity);
+  var packs = this.packager.generatePackages([{ code: f, name: operation, identity: identity}]);
   var collector = new ResultCollector(this.parts, function(results){
     var partial_results = results.map(collectorMapper);
     var m = merge_typed_arrays(partial_results);

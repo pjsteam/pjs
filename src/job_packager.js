@@ -20,17 +20,33 @@ var JobPackager = module.exports = function (parts, elements) {
   this.elements = elements;
 };
 
-JobPackager.prototype.generatePackages = function (code, operation, identity) {
-  if (!code) {
-    throw new errors.InvalidArgumentsError(errors.messages.INVALID_CODE);
+JobPackager.prototype.generatePackages = function (chain) {
+  if (!(chain && chain.length)){
+    throw new errors.InvalidArgumentsError(errors.messages.INVALID_CHAIN);
   }
-  if (!operation || -1 === operations.indexOf(operation)) {
-    throw new errors.InvalidArgumentsError(errors.messages.INVALID_OPERATION);
-  }
-  var functionString = code.toString();
-  var match = functionString.match(FUNCTION_REGEX);
-  var packageCodeArgs = match[1].split(',').map(function (p) { return p.trim(); });
-  var packageCode = match[2];
+
+  var parsedOperations = chain.map(function(link){
+    if (!link.code) {
+      throw new errors.InvalidArgumentsError(errors.messages.INVALID_CODE);
+    }
+
+    if (!link.name || -1 === operations.indexOf(link.name)) {
+      throw new errors.InvalidArgumentsError(errors.messages.INVALID_OPERATION);
+    }
+
+    var functionString = link.code.toString();
+    var match = functionString.match(FUNCTION_REGEX);
+    var packageCodeArgs = match[1].split(',').map(function (p) { return p.trim(); });
+    var packageCode = match[2];
+
+    return {
+      identity: link.identity,
+      args: packageCodeArgs,
+      code: packageCode,
+      name: link.name
+    };
+  });
+
   var elementsType = utils.getTypedArrayType(this.elements);
   var partitioner = new Partitioner(this.parts);
   var partitionedElements = partitioner.partition(this.elements);
@@ -38,12 +54,9 @@ JobPackager.prototype.generatePackages = function (code, operation, identity) {
   return partitionedElements.map(function (partitionedElement, index) {
     return {
       index: index,
-      args: packageCodeArgs,
-      code: packageCode,
       buffer: partitionedElement.buffer,
-      elementsType: elementsType,
-      operation: operation,
-      seed: identity
+      operations:  parsedOperations,
+      elementsType: elementsType
     };
   });
 };

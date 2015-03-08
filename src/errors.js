@@ -30,5 +30,6 @@ errors.messages = {
   INVALID_ELEMENTS: 'Invalid number of elements to package.',
   INVALID_PACKAGE_INDEX: 'Package index should be not negative and less than {0}.',
   INVALID_TYPED_ARRAY: 'Invalid argument. It should be of TypedArray',
-  INVALID_OPERATION: 'Invalid pjs operation. Possible values are \'filter\' or \'map\''
+  INVALID_OPERATION: 'Invalid pjs operation. Possible values are \'filter\', \'map\' or \'reduce\'',
+  INVALID_CHAIN: 'Invalid chain sent to JobPackager. Either undefined or empty.'
 };

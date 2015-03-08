@@ -74,10 +74,12 @@ var operations = {
 
 module.exports = function(event){
   var pack = event.data;
-  var seed = pack.seed;
-  var args = pack.args;
-  var code = pack.code;
-  
+  var ops = pack.operations;
+  var operation = ops[0];
+  var seed = operation.identity;
+  var args = operation.args;
+  var code = operation.code;
+
   var cacheKey = args.join(',') + code;
   var f = functionCache[cacheKey];
   if (!f){
@@ -87,8 +89,8 @@ module.exports = function(event){
 
   var array = createTypedArray(pack.elementsType, pack.buffer);
 
-  var newLength = operations[pack.operation](array, f, seed);
-  
+  var newLength = operations[operation.name](array, f, seed);
+
   return {
     message: {
       index: pack.index,
