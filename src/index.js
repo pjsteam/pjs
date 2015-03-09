@@ -1,7 +1,7 @@
 var errors = require('./errors');
 var utils = require('./utils');
 var work = require('webworkify');
-var WrappedTypedArray = require('./Wrapped_typed_array');
+var WrappedTypedArray = require('./wrapped_typed_array');
 var pjs;
 
 var initialized = false;
