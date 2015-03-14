@@ -41,17 +41,16 @@ var mapFactory = getMapFactory();
 var functionCache = mapFactory();
 
 var operations = {
-  map: function (array, f) {
-    var i = array.length;
+  map: function (array, length, f) {
+    var i = length;
     for ( ; i--; ){
       array[i] = f(array[i]);
     }
     return array.length;
   },
-  filter: function (array, f) {
-    var l = array.length;
+  filter: function (array, length, f) {
     var i = 0, newLength = 0;
-    for ( ; i < l; i += 1){
+    for ( ; i < length; i += 1){
       var e = array[i];
       if (f(e)) {
         array[newLength++] = e;
@@ -59,11 +58,10 @@ var operations = {
     }
     return newLength;
   },
-  reduce: function (array, f, seed) {
+  reduce: function (array, length, f, seed) {
     var i = 0;
-    var l = array.length;
     var reduced = seed;
-    for ( ; i < l; i += 1){
+    for ( ; i < length; i += 1){
       var e = array[i];
       reduced = f(reduced, e);
     }
@@ -75,21 +73,24 @@ var operations = {
 module.exports = function(event){
   var pack = event.data;
   var ops = pack.operations;
-  var operation = ops[0];
-  var seed = operation.identity;
-  var args = operation.args;
-  var code = operation.code;
-
-  var cacheKey = args.join(',') + code;
-  var f = functionCache[cacheKey];
-  if (!f){
-    f = createFunction(args, code);
-    functionCache[cacheKey] = f;
-  }
+  var opsLength = ops.length;
 
   var array = createTypedArray(pack.elementsType, pack.buffer);
+  var newLength = array.length;
 
-  var newLength = operations[operation.name](array, f, seed);
+  for (var i = 0; i < opsLength; i += 1) {
+    var operation = ops[i];
+    var seed = operation.identity;
+    var args = operation.args;
+    var code = operation.code;
+    var cacheKey = args.join(',') + code;
+    var f = functionCache[cacheKey];
+    if (!f){
+      f = createFunction(args, code);
+      functionCache[cacheKey] = f;
+    }
+    newLength = operations[operation.name](array, newLength, f, seed);
+  }
 
   return {
     message: {

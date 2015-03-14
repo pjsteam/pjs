@@ -1,6 +1,6 @@
 'use strict';
 
-describe('chaining tests', function(){
+describe.only('chaining tests', function(){
 
   var pjs;
   var utils = require('../src/utils.js');
@@ -45,11 +45,14 @@ describe('chaining tests', function(){
 
         it ('sequenced map-map should return mapped array in callback', function (done) {
           var wrapped = pjs(sourceArray);
-          wrapped.map(function (e) { return e * 2; }).map(function (e) { return e * 2; }).seq(function (result) {
+          var mapper1 = function (e) { return e * 2; };
+          var mapper2 = function (e) { return e * 3; };
+          wrapped.map(mapper1).map(mapper2).seq(function (result) {
             expect(result).to.have.length(sourceArray.length);
             expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(sourceArray));
+            var normalChaining = normalSourceArray.map(mapper1).map(mapper2);
             for (var i = sourceArray.length - 1; i >= 0; i--) {
-              expect(result[i]).to.equal(sourceArray[i] * 2 * 2);
+              expect(result[i]).to.equal(normalChaining[i]);
             };
             done();
           });

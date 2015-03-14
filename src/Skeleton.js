@@ -2,7 +2,8 @@ var JobPackager = require('./job_packager');
 var ResultCollector = require('./result_collector');
 var merge_typed_arrays = require('./typed_array_merger');
 var utils = require('./utils');
-//var operation_names = require('./operation_names');
+var operation_names = require('./operation_names');
+var operation_packager = require('./operation_packager');
 
 var finisher = {
   map: function (self, result, done) {
@@ -17,16 +18,20 @@ var finisher = {
   }
 };
 
-var Skeleton = function (source, parts, workers, operation) {
+var Skeleton = function (source, parts, workers, operation, previousOperations) {
   this.packager = new JobPackager(parts, source);
   this.source = source;
   this.parts = parts;
   this.workers = workers;
-  this.operation = operation;
+  this.operation = operation; //todo: (mati) por ahora lo dejo para finalizar el reduce correctamente
+  previousOperations = previousOperations || [];
+  previousOperations.push(operation);
+  this.operations = previousOperations;
 };
 
-Skeleton.prototype.map = function () {
-  //return new Skeleton(this.source, this.parts, this.workers, operation_names.MAP, mapper);
+Skeleton.prototype.map = function (mapper) {
+  var operation = operation_packager(operation_names.MAP, mapper);
+  return new Skeleton(this.source, this.parts, this.workers, operation, this.operations);
 };
 
 Skeleton.prototype.filter = function () {
@@ -41,7 +46,7 @@ Skeleton.prototype.seq = function (done) {
   var self = this;
   var workers = this.workers;
   var TypedArrayConstructor = this.source.constructor;
-  var packs = this.packager.generatePackages([this.operation]);
+  var packs = this.packager.generatePackages(this.operations);
   var collector = new ResultCollector(this.parts, function(results){
     var partial_results = results.map(function(result){
       return new TypedArrayConstructor(result.value).subarray(0, result.newLength);
