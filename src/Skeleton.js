@@ -2,6 +2,7 @@ var JobPackager = require('./job_packager');
 var ResultCollector = require('./result_collector');
 var merge_typed_arrays = require('./typed_array_merger');
 var utils = require('./utils');
+//var operation_names = require('./operation_names');
 
 var finisher = {
   map: function (self, result, done) {
@@ -11,31 +12,28 @@ var finisher = {
     done(result);
   },
   reduce: function (self, result, done) {
-    var r = Array.prototype.slice.call(result).reduce(self.code, self.seed);
+    var r = Array.prototype.slice.call(result).reduce(self.operation.code, self.operation.seed);
     done(r);
   }
 };
 
-var Skeleton = function (source, parts, workers, operationName, code, seed, identity) {
+var Skeleton = function (source, parts, workers, operation) {
   this.packager = new JobPackager(parts, source);
   this.source = source;
   this.parts = parts;
   this.workers = workers;
-  this.operationName = operationName;
-  this.code = code;
-  this.seed = seed;
-  this.identity = identity;
+  this.operation = operation;
 };
 
-Skeleton.prototype.map = function() {
-
+Skeleton.prototype.map = function () {
+  //return new Skeleton(this.source, this.parts, this.workers, operation_names.MAP, mapper);
 };
 
-Skeleton.prototype.filter = function() {
+Skeleton.prototype.filter = function () {
 
 };
 
-Skeleton.prototype.reduce = function() {
+Skeleton.prototype.reduce = function () {
 
 };
 
@@ -43,13 +41,13 @@ Skeleton.prototype.seq = function (done) {
   var self = this;
   var workers = this.workers;
   var TypedArrayConstructor = this.source.constructor;
-  var packs = this.packager.generatePackages([{ code: this.code, name: this.operationName, identity: this.identity}]);
+  var packs = this.packager.generatePackages([this.operation]);
   var collector = new ResultCollector(this.parts, function(results){
     var partial_results = results.map(function(result){
       return new TypedArrayConstructor(result.value).subarray(0, result.newLength);
     });
     var m = merge_typed_arrays(partial_results);
-    return finisher[self.operationName](self, m, done);
+    return finisher[self.operation.name](self, m, done);
   });
 
   packs.forEach(function(pack, index){

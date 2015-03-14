@@ -43,6 +43,18 @@ describe('chaining tests', function(){
           });
         });
 
+        it ('sequenced map-map should return mapped array in callback', function (done) {
+          var wrapped = pjs(sourceArray);
+          wrapped.map(function (e) { return e * 2; }).map(function (e) { return e * 2; }).seq(function (result) {
+            expect(result).to.have.length(sourceArray.length);
+            expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(sourceArray));
+            for (var i = sourceArray.length - 1; i >= 0; i--) {
+              expect(result[i]).to.equal(sourceArray[i] * 2 * 2);
+            };
+            done();
+          });
+        });
+
         it ('filter should return Skeleton', function () {
           var wrapped = pjs(sourceArray);
           var skeleton = wrapped.filter(function (e) {return true; } );

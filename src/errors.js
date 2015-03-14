@@ -31,5 +31,7 @@ errors.messages = {
   INVALID_PACKAGE_INDEX: 'Package index should be not negative and less than {0}.',
   INVALID_TYPED_ARRAY: 'Invalid argument. It should be of TypedArray',
   INVALID_OPERATION: 'Invalid pjs operation. Possible values are \'filter\', \'map\' or \'reduce\'',
-  INVALID_OPERATIONS: 'Invalid operation chain sent to JobPackager. Either undefined or empty.'
+  INVALID_OPERATIONS: 'Invalid operation chain sent to JobPackager. Either undefined or empty.',
+  MISSING_SEED: 'Missing Seed argument for reduce operation packaging',
+  MISSING_IDENTITY: 'Missing Identity argument for reduce operation packaging'
 };
