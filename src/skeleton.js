@@ -1,7 +1,6 @@
 var JobPackager = require('./job_packager');
 var ResultCollector = require('./result_collector');
 var merge_typed_arrays = require('./typed_array_merger');
-var utils = require('./utils');
 var operation_names = require('./operation_names');
 var operation_packager = require('./operation_packager');
 var errors = require('./errors');
@@ -63,13 +62,20 @@ Skeleton.prototype.seq = function (done) {
   });
 
   packs.forEach(function(pack, index){
-    utils.listenOnce(workers[index], 'message', function(event){
-      collector.onPart(event.data);
-    });
+    var onMessageHandler = function (event){
+      event.target.removeEventListener('error', onErrorHandler);
+      event.target.removeEventListener('message', onMessageHandler);
+      return collector.onPart(event.data);
+    };
 
-    utils.listenOnce(workers[index], 'error', function(event){
-      collector.onError(event.message);
-    });
+    var onErrorHandler = function (event){
+      event.target.removeEventListener('error', onErrorHandler);
+      event.target.removeEventListener('message', onMessageHandler);
+      return collector.onError(event.message);
+    };
+
+    workers[index].addEventListener('error', onErrorHandler);
+    workers[index].addEventListener('message', onMessageHandler);
 
     workers[index].postMessage(pack, [ pack.buffer ]);
   });
