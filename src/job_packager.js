@@ -1,6 +1,6 @@
-var errors = require('./errors.js');
-var utils = require('./utils.js');
-var Partitioner = require('./typed_array_partitioner.js');
+var errors = require('./errors');
+var utils = require('./utils');
+var Partitioner = require('./typed_array_partitioner');
 
 var operation_names = require('./operation_names');
 operation_names = Object.keys(operation_names).map(function (k) {

@@ -134,11 +134,6 @@ describe('wrap tests', function(){
           }).to.not.throw(errors.InvalidArgumentsError);
         });
 
-        it('should initialize packager after wrap a typed array', function () {
-          var wrapped = pjs(sourceArray);
-          expect(wrapped.packager).to.not.be.undefined;
-        });
-
         it('should have source after wrap a typed array', function () {
           var wrapped = pjs(sourceArray);
           expect(wrapped.source).to.not.be.undefined;
