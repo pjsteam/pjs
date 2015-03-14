@@ -77,6 +77,7 @@ InvalidArgumentsError.prototype = new Error();
 InvalidArgumentsError.prototype.constructor = InvalidArgumentsError;
 errors.InvalidArgumentsError = InvalidArgumentsError;
 
+
 errors.messages = {
   CONSECUTIVE_INITS: 'You should not recall init if the library is already initialized.',
   TERMINATE_WITHOUT_INIT: 'You should not terminate pjs if it was not initialized before.',
@@ -87,66 +88,29 @@ errors.messages = {
   INVALID_CODE: 'Invalid code argument to package.',
   INVALID_ELEMENTS: 'Invalid number of elements to package.',
   INVALID_PACKAGE_INDEX: 'Package index should be not negative and less than {0}.',
-  INVALID_TYPED_ARRAY: 'Invalid argument. It should be of TypedArray',
-  INVALID_OPERATION: 'Invalid pjs operation. Possible values are \'filter\' or \'map\''
+  INVALID_TYPED_ARRAY: 'Invalid argument. It should be of TypedArray.',
+  INVALID_OPERATION: 'Invalid pjs operation. Possible values are \'filter\', \'map\' or \'reduce\'.',
+  INVALID_OPERATIONS: 'Invalid operation chain sent to JobPackager. Either undefined or empty.',
+  MISSING_SEED: 'Missing Seed argument for reduce operation packaging.',
+  MISSING_IDENTITY: 'Missing Identity argument for reduce operation packaging.',
+  INVALID_CHAINING_OPERATION: 'Can not perform more chaining after reduce operation.'
 };
 
 },{}],3:[function(require,module,exports){
 var errors = require('./errors');
 var utils = require('./utils');
-var JobPackager = require('./job_packager');
-var ResultCollector = require('./result_collector');
-var merge_typed_arrays = require('./typed_array_merger');
 var work = require('webworkify');
-var operation_names = require('./operation_names');
+var WrappedTypedArray = require('./wrapped_typed_array');
 var pjs;
 
 var initialized = false;
 var workers = [];
 
-var WrappedTypedArray = function(source, parts){
-	this.packager = new JobPackager(parts, source);
-	this.source = source;
-	this.parts = parts;
-};
-
-WrappedTypedArray.prototype.__operationSkeleton = function (f, operation, collectorMapper, done) {
-	var packs = this.packager.generatePackages(f, operation);
-	var collector = new ResultCollector(this.parts, function(results){
-		var partial_results = results.map(collectorMapper);
-		var m = merge_typed_arrays(partial_results);
-		return done(m);
-	});
-
-	packs.forEach(function(pack, index){
-		utils.listenOnce(workers[index], 'message', function(event){
-			collector.onPart(event.data);
-		});
-
-		workers[index].postMessage(pack, [ pack.buffer ]);
-	});
-};
-
-WrappedTypedArray.prototype.map = function(mapper, done) {
-	var TypedArrayConstructor = this.source.constructor;
-	this.__operationSkeleton(mapper, operation_names.MAP, function(result){
-		return new TypedArrayConstructor(result.value);
-	}, done);
-};
-
-WrappedTypedArray.prototype.filter = function(predicate, done) {
-	var TypedArrayConstructor = this.source.constructor;
-	this.__operationSkeleton(predicate, operation_names.FILTER, function(result){
-		return new TypedArrayConstructor(result.value).subarray(0, result.newLength);
-	}, done);
-};
-
 function wrap(typedArray){
 	if (!utils.isTypedArray(typedArray)) {
 		throw new errors.InvalidArgumentsError(errors.messages.INVALID_TYPED_ARRAY);
 	}
-
-	return new WrappedTypedArray(typedArray, pjs.config.workers);
+	return new WrappedTypedArray(typedArray, pjs.config.workers, workers);
 }
 
 function init(options) {
@@ -191,17 +155,17 @@ pjs = module.exports = wrap;
 
 pjs.init = init;
 pjs.terminate = terminate;
-},{"./errors":2,"./job_packager":4,"./operation_names":5,"./result_collector":6,"./typed_array_merger":7,"./utils":9,"./worker.js":10,"webworkify":1}],4:[function(require,module,exports){
-var errors = require('./errors.js');
-var utils = require('./utils.js');
-var Partitioner = require('./typed_array_partitioner.js');
+},{"./errors":2,"./utils":11,"./worker.js":12,"./wrapped_typed_array":14,"webworkify":1}],4:[function(require,module,exports){
+var errors = require('./errors');
+var utils = require('./utils');
+var Partitioner = require('./typed_array_partitioner');
+
 var operation_names = require('./operation_names');
-
-var FUNCTION_REGEX = /^function[^(]*\(([^)]*)\)[^{]*\{([\s\S]*)\}$/;
-
-var operations = Object.keys(operation_names).map(function (k) {
+operation_names = Object.keys(operation_names).map(function (k) {
   return operation_names[k];
 });
+
+var FUNCTION_REGEX = /^function[^(]*\(([^)]*)\)[^{]*\{([\s\S]*)\}$/;
 
 var JobPackager = module.exports = function (parts, elements) {
   if (!parts) {
@@ -214,17 +178,33 @@ var JobPackager = module.exports = function (parts, elements) {
   this.elements = elements;
 };
 
-JobPackager.prototype.generatePackages = function (code, operation) {
-  if (!code) {
-    throw new errors.InvalidArgumentsError(errors.messages.INVALID_CODE);
+JobPackager.prototype.generatePackages = function (operations) {
+  if (!(operations && operations.length)){
+    throw new errors.InvalidArgumentsError(errors.messages.INVALID_OPERATIONS);
   }
-  if (!operation || -1 === operations.indexOf(operation)) {
-    throw new errors.InvalidArgumentsError(errors.messages.INVALID_OPERATION);
-  }
-  var functionString = code.toString();
-  var match = functionString.match(FUNCTION_REGEX);
-  var packageCodeArg = match[1].split(',')[0].trim();
-  var packageCode = match[2];
+
+  var parsedOperations = operations.map(function(op){
+    if (!op.code) {
+      throw new errors.InvalidArgumentsError(errors.messages.INVALID_CODE);
+    }
+
+    if (!op.name || -1 === operation_names.indexOf(op.name)) {
+      throw new errors.InvalidArgumentsError(errors.messages.INVALID_OPERATION);
+    }
+
+    var functionString = op.code.toString();
+    var match = functionString.match(FUNCTION_REGEX);
+    var packageCodeArgs = match[1].split(',').map(function (p) { return p.trim(); });
+    var packageCode = match[2];
+
+    return {
+      identity: op.identity,
+      args: packageCodeArgs,
+      code: packageCode,
+      name: op.name
+    };
+  });
+
   var elementsType = utils.getTypedArrayType(this.elements);
   var partitioner = new Partitioner(this.parts);
   var partitionedElements = partitioner.partition(this.elements);
@@ -232,21 +212,49 @@ JobPackager.prototype.generatePackages = function (code, operation) {
   return partitionedElements.map(function (partitionedElement, index) {
     return {
       index: index,
-      arg: packageCodeArg,
-      code: packageCode,
       buffer: partitionedElement.buffer,
-      elementsType: elementsType,
-      operation: operation
+      operations:  parsedOperations,
+      elementsType: elementsType
     };
   });
 };
 
-},{"./errors.js":2,"./operation_names":5,"./typed_array_partitioner.js":8,"./utils.js":9}],5:[function(require,module,exports){
+},{"./errors":2,"./operation_names":5,"./typed_array_partitioner":10,"./utils":11}],5:[function(require,module,exports){
 module.exports = {
   MAP: 'map',
-  FILTER: 'filter'
+  FILTER: 'filter',
+  REDUCE: 'reduce'
 };
 },{}],6:[function(require,module,exports){
+var errors = require('./errors');
+var operation_names = require('./operation_names');
+operation_names = Object.keys(operation_names).map(function (k) {
+  return operation_names[k];
+});
+
+module.exports = function (name, code, seed, identity) {
+  if (!name || -1 === operation_names.indexOf(name)) {
+    throw new errors.InvalidArgumentsError(errors.messages.INVALID_OPERATION);
+  }
+  if (!code) {
+    throw new errors.InvalidArgumentsError(errors.messages.INVALID_CODE);
+  }
+  if (name === 'reduce' && undefined === seed) {
+    throw new errors.InvalidArgumentsError(errors.messages.MISSING_SEED);
+  }
+  if (name === 'reduce' && undefined === identity) {
+    throw new errors.InvalidArgumentsError(errors.messages.MISSING_IDENTITY);
+  }
+
+  return {
+    name: name,
+    code: code,
+    seed: seed,
+    identity: identity
+  };
+};
+
+},{"./errors":2,"./operation_names":5}],7:[function(require,module,exports){
 var errors = require('./errors.js');
 var utils = require('./utils.js');
 
@@ -275,7 +283,87 @@ Collector.prototype.onPart = function (data){
     return this.cb(this.collected);
   }
 };
-},{"./errors.js":2,"./utils.js":9}],7:[function(require,module,exports){
+},{"./errors.js":2,"./utils.js":11}],8:[function(require,module,exports){
+var JobPackager = require('./job_packager');
+var ResultCollector = require('./result_collector');
+var merge_typed_arrays = require('./typed_array_merger');
+var utils = require('./utils');
+var operation_names = require('./operation_names');
+var operation_packager = require('./operation_packager');
+var errors = require('./errors');
+
+var finisher = {
+  map: function (self, result, done) {
+    done(result);
+  },
+  filter: function (self, result, done) {
+    done(result);
+  },
+  reduce: function (self, result, done) {
+    var r = Array.prototype.slice.call(result).reduce(self.operation.code, self.operation.seed);
+    done(r);
+  }
+};
+
+var Skeleton = function (source, parts, workers, operation, previousOperations) {
+  this.packager = new JobPackager(parts, source);
+  this.source = source;
+  this.parts = parts;
+  this.workers = workers;
+  this.operation = operation; //todo: (mati) por ahora lo dejo para finalizar el reduce correctamente
+  previousOperations = previousOperations || [];
+  previousOperations.push(operation);
+  this.operations = previousOperations;
+};
+
+Skeleton.prototype.map = function (mapper) {
+  this.__verifyPreviousOperation();
+  var operation = operation_packager(operation_names.MAP, mapper);
+  return new Skeleton(this.source, this.parts, this.workers, operation, this.operations);
+};
+
+Skeleton.prototype.filter = function (predicate) {
+  this.__verifyPreviousOperation();
+  var operation = operation_packager(operation_names.FILTER, predicate);
+  return new Skeleton(this.source, this.parts, this.workers, operation, this.operations);
+};
+
+Skeleton.prototype.reduce = function (predicate, seed, identity) {
+  this.__verifyPreviousOperation();
+  var operation = operation_packager(operation_names.REDUCE, predicate, seed, identity);
+  return new Skeleton(this.source, this.parts, this.workers, operation, this.operations);
+};
+
+Skeleton.prototype.seq = function (done) {
+  var self = this;
+  var workers = this.workers;
+  var TypedArrayConstructor = this.source.constructor;
+  var packs = this.packager.generatePackages(this.operations);
+  var collector = new ResultCollector(this.parts, function(results){
+    var partial_results = results.map(function(result){
+      return new TypedArrayConstructor(result.value).subarray(0, result.newLength);
+    });
+    var m = merge_typed_arrays(partial_results);
+    return finisher[self.operation.name](self, m, done);
+  });
+
+  packs.forEach(function(pack, index){
+    utils.listenOnce(workers[index], 'message', function(event){
+      collector.onPart(event.data);
+    });
+
+    workers[index].postMessage(pack, [ pack.buffer ]);
+  });
+};
+
+Skeleton.prototype.__verifyPreviousOperation = function () {
+  if (this.operation.name === 'reduce') {
+    throw new errors.InvalidOperationError(errors.messages.INVALID_CHAINING_OPERATION);
+  }
+};
+
+module.exports = Skeleton;
+},{"./errors":2,"./job_packager":4,"./operation_names":5,"./operation_packager":6,"./result_collector":7,"./typed_array_merger":9,"./utils":11}],9:[function(require,module,exports){
 var errors = require('./errors.js');
 
 module.exports = function merge(arrays){
@@ -300,7 +388,7 @@ module.exports = function merge(arrays){
 
   return result;
 };
-},{"./errors.js":2}],8:[function(require,module,exports){
+},{"./errors.js":2}],10:[function(require,module,exports){
 var utils = require('./utils.js');
 var errors = require('./errors.js');
 
@@ -350,7 +438,7 @@ Partitioner.prototype.doPartition = function (array) {
   return arrays;
 };
 
-},{"./errors.js":2,"./utils.js":9}],9:[function(require,module,exports){
+},{"./errors.js":2,"./utils.js":11}],11:[function(require,module,exports){
 var utils = module.exports = {};
 
 utils.getter = function (obj, name, value) {
@@ -410,7 +498,7 @@ utils.listenOnce = function(eventSource, eventName, callback){
   });
 };
 
-},{}],10:[function(require,module,exports){
+},{}],12:[function(require,module,exports){
 var worker_core = require('./worker_core');
 
 module.exports = function (self) {
@@ -420,7 +508,7 @@ module.exports = function (self) {
     self.postMessage(result.message, result.transferables);
   });
 };
-},{"./worker_core":11}],11:[function(require,module,exports){
+},{"./worker_core":13}],13:[function(require,module,exports){
 // param can be either length (number) or buffer
 function createTypedArray(type, param){
   switch(type){
@@ -464,42 +552,57 @@ var mapFactory = getMapFactory();
 var functionCache = mapFactory();
 
 var operations = {
-  map: function (array, f) {
-    var i = array.length;
-    for ( ; i--; ){
+  map: function (array, length, f) {
+    var i = 0;
+    for ( ; i < length; i += 1){
       array[i] = f(array[i]);
     }
-    return array.length;
+    return length;
   },
-  filter: function (array, f) {
-    var l = array.length;
+  filter: function (array, length, f) {
     var i = 0, newLength = 0;
-    for ( ; i < l; i += 1){
+    for ( ; i < length; i += 1){
       var e = array[i];
       if (f(e)) {
         array[newLength++] = e;
       }
     }
     return newLength;
+  },
+  reduce: function (array, length, f, seed) {
+    var i = 0;
+    var reduced = seed;
+    for ( ; i < length; i += 1){
+      var e = array[i];
+      reduced = f(reduced, e);
+    }
+    array[0] = reduced;
+    return 1;
   }
 };
 
 module.exports = function(event){
   var pack = event.data;
-  var arg = pack.arg;
-  var code = pack.code;
-  var cacheKey = arg + code;
-  var f = functionCache[cacheKey];
-  if (!f){
-    /*jslint evil: true */
-    f = new Function(arg, code);
-    functionCache[cacheKey] = f;
-  }
+  var ops = pack.operations;
+  var opsLength = ops.length;
 
   var array = createTypedArray(pack.elementsType, pack.buffer);
+  var newLength = array.length;
 
-  var newLength = operations[pack.operation](array, f);
-  
+  for (var i = 0; i < opsLength; i += 1) {
+    var operation = ops[i];
+    var seed = operation.identity;
+    var args = operation.args;
+    var code = operation.code;
+    var cacheKey = args.join(',') + code;
+    var f = functionCache[cacheKey];
+    if (!f){
+      f = createFunction(args, code);
+      functionCache[cacheKey] = f;
+    }
+    newLength = operations[operation.name](array, newLength, f, seed);
+  }
+
   return {
     message: {
       index: pack.index,
@@ -510,5 +613,44 @@ module.exports = function(event){
   };
 };
 
-},{}]},{},[3])(3)
+function createFunction(args, code) {
+  if (1 === args.length) {
+    /*jslint evil: true */
+    return new Function(args[0], code);
+  }
+  if (2 === args.length) {
+    /*jslint evil: true */
+    return new Function(args[0], args[1], code);
+  }
+}
+},{}],14:[function(require,module,exports){
+var operation_names = require('./operation_names');
+var Skeleton = require('./skeleton');
+var operation_packager = require('./operation_packager');
+
+var WrappedTypedArray = function (source, parts, workers) {
+  this.source = source;
+  this.parts = parts;
+  this.workers = workers;
+};
+
+WrappedTypedArray.prototype.map = function(mapper) {
+  return this.__operation(operation_names.MAP, mapper);
+};
+
+WrappedTypedArray.prototype.filter = function(predicate) {
+  return this.__operation(operation_names.FILTER, predicate);
+};
+
+WrappedTypedArray.prototype.reduce = function(reducer, seed, identity) {
+  return this.__operation(operation_names.REDUCE, reducer, seed, identity);
+};
+
+WrappedTypedArray.prototype.__operation = function(name, reducer, seed, identity) {
+  var operation = operation_packager(name, reducer, seed, identity);
+  return new Skeleton(this.source, this.parts, this.workers, operation);
+};
+
+module.exports = WrappedTypedArray;
+},{"./operation_names":5,"./operation_packager":6,"./skeleton":8}]},{},[3])(3)
 });

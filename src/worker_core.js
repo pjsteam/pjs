@@ -41,42 +41,57 @@ var mapFactory = getMapFactory();
 var functionCache = mapFactory();
 
 var operations = {
-  map: function (array, f) {
-    var i = array.length;
-    for ( ; i--; ){
+  map: function (array, length, f) {
+    var i = 0;
+    for ( ; i < length; i += 1){
       array[i] = f(array[i]);
     }
-    return array.length;
+    return length;
   },
-  filter: function (array, f) {
-    var l = array.length;
+  filter: function (array, length, f) {
     var i = 0, newLength = 0;
-    for ( ; i < l; i += 1){
+    for ( ; i < length; i += 1){
       var e = array[i];
       if (f(e)) {
         array[newLength++] = e;
       }
     }
     return newLength;
+  },
+  reduce: function (array, length, f, seed) {
+    var i = 0;
+    var reduced = seed;
+    for ( ; i < length; i += 1){
+      var e = array[i];
+      reduced = f(reduced, e);
+    }
+    array[0] = reduced;
+    return 1;
   }
 };
 
 module.exports = function(event){
   var pack = event.data;
-  var arg = pack.arg;
-  var code = pack.code;
-  var cacheKey = arg + code;
-  var f = functionCache[cacheKey];
-  if (!f){
-    /*jslint evil: true */
-    f = new Function(arg, code);
-    functionCache[cacheKey] = f;
-  }
+  var ops = pack.operations;
+  var opsLength = ops.length;
 
   var array = createTypedArray(pack.elementsType, pack.buffer);
+  var newLength = array.length;
 
-  var newLength = operations[pack.operation](array, f);
-  
+  for (var i = 0; i < opsLength; i += 1) {
+    var operation = ops[i];
+    var seed = operation.identity;
+    var args = operation.args;
+    var code = operation.code;
+    var cacheKey = args.join(',') + code;
+    var f = functionCache[cacheKey];
+    if (!f){
+      f = createFunction(args, code);
+      functionCache[cacheKey] = f;
+    }
+    newLength = operations[operation.name](array, newLength, f, seed);
+  }
+
   return {
     message: {
       index: pack.index,
@@ -86,3 +101,14 @@ module.exports = function(event){
     transferables: [ array.buffer ]
   };
 };
+
+function createFunction(args, code) {
+  if (1 === args.length) {
+    /*jslint evil: true */
+    return new Function(args[0], code);
+  }
+  if (2 === args.length) {
+    /*jslint evil: true */
+    return new Function(args[0], args[1], code);
+  }
+}

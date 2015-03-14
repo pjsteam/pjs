@@ -19,6 +19,7 @@ InvalidArgumentsError.prototype = new Error();
 InvalidArgumentsError.prototype.constructor = InvalidArgumentsError;
 errors.InvalidArgumentsError = InvalidArgumentsError;
 
+
 errors.messages = {
   CONSECUTIVE_INITS: 'You should not recall init if the library is already initialized.',
   TERMINATE_WITHOUT_INIT: 'You should not terminate pjs if it was not initialized before.',
@@ -29,6 +30,10 @@ errors.messages = {
   INVALID_CODE: 'Invalid code argument to package.',
   INVALID_ELEMENTS: 'Invalid number of elements to package.',
   INVALID_PACKAGE_INDEX: 'Package index should be not negative and less than {0}.',
-  INVALID_TYPED_ARRAY: 'Invalid argument. It should be of TypedArray',
-  INVALID_OPERATION: 'Invalid pjs operation. Possible values are \'filter\' or \'map\''
+  INVALID_TYPED_ARRAY: 'Invalid argument. It should be of TypedArray.',
+  INVALID_OPERATION: 'Invalid pjs operation. Possible values are \'filter\', \'map\' or \'reduce\'.',
+  INVALID_OPERATIONS: 'Invalid operation chain sent to JobPackager. Either undefined or empty.',
+  MISSING_SEED: 'Missing Seed argument for reduce operation packaging.',
+  MISSING_IDENTITY: 'Missing Identity argument for reduce operation packaging.',
+  INVALID_CHAINING_OPERATION: 'Can not perform more chaining after reduce operation.'
 };
