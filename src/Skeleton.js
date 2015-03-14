@@ -34,12 +34,12 @@ Skeleton.prototype.map = function (mapper) {
   return new Skeleton(this.source, this.parts, this.workers, operation, this.operations);
 };
 
-Skeleton.prototype.filter = function () {
-
+Skeleton.prototype.filter = function (predicate) {
+  var operation = operation_packager(operation_names.FILTER, predicate);
+  return new Skeleton(this.source, this.parts, this.workers, operation, this.operations);
 };
 
 Skeleton.prototype.reduce = function () {
-
 };
 
 Skeleton.prototype.seq = function (done) {
