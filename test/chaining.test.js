@@ -1,6 +1,6 @@
 'use strict';
 
-describe.only('chaining tests', function(){
+describe('chaining tests', function(){
 
   var pjs;
   var utils = require('../src/utils.js');
@@ -58,6 +58,21 @@ describe.only('chaining tests', function(){
               done();
             });
           });
+
+          it ('sequenced map-filter should return mapped-and-filtered array in callback', function (done) {
+            var wrapped = pjs(sourceArray);
+            var mapper = function (e) { return e * 3; };
+            var predicate = function (e) { return 1 == (e % 2); };
+            wrapped.map(mapper).filter(predicate).seq(function (result) {
+              var normalChaining = normalSourceArray.map(mapper).filter(predicate);
+              expect(result).to.have.length(normalChaining.length);
+              expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(sourceArray));
+              for (var i = sourceArray.length - 1; i >= 0; i--) {
+                expect(result[i]).to.equal(normalChaining[i]);
+              };
+              done();
+            });
+          });
         });
 
         describe('filter skeleton', function () {
@@ -89,6 +104,22 @@ describe.only('chaining tests', function(){
             var predicate2 = function (e) { return 0 == e % 4; };
             wrapped.filter(predicate1).filter(predicate2).seq(function (result) {
               var normalChaining = normalSourceArray.filter(predicate1).filter(predicate2);
+              expect(result).to.have.length(normalChaining.length);
+              expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(sourceArray));
+              for (var i = sourceArray.length - 1; i >= 0; i--) {
+                expect(result[i]).to.equal(normalChaining[i]);
+              };
+              done();
+            });
+          });
+
+          it ('sequenced filter-map should return filtered-and-mapped array in callback', function (done) {
+            var wrapped = pjs(sourceArray);
+            var mapper = function (e) { return e * 3; };
+            var predicate = function (e) { return 1 == (e % 2); };
+            wrapped.filter(predicate).map(mapper).seq(function (result) {
+              var normalChaining = normalSourceArray.filter(predicate).map(mapper);
+              expect(0 < result.length).to.be.true;
               expect(result).to.have.length(normalChaining.length);
               expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(sourceArray));
               for (var i = sourceArray.length - 1; i >= 0; i--) {

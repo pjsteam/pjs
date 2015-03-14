@@ -42,11 +42,11 @@ var functionCache = mapFactory();
 
 var operations = {
   map: function (array, length, f) {
-    var i = length;
-    for ( ; i--; ){
+    var i = 0;
+    for ( ; i < length; i += 1){
       array[i] = f(array[i]);
     }
-    return array.length;
+    return length;
   },
   filter: function (array, length, f) {
     var i = 0, newLength = 0;
