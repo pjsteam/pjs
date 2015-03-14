@@ -1,0 +1,50 @@
+\section{Modules system}
+
+\note{At the time of writing, Google Chrome does not support the ES6 module specification so that is not a viable choice.}
+
+The two most known module formats/API in JavaScript are known as:
+\begin{description}
+\item[CommonJS] Recognized for being used in node.js~\cite{nodejs}.
+\item[AMD~\cite{amd}] The most known implementation being require.js~\cite{requirejs}.
+\end{description}
+
+CommonJS has many similar aspects with the ES6 module specification, although it does not provide a way to load modules asynchronously. AMD is very different from the ES6 module specification but does support asynchronous module loading which is useful for browser applications.
+
+Instead of making the choice for users, our library will support both systems in a way that is easy for users.
+
+\subsection{CommonJS support}
+All that needs to be done to use the library is shown in the following code snippet:
+\begin{lstlisting}[language=HTML, caption=CommonJS usage]
+<script src="https://rawgit.com/pjsteam/pjs/v0.2.1/dist/p-j-s.min.js"></script>
+
+<script>
+  var pjs = require('p-j-s');
+  pjs.init();
+
+  /* use below */
+</script>
+\end{lstlisting}
+
+\subsection{AMD support}
+This example shows how to use the library with require.js. It assumes a folder structure like the one shown below:
+\begin{lstlisting}[language=bash, caption=AMD folder structure]
+.
+|__ index.html
+|__ scripts
+    |__ main.js
+    |__ require.js
+\end{lstlisting}
+
+The file \textbf{main.js} must have the following contents:
+\begin{lstlisting}[caption=main.js AMD support]
+require(["https://rawgit.com/pjsteam/pjs/v0.2.1/dist/p-j-s-standalone.min.js"], function(pjs) {
+  pjs.init();
+
+  /* use below */
+});
+\end{lstlisting}
+
+\subsection{Conclusion}
+As the previous examples show, using our library with either module system is really simple and is done in a way that should feel familiar for users of those module formats.
+
+\pagebreak
