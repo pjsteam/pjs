@@ -14,10 +14,13 @@ var pjs = require('p-j-s');
 
 pjs.init(); // initialize the library
 
-pjs(new Uint32Array([1,2,3,4])).map(function(e){
-    return e * 2;
+pjs(new Uint32Array([1,2,3,4]))
+.filter(function(e){
+  return e % 2 === 0;
+}).map(function(e){
+  return e * 2;
 }).seq(function(result){
-    // use result...
+    // result is [4,8] a new Uint32Array
     
     // if we are not using the library any more cleanup once we are done
     pjs.terminate();
