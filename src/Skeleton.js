@@ -4,6 +4,7 @@ var merge_typed_arrays = require('./typed_array_merger');
 var utils = require('./utils');
 var operation_names = require('./operation_names');
 var operation_packager = require('./operation_packager');
+var errors = require('./errors');
 
 var finisher = {
   map: function (self, result, done) {
@@ -30,16 +31,21 @@ var Skeleton = function (source, parts, workers, operation, previousOperations) 
 };
 
 Skeleton.prototype.map = function (mapper) {
+  this.__verifyPreviousOperation();
   var operation = operation_packager(operation_names.MAP, mapper);
   return new Skeleton(this.source, this.parts, this.workers, operation, this.operations);
 };
 
 Skeleton.prototype.filter = function (predicate) {
+  this.__verifyPreviousOperation();
   var operation = operation_packager(operation_names.FILTER, predicate);
   return new Skeleton(this.source, this.parts, this.workers, operation, this.operations);
 };
 
-Skeleton.prototype.reduce = function () {
+Skeleton.prototype.reduce = function (predicate, seed, identity) {
+  this.__verifyPreviousOperation();
+  var operation = operation_packager(operation_names.REDUCE, predicate, seed, identity);
+  return new Skeleton(this.source, this.parts, this.workers, operation, this.operations);
 };
 
 Skeleton.prototype.seq = function (done) {
@@ -62,6 +68,12 @@ Skeleton.prototype.seq = function (done) {
 
     workers[index].postMessage(pack, [ pack.buffer ]);
   });
+};
+
+Skeleton.prototype.__verifyPreviousOperation = function () {
+  if (this.operation.name === 'reduce') {
+    throw new errors.InvalidOperationError(errors.messages.INVALID_CHAINING_OPERATION);
+  }
 };
 
 module.exports = Skeleton;

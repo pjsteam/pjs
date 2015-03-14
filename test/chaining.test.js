@@ -5,6 +5,7 @@ describe('chaining tests', function(){
   var pjs;
   var utils = require('../src/utils.js');
   var Skeleton = require('../src/skeleton');
+  var errors = require('../src/errors');
 
   beforeEach(function () {
     pjs = require('../src/index.js');
@@ -49,9 +50,10 @@ describe('chaining tests', function(){
             var mapper1 = function (e) { return e * 2; };
             var mapper2 = function (e) { return e * 3; };
             wrapped.map(mapper1).map(mapper2).seq(function (result) {
+              var normalChaining = normalSourceArray.map(mapper1).map(mapper2);
+              expect(0 < result.length).to.be.true;
               expect(result).to.have.length(sourceArray.length);
               expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(sourceArray));
-              var normalChaining = normalSourceArray.map(mapper1).map(mapper2);
               for (var i = sourceArray.length - 1; i >= 0; i--) {
                 expect(result[i]).to.equal(normalChaining[i]);
               };
@@ -65,11 +67,25 @@ describe('chaining tests', function(){
             var predicate = function (e) { return 1 == (e % 2); };
             wrapped.map(mapper).filter(predicate).seq(function (result) {
               var normalChaining = normalSourceArray.map(mapper).filter(predicate);
+              expect(0 < result.length).to.be.true;
               expect(result).to.have.length(normalChaining.length);
               expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(sourceArray));
               for (var i = sourceArray.length - 1; i >= 0; i--) {
                 expect(result[i]).to.equal(normalChaining[i]);
               };
+              done();
+            });
+          });
+
+          it ('sequenced map-reduce should return mapped-and-reduced element in callback', function (done) {
+            var wrapped = pjs(sourceArray);
+            var reducer = function (p, e) { return p + e; };
+            var mapper = function (e) { return e * 2; };
+            var seed = 1;
+            var identity = 0;
+            wrapped.map(mapper).reduce(reducer, seed, identity).seq(function (result) {
+              var normalChaining = normalSourceArray.map(mapper).reduce(reducer, seed);
+              expect(result).to.equal(normalChaining);
               done();
             });
           });
@@ -104,6 +120,7 @@ describe('chaining tests', function(){
             var predicate2 = function (e) { return 0 == e % 4; };
             wrapped.filter(predicate1).filter(predicate2).seq(function (result) {
               var normalChaining = normalSourceArray.filter(predicate1).filter(predicate2);
+              expect(0 < result.length).to.be.true;
               expect(result).to.have.length(normalChaining.length);
               expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(sourceArray));
               for (var i = sourceArray.length - 1; i >= 0; i--) {
@@ -128,6 +145,19 @@ describe('chaining tests', function(){
               done();
             });
           });
+
+          it ('sequenced filter-reduce should return filtered-and-reduced element in callback', function (done) {
+            var wrapped = pjs(sourceArray);
+            var reducer = function (p, e) { return p + e; };
+            var predicate = function (e) { return 1 == (e % 2); };
+            var seed = 1;
+            var identity = 0;
+            wrapped.filter(predicate).reduce(reducer, seed, identity).seq(function (result) {
+              var normalChaining = normalSourceArray.filter(predicate).reduce(reducer, seed);
+              expect(result).to.equal(normalChaining);
+              done();
+            });
+          });
         });
 
         describe('reduce skeleton', function () {
@@ -149,6 +179,33 @@ describe('chaining tests', function(){
               expect(result).to.equal(reducedSource);
               done();
             });
+          });
+
+          it('should not chaing map if reduce has been called', function() {
+            var skeleton = pjs(sourceArray).reduce(function (p, e) {
+              return p + e;
+            }, 1, 0);
+            expect(function () {
+              skeleton.map(function (e) { return e + 1; });
+            }).to.be.throw(errors.InvalidOperationError);
+          });
+
+          it('should not chaing filter if reduce has been called', function() {
+            var skeleton = pjs(sourceArray).reduce(function (p, e) {
+              return p + e;
+            }, 1, 0);
+            expect(function () {
+              skeleton.filter(function (e) { return 1 == e % 2; });
+            }).to.be.throw(errors.InvalidOperationError);
+          });
+
+          it('should not chaing reduce if reduce has been called', function() {
+            var skeleton = pjs(sourceArray).reduce(function (p, e) {
+              return p + e;
+            }, 1, 0);
+            expect(function () {
+              skeleton.reduce(function (p, e) { return p + e; }, 4, 0);
+            }).to.be.throw(errors.InvalidOperationError);
           });
         });
       });
