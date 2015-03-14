@@ -26,7 +26,7 @@ describe('filter tests', function(){
         it('should return filtered elements in callback', function(done){
           pjs(sourceArray).filter(function(e){
             return 0 === (e % 2);
-          }, function(result) {
+          }).seq(function(result) {
             expect(result).to.have.length(2);
             expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(sourceArray));
             expect(result[0]).to.equal(2);
@@ -39,7 +39,7 @@ describe('filter tests', function(){
         it('should return no elements for empty array in callback', function(done){
           pjs(emptySourceArray).map(function(e){
             return true;
-          }, function(result){
+          }).seq(function(result){
             expect(result).to.have.length(0);
             expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(emptySourceArray));
             done();
@@ -49,7 +49,7 @@ describe('filter tests', function(){
         it('should return no elements if no elements match predicate in callback', function(done){
           pjs(sourceArray).filter(function(e){
             return false;
-          }, function(result) {
+          }).seq(function(result) {
             expect(result).to.have.length(0);
             expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(sourceArray));
             done();
@@ -59,7 +59,7 @@ describe('filter tests', function(){
         it('should return all elements if all elements match predicate in callback', function(done){
           pjs(sourceArray).filter(function(e){
             return true;
-          }, function(result) {
+          }).seq(function(result) {
             expect(result).to.have.length(sourceArray.length);
             expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(sourceArray));
             for (var i = 0; i < sourceArray.length; i += 1) {
@@ -73,7 +73,7 @@ describe('filter tests', function(){
         it('should return filtered elements for single element in callback', function(done){
           pjs(singleElementSourceArray).filter(function(e){
             return true;
-          }, function(result){
+          }).seq(function(result){
             expect(result).to.have.length(singleElementSourceArray.length);
             expect(result[0]).to.equal(singleElementSourceArray[0]);
             expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(singleElementSourceArray));

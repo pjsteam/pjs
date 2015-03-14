@@ -25,7 +25,7 @@ describe('map tests', function(){
         it('should return mapped elements in callback', function(done){
           pjs(sourceArray).map(function(e){
             return e * 2;
-          }, function(result){
+          }).seq(function(result){
             expect(result).to.have.length(sourceArray.length);
             expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(sourceArray));
             for (var i = sourceArray.length - 1; i >= 0; i--) {
@@ -39,7 +39,7 @@ describe('map tests', function(){
         it('should return no elements for empty array in callback', function(done){
           pjs(emptySourceArray).map(function(e){
             return e * 2;
-          }, function(result){
+          }).seq(function(result){
             expect(result).to.have.length(0);
             expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(emptySourceArray));
             done();
@@ -50,7 +50,7 @@ describe('map tests', function(){
         it('should return mapped elements for single element array in callback', function(done){
           pjs(singleElementSourceArray).map(function(e){
             return e * 2;
-          }, function(result){
+          }).seq(function(result){
             expect(result).to.have.length(singleElementSourceArray.length);
             expect(result[0]).to.equal(singleElementSourceArray[0] * 2);
             expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(singleElementSourceArray));

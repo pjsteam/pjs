@@ -1,6 +1,6 @@
 'use strict';
 
-describe.only('chaining tests', function(){
+describe('chaining tests', function(){
 
   var pjs;
   var utils = require('../src/utils.js');
