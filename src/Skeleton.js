@@ -2,7 +2,19 @@ var JobPackager = require('./job_packager');
 var ResultCollector = require('./result_collector');
 var merge_typed_arrays = require('./typed_array_merger');
 var utils = require('./utils');
-var operation_names = require('./operation_names');
+
+var finisher = {
+  map: function (self, result, done) {
+    done(result);
+  },
+  filter: function (self, result, done) {
+    done(result);
+  },
+  reduce: function (self, result, done) {
+    var r = Array.prototype.slice.call(result).reduce(self.code, self.seed);
+    done(r);
+  }
+};
 
 var Skeleton = function (source, parts, workers, operationName, code, seed, identity) {
   this.packager = new JobPackager(parts, source);
@@ -37,7 +49,7 @@ Skeleton.prototype.seq = function (done) {
       return new TypedArrayConstructor(result.value).subarray(0, result.newLength);
     });
     var m = merge_typed_arrays(partial_results);
-    return self.__finish(self, m, done);
+    return finisher[self.operationName](self, m, done);
   });
 
   packs.forEach(function(pack, index){
@@ -47,15 +59,6 @@ Skeleton.prototype.seq = function (done) {
 
     workers[index].postMessage(pack, [ pack.buffer ]);
   });
-};
-
-Skeleton.prototype.__finish = function(self, result, done) {
-  if (self.operationName === operation_names.REDUCE) {
-    var r = Array.prototype.slice.call(result).reduce(self.code, self.seed);
-    done(r);
-  } else {
-    done(result);
-  }
 };
 
 module.exports = Skeleton;
