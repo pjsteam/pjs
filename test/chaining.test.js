@@ -33,9 +33,9 @@ describe('chaining tests', function(){
             expect(skeleton.constructor).to.be.equal(Skeleton);
           });
 
-          it ('sequenced map should return mapped array in callback', function (done) {
+          it('sequenced map should return mapped array in callback', function (done) {
             var wrapped = pjs(sourceArray);
-            wrapped.map(function (e) { return e * 2; }).seq(function (result) {
+            wrapped.map(function (e) { return e * 2; }).seq(function (err, result) {
               expect(result).to.have.length(sourceArray.length);
               expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(sourceArray));
               for (var i = sourceArray.length - 1; i >= 0; i--) {
@@ -49,7 +49,7 @@ describe('chaining tests', function(){
             var wrapped = pjs(sourceArray);
             var mapper1 = function (e) { return e * 2; };
             var mapper2 = function (e) { return e * 3; };
-            wrapped.map(mapper1).map(mapper2).seq(function (result) {
+            wrapped.map(mapper1).map(mapper2).seq(function (err, result) {
               var normalChaining = normalSourceArray.map(mapper1).map(mapper2);
               expect(0 < result.length).to.be.true;
               expect(result).to.have.length(sourceArray.length);
@@ -64,8 +64,8 @@ describe('chaining tests', function(){
           it ('sequenced map-filter should return mapped-and-filtered array in callback', function (done) {
             var wrapped = pjs(sourceArray);
             var mapper = function (e) { return e * 3; };
-            var predicate = function (e) { return 1 == (e % 2); };
-            wrapped.map(mapper).filter(predicate).seq(function (result) {
+            var predicate = function (e) { return 1 === (e % 2); };
+            wrapped.map(mapper).filter(predicate).seq(function (err, result) {
               var normalChaining = normalSourceArray.map(mapper).filter(predicate);
               expect(0 < result.length).to.be.true;
               expect(result).to.have.length(normalChaining.length);
@@ -83,7 +83,7 @@ describe('chaining tests', function(){
             var mapper = function (e) { return e * 2; };
             var seed = 1;
             var identity = 0;
-            wrapped.map(mapper).reduce(reducer, seed, identity).seq(function (result) {
+            wrapped.map(mapper).reduce(reducer, seed, identity).seq(function (err, result) {
               var normalChaining = normalSourceArray.map(mapper).reduce(reducer, seed);
               expect(result).to.equal(normalChaining);
               done();
@@ -94,7 +94,7 @@ describe('chaining tests', function(){
         describe('filter skeleton', function () {
           it ('filter should return Skeleton', function () {
             var wrapped = pjs(sourceArray);
-            var skeleton = wrapped.filter(function (e) {return true; } );
+            var skeleton = wrapped.filter(function () {return true; } );
             expect(skeleton.constructor).to.be.equal(Skeleton);
           });
 
@@ -103,7 +103,7 @@ describe('chaining tests', function(){
             var predicate = function (e) {
               return 1 == (e % 2);
             };
-            wrapped.filter(predicate).seq(function (result) {
+            wrapped.filter(predicate).seq(function (err, result) {
               var normalResult = normalSourceArray.filter(predicate);
               expect(result).to.have.length(normalResult.length);
               expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(sourceArray));
@@ -116,9 +116,9 @@ describe('chaining tests', function(){
 
           it ('sequenced filter-filter should return filtered array in callback', function (done) {
             var wrapped = pjs(sourceArray);
-            var predicate1 = function (e) { return 0 == e % 2; };
-            var predicate2 = function (e) { return 0 == e % 4; };
-            wrapped.filter(predicate1).filter(predicate2).seq(function (result) {
+            var predicate1 = function (e) { return 0 === e % 2; };
+            var predicate2 = function (e) { return 0 === e % 4; };
+            wrapped.filter(predicate1).filter(predicate2).seq(function (err, result) {
               var normalChaining = normalSourceArray.filter(predicate1).filter(predicate2);
               expect(0 < result.length).to.be.true;
               expect(result).to.have.length(normalChaining.length);
@@ -133,8 +133,8 @@ describe('chaining tests', function(){
           it ('sequenced filter-map should return filtered-and-mapped array in callback', function (done) {
             var wrapped = pjs(sourceArray);
             var mapper = function (e) { return e * 3; };
-            var predicate = function (e) { return 1 == (e % 2); };
-            wrapped.filter(predicate).map(mapper).seq(function (result) {
+            var predicate = function (e) { return 1 === (e % 2); };
+            wrapped.filter(predicate).map(mapper).seq(function (err, result) {
               var normalChaining = normalSourceArray.filter(predicate).map(mapper);
               expect(0 < result.length).to.be.true;
               expect(result).to.have.length(normalChaining.length);
@@ -149,10 +149,10 @@ describe('chaining tests', function(){
           it ('sequenced filter-reduce should return filtered-and-reduced element in callback', function (done) {
             var wrapped = pjs(sourceArray);
             var reducer = function (p, e) { return p + e; };
-            var predicate = function (e) { return 1 == (e % 2); };
+            var predicate = function (e) { return 1 === (e % 2); };
             var seed = 1;
             var identity = 0;
-            wrapped.filter(predicate).reduce(reducer, seed, identity).seq(function (result) {
+            wrapped.filter(predicate).reduce(reducer, seed, identity).seq(function (err, result) {
               var normalChaining = normalSourceArray.filter(predicate).reduce(reducer, seed);
               expect(result).to.equal(normalChaining);
               done();
@@ -175,7 +175,7 @@ describe('chaining tests', function(){
             };
             var reducedSource = normalSourceArray.reduce(reducer, seed);
             var wrapped = pjs(sourceArray);
-            wrapped.reduce(reducer, seed, identitiy).seq(function (result) {
+            wrapped.reduce(reducer, seed, identitiy).seq(function (err, result) {
               expect(result).to.equal(reducedSource);
               done();
             });

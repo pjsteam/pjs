@@ -72,7 +72,7 @@ describe('result collector', function(){
   it('should invoke callback when all parts are completed', function () {
     var parts = 3;
     var callback_invoked = false, result;
-    var collector = new Collector(parts, function (res) {
+    var collector = new Collector(parts, function (err, res) {
       callback_invoked = true;
       result = res;
     });

@@ -12,5 +12,9 @@
   "eqnull": true,
   "node": true,
   "expr": true,
-  "browserify": true
+  "browserify": true,
+  "mocha": true,
+  "globals": {
+    "expect": true
+  }
 }

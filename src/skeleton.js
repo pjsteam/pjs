@@ -8,14 +8,14 @@ var errors = require('./errors');
 
 var finisher = {
   map: function (self, result, done) {
-    done(result);
+    done(null, result);
   },
   filter: function (self, result, done) {
-    done(result);
+    done(null, result);
   },
   reduce: function (self, result, done) {
     var r = Array.prototype.slice.call(result).reduce(self.operation.code, self.operation.seed);
-    done(r);
+    done(null, r);
   }
 };
 
@@ -53,7 +53,8 @@ Skeleton.prototype.seq = function (done) {
   var workers = this.workers;
   var TypedArrayConstructor = this.source.constructor;
   var packs = this.packager.generatePackages(this.operations);
-  var collector = new ResultCollector(this.parts, function(results){
+  var collector = new ResultCollector(this.parts, function(err, results){
+    if (err) { return done(err); }
     var partial_results = results.map(function(result){
       return new TypedArrayConstructor(result.value).subarray(0, result.newLength);
     });
@@ -64,6 +65,10 @@ Skeleton.prototype.seq = function (done) {
   packs.forEach(function(pack, index){
     utils.listenOnce(workers[index], 'message', function(event){
       collector.onPart(event.data);
+    });
+
+    utils.listenOnce(workers[index], 'error', function(event){
+      collector.onError(event.message);
     });
 
     workers[index].postMessage(pack, [ pack.buffer ]);
