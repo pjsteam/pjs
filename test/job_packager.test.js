@@ -110,7 +110,8 @@ describe('job packager', function(){
   it('should generate packaged context on all packages', function () {
     ctxPackages.forEach(function (jobPackage) {
       expect(jobPackage.ctx).to.not.be.undefined;
-      expect(jobPackage.ctx.name).to.equal('pjs');
+      var jobCtx = JSON.parse(jobPackage.ctx);
+      expect(jobCtx.name).to.equal('pjs');
     });
   });
 
