@@ -133,10 +133,12 @@ JobPackager.prototype.generatePackages = function (operations, context) {
       throw new errors.InvalidArgumentsError(errors.messages.INVALID_OPERATION);
     }
 
-    var functionString = op.code.toString();
-    var match = functionString.match(FUNCTION_REGEX);
-    var packageCodeArgs = match[1].split(',').map(function (p) { return p.trim(); });
-    var packageCode = match[2];
+    var packageCodeArgs;
+    var packageCode;
+    parseFunction(op.code, function (args, body) {
+      packageCodeArgs = args;
+      packageCode = body;
+    });
 
     return {
       identity: op.identity,
@@ -150,17 +152,57 @@ JobPackager.prototype.generatePackages = function (operations, context) {
   var partitioner = new Partitioner(this.parts);
   var partitionedElements = partitioner.partition(this.elements);
 
+  var ctx = sanitizeContext(context);
+
   return partitionedElements.map(function (partitionedElement, index) {
     return {
       index: index,
       buffer: partitionedElement.buffer,
-      operations:  parsedOperations,
+      operations: parsedOperations,
       elementsType: elementsType,
-      ctx: context
+      ctx: ctx
     };
   });
 };
 
+function parseFunction (code, callback) {  
+  var functionString = code.toString();
+  var match = functionString.match(FUNCTION_REGEX);
+  var args = match[1].split(',').map(function (p) { return p.trim(); });
+  var body = match[2];
+  callback(args, body);
+}
+
+function sanitizeContext (context) {
+  var ctx;
+  if (context) {
+    ctx = {};
+    for (var name in context) {
+      if (context.hasOwnProperty(name)) {
+        ctx[name] = sanitizeContextValue(context[name]);
+      }
+    }
+  }
+  return ctx;
+}
+
+function sanitizeContextValue (value) {
+  if (utils.isFunction(value)) {
+    var packageCodeArgs;
+    var packageCode;
+    parseFunction(value, function (args, body) {
+      packageCodeArgs = args;
+      packageCode = body;
+    });
+    return {
+      isFunction: true,
+      args: packageCodeArgs,
+      code: packageCode
+    };
+  } else { //TODO: (mati) ver que pasa con otros tipos
+    return value;
+  }
+}
 },{"./errors":2,"./operation_names":4,"./typed_array_partitioner":9,"./utils":10}],4:[function(require,module,exports){
 module.exports = {
   MAP: 'map',
@@ -413,6 +455,10 @@ Partitioner.prototype.doPartition = function (array) {
 },{"./errors.js":2,"./utils.js":10}],10:[function(require,module,exports){
 var utils = module.exports = {};
 
+utils.isFunction = function (object) { //http://jsperf.com/alternative-isfunction-implementations
+  return !!(object && object.constructor && object.call && object.apply);
+};
+
 utils.getter = function (obj, name, value) {
   Object.defineProperty(obj, name, {
     enumerable: true,
@@ -556,7 +602,7 @@ var operations = {
 
 module.exports = function(event){
   var pack = event.data;
-  var context = pack.ctx;
+  var context = createContext(pack.ctx);
   var ops = pack.operations;
   var opsLength = ops.length;
 
@@ -599,6 +645,27 @@ function createFunction(args, code) {
   if (3 === args.length) {
     /*jslint evil: true */
     return new Function(args[0], args[1], args[2], code);
+  }
+}
+
+function createContext (context) {
+  var ctx;
+  if (context) {
+    ctx = {};
+    for (var name in context) {
+      if (context.hasOwnProperty(name)) {
+        ctx[name] = createContextValue(context[name]);
+      }
+    }
+  }
+  return ctx;
+}
+
+function createContextValue (value) {
+  if (value && value.isFunction && value.args && value.code) {
+    return createFunction(value.args, value.code);
+  } else {
+    return value;
   }
 }
 },{}],13:[function(require,module,exports){

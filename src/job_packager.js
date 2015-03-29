@@ -34,10 +34,12 @@ JobPackager.prototype.generatePackages = function (operations, context) {
       throw new errors.InvalidArgumentsError(errors.messages.INVALID_OPERATION);
     }
 
-    var functionString = op.code.toString();
-    var match = functionString.match(FUNCTION_REGEX);
-    var packageCodeArgs = match[1].split(',').map(function (p) { return p.trim(); });
-    var packageCode = match[2];
+    var packageCodeArgs;
+    var packageCode;
+    parseFunction(op.code, function (args, body) {
+      packageCodeArgs = args;
+      packageCode = body;
+    });
 
     return {
       identity: op.identity,
@@ -51,13 +53,54 @@ JobPackager.prototype.generatePackages = function (operations, context) {
   var partitioner = new Partitioner(this.parts);
   var partitionedElements = partitioner.partition(this.elements);
 
+  var ctx = sanitizeContext(context);
+
   return partitionedElements.map(function (partitionedElement, index) {
     return {
       index: index,
       buffer: partitionedElement.buffer,
-      operations:  parsedOperations,
+      operations: parsedOperations,
       elementsType: elementsType,
-      ctx: context
+      ctx: ctx
     };
   });
 };
+
+function parseFunction (code, callback) {  
+  var functionString = code.toString();
+  var match = functionString.match(FUNCTION_REGEX);
+  var args = match[1].split(',').map(function (p) { return p.trim(); });
+  var body = match[2];
+  callback(args, body);
+}
+
+function sanitizeContext (context) {
+  var ctx;
+  if (context) {
+    ctx = {};
+    for (var name in context) {
+      if (context.hasOwnProperty(name)) {
+        ctx[name] = sanitizeContextValue(context[name]);
+      }
+    }
+  }
+  return ctx;
+}
+
+function sanitizeContextValue (value) {
+  if (utils.isFunction(value)) {
+    var packageCodeArgs;
+    var packageCode;
+    parseFunction(value, function (args, body) {
+      packageCodeArgs = args;
+      packageCode = body;
+    });
+    return {
+      isFunction: true,
+      args: packageCodeArgs,
+      code: packageCode
+    };
+  } else { //TODO: (mati) ver que pasa con otros tipos
+    return value;
+  }
+}

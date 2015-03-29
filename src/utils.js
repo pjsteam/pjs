@@ -1,5 +1,9 @@
 var utils = module.exports = {};
 
+utils.isFunction = function (object) { //http://jsperf.com/alternative-isfunction-implementations
+  return !!(object && object.constructor && object.call && object.apply);
+};
+
 utils.getter = function (obj, name, value) {
   Object.defineProperty(obj, name, {
     enumerable: true,

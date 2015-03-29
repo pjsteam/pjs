@@ -73,7 +73,7 @@ var operations = {
 
 module.exports = function(event){
   var pack = event.data;
-  var context = pack.ctx;
+  var context = createContext(pack.ctx);
   var ops = pack.operations;
   var opsLength = ops.length;
 
@@ -116,5 +116,26 @@ function createFunction(args, code) {
   if (3 === args.length) {
     /*jslint evil: true */
     return new Function(args[0], args[1], args[2], code);
+  }
+}
+
+function createContext (context) {
+  var ctx;
+  if (context) {
+    ctx = {};
+    for (var name in context) {
+      if (context.hasOwnProperty(name)) {
+        ctx[name] = createContextValue(context[name]);
+      }
+    }
+  }
+  return ctx;
+}
+
+function createContextValue (value) {
+  if (value && value.isFunction && value.args && value.code) {
+    return createFunction(value.args, value.code);
+  } else {
+    return value;
   }
 }

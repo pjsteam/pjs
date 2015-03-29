@@ -1,6 +1,6 @@
 'use strict';
 
-describe('additional context tests', function(){
+describe.only('additional context tests', function(){
 
   var pjs;
   var utils = require('../src/utils.js');
@@ -74,6 +74,75 @@ describe('additional context tests', function(){
           };
           var ctx = {
             max: 0x00000070
+          };
+          var reducedSource = Array.prototype.slice.call(sourceArray).reduce(function (p, e) {
+            return reducer(p, e, ctx);
+          }, seed);
+          var wr = pjs(sourceArray).reduce(reducer, seed, identitiy, ctx);
+          wr.seq(function (result) {
+            expect(result).to.equal(reducedSource);
+            done();
+          });
+        });
+
+        it('should return mapped elements in callback using functions from context', function(done){
+          var mapper = function (e, ctx) {
+            return ctx.shifter(e & ctx.filter);
+          };
+          var ctx = {
+            filter: 0x0000000F,
+            shifter: function (e) {
+              return e << 2;
+            }
+          };
+          pjs(sourceArray).map(mapper, ctx).seq(function(result){
+            expect(result).to.have.length(sourceArray.length);
+            expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(sourceArray));
+            for (var i = sourceArray.length - 1; i >= 0; i--) {
+              expect(result[i]).to.equal(mapper(sourceArray[i], ctx));
+            };
+            done();
+          });
+        });
+
+        it('should return filter elements in callback using functions from context', function(done){
+          var predicate = function (e, ctx) {
+            return ctx.biggerThanMin(e) && ctx.shorterThanMax(e); 
+          }
+          var ctx = {
+            biggerThanMin: function (e) {
+              return 0x0000000a < e;
+            },
+            shorterThanMax: function (e) {
+              return e < 0x00000100;
+            }
+          };
+          pjs(sourceArray).filter(predicate, ctx).seq(function(result){
+            expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(sourceArray));
+            var index = 0;
+            var i = 0;
+            for ( ; index < result.length; index++) {
+              var sourceElement = sourceArray[index];
+              if (predicate(sourceElement, ctx)) {
+                expect(result[i]).to.equal(sourceElement);
+                i++;
+              }
+            }
+            expect(index).to.equal(result.length);
+            done();
+          });
+        });
+
+        it('should return reduced element in callback usign functions from context', function(done) {
+          var seed = 0;
+          var identitiy = 0;
+          var reducer = function (p, e, ctx) {
+            return ctx.minimizer(Math.max(p, e));
+          };
+          var ctx = {
+            minimizer: function (e) {
+              Math.min(e, 0x00000070);
+            }
           };
           var reducedSource = Array.prototype.slice.call(sourceArray).reduce(function (p, e) {
             return reducer(p, e, ctx);
