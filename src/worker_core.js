@@ -41,29 +41,29 @@ var mapFactory = getMapFactory();
 var functionCache = mapFactory();
 
 var operations = {
-  map: function (array, length, f) {
+  map: function (array, length, f, ctx) {
     var i = 0;
     for ( ; i < length; i += 1){
-      array[i] = f(array[i]);
+      array[i] = f(array[i], ctx);
     }
     return length;
   },
-  filter: function (array, length, f) {
+  filter: function (array, length, f, ctx) {
     var i = 0, newLength = 0;
     for ( ; i < length; i += 1){
       var e = array[i];
-      if (f(e)) {
+      if (f(e, ctx)) {
         array[newLength++] = e;
       }
     }
     return newLength;
   },
-  reduce: function (array, length, f, seed) {
+  reduce: function (array, length, f, ctx, seed) {
     var i = 0;
     var reduced = seed;
     for ( ; i < length; i += 1){
       var e = array[i];
-      reduced = f(reduced, e);
+      reduced = f(reduced, e, ctx);
     }
     array[0] = reduced;
     return 1;
@@ -72,6 +72,7 @@ var operations = {
 
 module.exports = function(event){
   var pack = event.data;
+  var context = pack.ctx;
   var ops = pack.operations;
   var opsLength = ops.length;
 
@@ -89,7 +90,7 @@ module.exports = function(event){
       f = createFunction(args, code);
       functionCache[cacheKey] = f;
     }
-    newLength = operations[operation.name](array, newLength, f, seed);
+    newLength = operations[operation.name](array, newLength, f, context, seed);
   }
 
   return {

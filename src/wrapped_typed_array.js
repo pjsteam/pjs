@@ -8,21 +8,21 @@ var WrappedTypedArray = function (source, parts, workers) {
   this.workers = workers;
 };
 
-WrappedTypedArray.prototype.map = function(mapper) {
-  return this.__operation(operation_names.MAP, mapper);
+WrappedTypedArray.prototype.map = function(mapper, context) {
+  return this.__operation(operation_names.MAP, mapper, context);
 };
 
-WrappedTypedArray.prototype.filter = function(predicate) {
-  return this.__operation(operation_names.FILTER, predicate);
+WrappedTypedArray.prototype.filter = function(predicate, context) {
+  return this.__operation(operation_names.FILTER, predicate, context);
 };
 
-WrappedTypedArray.prototype.reduce = function(reducer, seed, identity) {
-  return this.__operation(operation_names.REDUCE, reducer, seed, identity);
+WrappedTypedArray.prototype.reduce = function(reducer, seed, identity, context) {
+  return this.__operation(operation_names.REDUCE, reducer, context, seed, identity);
 };
 
-WrappedTypedArray.prototype.__operation = function(name, reducer, seed, identity) {
-  var operation = operation_packager(name, reducer, seed, identity);
-  return new Skeleton(this.source, this.parts, this.workers, operation);
+WrappedTypedArray.prototype.__operation = function(name, code, context, seed, identity) {
+  var operation = operation_packager(name, code, seed, identity);
+  return new Skeleton(this.source, this.parts, this.workers, operation, context);
 };
 
 module.exports = WrappedTypedArray;

@@ -20,7 +20,7 @@ var JobPackager = module.exports = function (parts, elements) {
   this.elements = elements;
 };
 
-JobPackager.prototype.generatePackages = function (operations) {
+JobPackager.prototype.generatePackages = function (operations, context) {
   if (!(operations && operations.length)){
     throw new errors.InvalidArgumentsError(errors.messages.INVALID_OPERATIONS);
   }
@@ -56,7 +56,8 @@ JobPackager.prototype.generatePackages = function (operations) {
       index: index,
       buffer: partitionedElement.buffer,
       operations:  parsedOperations,
-      elementsType: elementsType
+      elementsType: elementsType,
+      ctx: context
     };
   });
 };
