@@ -14,7 +14,18 @@ var finisher = {
     done(result);
   },
   reduce: function (self, result, done) {
-    var r = Array.prototype.slice.call(result).reduce(self.operation.code, self.operation.seed);
+    var r;
+    var context = self.context;
+    var operation = self.operation;
+    var code = operation.code;
+    var seed = operation.seed;
+    if (!context) {
+      r = Array.prototype.slice.call(result).reduce(code, seed);
+    } else {
+      r = Array.prototype.slice.call(result).reduce(function (p, e) {
+        return code(p, e, context);
+      }, seed);
+    }
     done(r);
   }
 };
@@ -69,7 +80,6 @@ Skeleton.prototype.seq = function (done) {
     utils.listenOnce(workers[index], 'message', function(event){
       collector.onPart(event.data);
     });
-
     workers[index].postMessage(pack, [ pack.buffer ]);
   });
 };

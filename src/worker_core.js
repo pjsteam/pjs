@@ -59,6 +59,7 @@ var operations = {
     return newLength;
   },
   reduce: function (array, length, f, ctx, seed) {
+    console.log('ww - reduce');
     var i = 0;
     var reduced = seed;
     for ( ; i < length; i += 1){
@@ -111,5 +112,9 @@ function createFunction(args, code) {
   if (2 === args.length) {
     /*jslint evil: true */
     return new Function(args[0], args[1], code);
+  }
+  if (3 === args.length) {
+    /*jslint evil: true */
+    return new Function(args[0], args[1], args[2], code);
   }
 }
