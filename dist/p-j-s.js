@@ -153,14 +153,14 @@ JobPackager.prototype.generatePackages = function (operations, context) {
   var partitionedElements = partitioner.partition(this.elements);
 
   var ctx = sanitizeContext(context);
-
+  var strfyCtx = JSON.stringify(ctx);
   return partitionedElements.map(function (partitionedElement, index) {
     return {
       index: index,
       buffer: partitionedElement.buffer,
       operations: parsedOperations,
       elementsType: elementsType,
-      ctx: ctx
+      ctx: strfyCtx
     };
   });
 };
@@ -634,23 +634,15 @@ module.exports = function(event){
 };
 
 function createFunction(args, code) {
-  if (1 === args.length) {
-    /*jslint evil: true */
-    return new Function(args[0], code);
-  }
-  if (2 === args.length) {
-    /*jslint evil: true */
-    return new Function(args[0], args[1], code);
-  }
-  if (3 === args.length) {
-    /*jslint evil: true */
-    return new Function(args[0], args[1], args[2], code);
-  }
+  var fArgs = new Array(args);
+  fArgs.push(code);
+  return Function.prototype.constructor.apply(null, fArgs);
 }
 
 function createContext (context) {
   var ctx;
   if (context) {
+    context = JSON.parse(context);
     ctx = {};
     for (var name in context) {
       if (context.hasOwnProperty(name)) {

@@ -54,14 +54,14 @@ JobPackager.prototype.generatePackages = function (operations, context) {
   var partitionedElements = partitioner.partition(this.elements);
 
   var ctx = sanitizeContext(context);
-
+  var strfyCtx = JSON.stringify(ctx);
   return partitionedElements.map(function (partitionedElement, index) {
     return {
       index: index,
       buffer: partitionedElement.buffer,
       operations: parsedOperations,
       elementsType: elementsType,
-      ctx: ctx
+      ctx: strfyCtx
     };
   });
 };

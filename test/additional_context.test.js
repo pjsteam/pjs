@@ -1,6 +1,6 @@
 'use strict';
 
-describe.only('additional context tests', function(){
+describe('additional context tests', function(){
 
   var pjs;
   var utils = require('../src/utils.js');

@@ -113,6 +113,7 @@ function createFunction(args, code) {
 function createContext (context) {
   var ctx;
   if (context) {
+    context = JSON.parse(context);
     ctx = {};
     for (var name in context) {
       if (context.hasOwnProperty(name)) {
