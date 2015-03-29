@@ -153,6 +153,43 @@ describe.only('additional context tests', function(){
             done();
           });
         });
+
+        it('should merge context', function(done){
+          var mapper = function (e, ctx) {
+            return ctx.shifter(e & ctx.filter);
+          };
+          var mapCtx = {
+            filter: 0x0000000F,
+            shifter: function (e) {
+              return e << 2;
+            }
+          };
+
+          var predicate = function (e, ctx) {
+            var red = e & ctx.redMask;
+            return ctx.redValidator(red);
+          };
+          var filterCtx = {
+            redMask: 0x000000FF,
+            redValidator: function (e) {
+              return e < 0x00000010;
+            }
+          };
+
+          pjs(sourceArray).map(mapper, mapCtx).filter(predicate, filterCtx).seq(function(result){
+            expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(sourceArray));
+            var trasformedSource = Array.prototype.slice.call(sourceArray).map(function (e) {
+              return mapper(e, mapCtx);
+            }).filter(function (e) {
+              return predicate(e, filterCtx);
+            });
+            for (var i = 0; i < trasformedSource.length; i++) {
+              expect(result[i]).to.equal(trasformedSource[i]);
+            }
+            done();
+          });
+        });
+
       });
     });
 });
