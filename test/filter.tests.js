@@ -27,6 +27,7 @@ describe('filter tests', function(){
           pjs(sourceArray).filter(function(e){
             return 0 === (e % 2);
           }).seq(function(err, result) {
+            if (err) { return done(err); }
             expect(result).to.have.length(2);
             expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(sourceArray));
             expect(result[0]).to.equal(2);
@@ -40,6 +41,7 @@ describe('filter tests', function(){
           pjs(emptySourceArray).map(function(e){
             return true;
           }).seq(function(err, result){
+            if (err) { return done(err); }
             expect(result).to.have.length(0);
             expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(emptySourceArray));
             done();
@@ -50,6 +52,7 @@ describe('filter tests', function(){
           pjs(sourceArray).filter(function(e){
             return false;
           }).seq(function(err, result) {
+            if (err) { return done(err); }
             expect(result).to.have.length(0);
             expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(sourceArray));
             done();
@@ -60,6 +63,7 @@ describe('filter tests', function(){
           pjs(sourceArray).filter(function(e){
             return true;
           }).seq(function(err, result) {
+            if (err) { return done(err); }
             expect(result).to.have.length(sourceArray.length);
             expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(sourceArray));
             for (var i = 0; i < sourceArray.length; i += 1) {
@@ -74,6 +78,7 @@ describe('filter tests', function(){
           pjs(singleElementSourceArray).filter(function(e){
             return true;
           }).seq(function(err, result){
+            if (err) { return done(err); }
             expect(result).to.have.length(singleElementSourceArray.length);
             expect(result[0]).to.equal(singleElementSourceArray[0]);
             expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(singleElementSourceArray));

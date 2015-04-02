@@ -32,9 +32,7 @@ describe('reduce tests', function(){
           var reducedSource = normalArray.reduce(reducer, seed);
 
           pjs(sourceArray).reduce(reducer, seed, identitiy).seq(function(err, result) {
-            if (err) {
-              return done(err);
-            }
+            if (err) { return done(err); }
             expect(result).to.equal(reducedSource);
             done();
           });
@@ -45,9 +43,7 @@ describe('reduce tests', function(){
           var normalArray = [];
           var sourceArray = new TypedArray(normalArray);
           pjs(sourceArray).reduce(reducer, seed, identitiy).seq(function(err, result){
-            if (err) {
-              return done(err);
-            }
+            if (err) { return done(err); }
             expect(result).to.equal(seed);
             done();
           });
@@ -59,9 +55,7 @@ describe('reduce tests', function(){
           var sourceArray = new TypedArray(normalArray);
           var reducedSource = normalArray.reduce(reducer, seed);
           pjs(sourceArray).reduce(reducer, seed, identitiy).seq(function(err, result){
-            if (err) {
-              return done(err);
-            }
+            if (err) { return done(err); }
             expect(result).to.equal(reducedSource);
             done();
           });
