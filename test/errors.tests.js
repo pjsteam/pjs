@@ -3,17 +3,19 @@
 var chromeVersion = parseInt(window.navigator.appVersion.match(/Chrome\/(\d+)\./)[1], 10);
 
 if(chromeVersion && chromeVersion > 39){
-  describe('error tests', function(){
+  describe.only('error tests', function(){
 
     var pjs;
 
     beforeEach(function () {
       pjs = require('../src/index.js');
+      console.log('init');
       pjs.init({maxWorkers:4});
     });
 
     afterEach(function(){
       if (pjs.config){
+        console.log('terminate');
         pjs.terminate();
       }
     });

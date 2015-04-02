@@ -25,7 +25,7 @@ var finisher = {
         return code(p, e, context);
       }, seed);
     }
-    done(r);
+    done(null, r);
   }
 };
 
@@ -41,14 +41,14 @@ var Chain = function (source, parts, workers, operation, context, previousOperat
   this.operations = previousOperations;
 };
 
-Chain.prototype.map = function (mapper) {
+Chain.prototype.map = function (mapper, context) {
   this.__verifyPreviousOperation();
   var expandedContext = this.__expandContext(context);
   var operation = operation_packager(operation_names.MAP, mapper);
   return new Chain(this.source, this.parts, this.workers, operation, expandedContext, this.operations);
 };
 
-Chain.prototype.filter = function (predicate) {
+Chain.prototype.filter = function (predicate, context) {
   this.__verifyPreviousOperation();
   var expandedContext = this.__expandContext(context);
   var operation = operation_packager(operation_names.FILTER, predicate);
