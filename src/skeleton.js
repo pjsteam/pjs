@@ -44,23 +44,23 @@ var Skeleton = function (source, parts, workers, operation, context, previousOpe
 
 Skeleton.prototype.map = function (mapper, context) {
   this.__verifyPreviousOperation();
-  this.__expandContext(context);
+  var expandedContext = this.__expandContext(context);
   var operation = operation_packager(operation_names.MAP, mapper);
-  return new Skeleton(this.source, this.parts, this.workers, operation, this.context, this.operations);
+  return new Skeleton(this.source, this.parts, this.workers, operation, expandedContext, this.operations);
 };
 
 Skeleton.prototype.filter = function (predicate, context) {
   this.__verifyPreviousOperation();
-  this.__expandContext(context);
+  var expandedContext = this.__expandContext(context);
   var operation = operation_packager(operation_names.FILTER, predicate);
-  return new Skeleton(this.source, this.parts, this.workers, operation, this.context, this.operations);
+  return new Skeleton(this.source, this.parts, this.workers, operation, expandedContext, this.operations);
 };
 
 Skeleton.prototype.reduce = function (predicate, seed, identity, context) {
   this.__verifyPreviousOperation();
-  this.__expandContext(context);
+  var expandedContext = this.__expandContext(context);
   var operation = operation_packager(operation_names.REDUCE, predicate, seed, identity);
-  return new Skeleton(this.source, this.parts, this.workers, operation, this.context, this.operations);
+  return new Skeleton(this.source, this.parts, this.workers, operation, expandedContext, this.operations);
 };
 
 Skeleton.prototype.seq = function (done) {
@@ -99,11 +99,11 @@ Skeleton.prototype.__expandContext = function (context) {
           ctx[name] = context[name];
         }
       }
-    } else {
-      ctx = context;
+      return ctx;
     }
-    this.context = ctx;
+    return context;
   }
+  return this.context;
 };
 
 module.exports = Skeleton;

@@ -1,5 +1,7 @@
 var utils = module.exports = {};
 
+var FUNCTION_REGEX = /^function[^(]*\(([^)]*)\)[^{]*\{([\s\S]*)\}$/;
+
 utils.isFunction = function (object) { //http://jsperf.com/alternative-isfunction-implementations
   return !!(object && object.constructor && object.call && object.apply);
 };
@@ -59,4 +61,12 @@ utils.listenOnce = function(eventSource, eventName, callback){
     event.target.removeEventListener(eventName, messageHandler);
     return callback(event);
   });
+};
+
+utils.parseFunction = function (code, callback) {  
+  var functionString = code.toString();
+  var match = functionString.match(FUNCTION_REGEX);
+  var args = match[1].split(',').map(function (p) { return p.trim(); });
+  var body = match[2];
+  callback(args, body);
 };
