@@ -67,3 +67,10 @@ utils.format = function (template) {
   }
   return current;
 };
+
+utils.listenOnce = function(eventSource, eventName, callback){
+  eventSource.addEventListener(eventName, function messageHandler(event){
+    event.target.removeEventListener(eventName, messageHandler);
+    return callback(event);
+  });
+};
