@@ -1,6 +1,6 @@
 'use strict';
 
-describe.only('context tests', function(){
+describe('context tests', function(){
   var context = require('../src/context');
 
   describe('serialize', function(){
@@ -103,6 +103,104 @@ describe.only('context tests', function(){
       expect(serialized.l1.l2.h.args).to.have.length(2);
       expect(serialized.l1.l2.h.args[0]).to.equal('a');
       expect(serialized.l1.l2.h.args[1]).to.equal('b');
+    });
+  });
+
+  describe('deserialize', function(){
+    it('should work on object with only one property number', function(){
+      var deserialized = context.deserializeFunctions({
+        prop: 10
+      });
+
+      expect(deserialized.prop).to.equal(10);
+    });
+
+    it('should work on object with only one property of type array', function(){
+      var deserialized = context.deserializeFunctions({
+        prop: [ 1,2,3 ],
+      });
+
+      expect(deserialized.prop).to.have.length(3);
+      expect(deserialized.prop[0]).to.equal(1);
+      expect(deserialized.prop[1]).to.equal(2);
+      expect(deserialized.prop[2]).to.equal(3);
+    });
+
+    it('should work on object with only one property function', function(){
+      var deserialized = context.deserializeFunctions({
+        f: {
+          __isFunction: true,
+          args: [ 'a', 'b', 'c' ],
+          code: ' return a + b * c'
+        }
+      });
+
+      expect(deserialized.f(1,2,3), 7);
+    });
+
+    it('should work on object with many properties', function(){
+      var deserialized = context.deserializeFunctions({
+        val: 10,
+        items: [ 1,2,3 ],
+        f: {
+          __isFunction: true,
+          args: [ 'a', 'b', 'c' ],
+          code: ' return a + b * c'
+        }
+      });
+
+      expect(deserialized.val).to.equal(10);
+
+      expect(deserialized.items).to.have.length(3);
+      expect(deserialized.items[0]).to.equal(1);
+      expect(deserialized.items[1]).to.equal(2);
+      expect(deserialized.items[2]).to.equal(3);
+
+      expect(deserialized.f(1,2,3), 7);
+    });
+
+    it ('should work with nested properties', function(){
+      var deserialized = context.deserializeFunctions({
+        l1: {
+          items: [ 1, 2, 3]
+        },
+        val: 10
+      });
+
+      expect(deserialized.val).to.equal(10);
+
+      expect(deserialized.l1.items).to.have.length(3);
+      expect(deserialized.l1.items[0]).to.equal(1);
+      expect(deserialized.l1.items[1]).to.equal(2);
+      expect(deserialized.l1.items[2]).to.equal(3);
+    });
+
+    it('should work with nested functions', function(){
+      var deserialized = context.deserializeFunctions({
+        l1: {
+          l2: {
+            h: {
+              __isFunction: true,
+              args: [ 'a', 'b' ],
+              code: ' return a / b'
+            }
+          },
+          g: {
+            __isFunction: true,
+            args: [ 'a', 'b' ],
+            code: ' return a * b'
+          }
+        },
+        f: {
+          __isFunction: true,
+          args: [ 'a', 'b', 'c' ],
+          code: ' return a + b / c'
+        }
+      });
+
+      expect(deserialized.f(8, 4, 2)).to.equal(10);
+      expect(deserialized.l1.g(3, 7)).to.equal(21);
+      expect(deserialized.l1.l2.h(1, 4)).to.equal(0.25);
     });
   });
 });
