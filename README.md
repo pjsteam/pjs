@@ -19,9 +19,9 @@ pjs(new Uint32Array([1,2,3,4]))
   return e % 2 === 0;
 }).map(function(e){
   return e * 2;
-}).seq(function(result){
+}).seq(function(err, result){
     // result is [4,8] a new Uint32Array
-    
+
     // if we are not using the library any more cleanup once we are done
     pjs.terminate();
 });
@@ -94,7 +94,7 @@ __Example__
 ```js
 pjs(new Uint32Array([1,2,3,4])).map(function(e){
     return e * 2;
-}).seq(function(result){
+}).seq(function(err, result){
     // result is a Uint32Array with values [2,4,6,8]
 });
 ```
@@ -114,7 +114,7 @@ __Example__
 ```js
 pjs(new Uint32Array([1,2,3,4])).filter(function(e){
     return e % 2 === 0;
-}).seq(function(result){
+}).seq(function(err, result){
     // result is a Uint32Array with values [2,4]
 });
 ```
@@ -138,7 +138,7 @@ __Example__
 ```js
 pjs(new Uint32Array([1,2,3,4])).reduce(function(current, element){
     return current * element;
-}, 5, 1).seq(function(result){
+}, 5, 1).seq(function(err, result){
     // result is 5! => 120
 });
 ```
@@ -167,7 +167,7 @@ var skeleton = pjs(new Uint32Array([1,2,3,4])).filter(function(e){
 
 skeleton.map(function(e){
     return e * 3;
-}).seq(function(result){
+}).seq(function(err, result){
     // result is a Uint32Array with values [6,12]
 });
 ```
@@ -195,7 +195,7 @@ var skeleton = pjs(new Uint32Array([1,2,3,4])).map(function(e){
 
 skeleton.filter(function(e){
     return e < 4;
-}).seq(function(result){
+}).seq(function(err, result){
     // result is a Uint32Array with values [2]
 });
 ```
@@ -223,15 +223,17 @@ var skeleton = pjs(new Uint32Array([1,2,4])).map(function(e){
 
 skeleton.reduce(function(current, element){
     return current + element;
-}, 1, 0).seq(function(result){
+}, 1, 0).seq(function(err, result){
     // result is 15
 });
 ```
 
-### `Skeleton.prototype.seq(done)`
-Executes all operations in the `Skeleton` asynchronously. When the result is available `done` is invoked.
+### `Skeleton.prototype.seq(err, done)`
+Executes all operations in the `Skeleton` asynchronously. When the result is available or an error occurs `done` is invoked.
 
-* `done(result)` - the function invoked passing the `result` of the asynchronous computation when it is completed.
+* `done(err, result)` - the function invoked passing the `result` of the asynchronous computation when it is completed.
+  * `err` - If an error ocurred, it contains the error message.
+  * `result` - The result of the skeleton's asynchronous computation.
 
 __Parameters__
 ```js
@@ -243,7 +245,7 @@ skeleton.filter(function(e){
   return e < 8;
 }).reduce(function(c, e){
   return c + e
-}, 0, 0).seq(function(result){
+}, 0, 0).seq(function(err, result){
   // result is 12
 });
 ```

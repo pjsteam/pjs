@@ -1,21 +1,20 @@
 var JobPackager = require('./job_packager');
 var ResultCollector = require('./result_collector');
 var merge_typed_arrays = require('./typed_array_merger');
-var utils = require('./utils');
 var operation_names = require('./operation_names');
 var operation_packager = require('./operation_packager');
 var errors = require('./errors');
 
 var finisher = {
   map: function (self, result, done) {
-    done(result);
+    done(null, result);
   },
   filter: function (self, result, done) {
-    done(result);
+    done(null, result);
   },
   reduce: function (self, result, done) {
     var r = Array.prototype.slice.call(result).reduce(self.operation.code, self.operation.seed);
-    done(r);
+    done(null, r);
   }
 };
 
@@ -53,7 +52,8 @@ Skeleton.prototype.seq = function (done) {
   var workers = this.workers;
   var TypedArrayConstructor = this.source.constructor;
   var packs = this.packager.generatePackages(this.operations);
-  var collector = new ResultCollector(this.parts, function(results){
+  var collector = new ResultCollector(this.parts, function(err, results){
+    if (err) { return done(err); }
     var partial_results = results.map(function(result){
       return new TypedArrayConstructor(result.value).subarray(0, result.newLength);
     });
@@ -62,9 +62,20 @@ Skeleton.prototype.seq = function (done) {
   });
 
   packs.forEach(function(pack, index){
-    utils.listenOnce(workers[index], 'message', function(event){
-      collector.onPart(event.data);
-    });
+    var onMessageHandler = function (event){
+      event.target.removeEventListener('error', onErrorHandler);
+      event.target.removeEventListener('message', onMessageHandler);
+      return collector.onPart(event.data);
+    };
+
+    var onErrorHandler = function (event){
+      event.target.removeEventListener('error', onErrorHandler);
+      event.target.removeEventListener('message', onMessageHandler);
+      return collector.onError(event.message);
+    };
+
+    workers[index].addEventListener('error', onErrorHandler);
+    workers[index].addEventListener('message', onMessageHandler);
 
     workers[index].postMessage(pack, [ pack.buffer ]);
   });

@@ -72,7 +72,7 @@ describe('result collector', function(){
   it('should invoke callback when all parts are completed', function () {
     var parts = 3;
     var callback_invoked = false, result;
-    var collector = new Collector(parts, function (res) {
+    var collector = new Collector(parts, function (err, res) {
       callback_invoked = true;
       result = res;
     });
@@ -92,5 +92,65 @@ describe('result collector', function(){
     expect(result[1].value[1]).to.equal(3);
     expect(result[2].value[0]).to.equal(4);
     expect(result[2].value[1]).to.equal(5);
+  });
+
+  it('should invoke callback when all parts are completed if first has error', function () {
+    var parts = 3;
+    var callback_invoked = false, error;
+    var collector = new Collector(parts, function (err) {
+      callback_invoked = true;
+      error = err;
+    });
+
+    collector.onError('Failed');
+    expect(callback_invoked).to.equal(false);
+
+    collector.onPart({index: 1, value: new Uint8Array([0,1])});
+    expect(callback_invoked).to.equal(false);
+
+    collector.onPart({index: 2, value: new Uint8Array([2,3])});
+    expect(callback_invoked).to.equal(true);
+
+    expect(error).to.equal('Failed');
+  });
+
+  it('should invoke callback when all parts are completed if middle has error', function () {
+    var parts = 3;
+    var callback_invoked = false, error;
+    var collector = new Collector(parts, function (err) {
+      callback_invoked = true;
+      error = err;
+    });
+
+    collector.onPart({index: 0, value: new Uint8Array([0,1])});
+    expect(callback_invoked).to.equal(false);
+
+    collector.onError('Failed');
+    expect(callback_invoked).to.equal(false);
+
+    collector.onPart({index: 2, value: new Uint8Array([2,3])});
+    expect(callback_invoked).to.equal(true);
+
+    expect(error).to.equal('Failed');
+  });
+
+  it('should invoke callback when all parts are completed if last has error', function () {
+    var parts = 3;
+    var callback_invoked = false, error;
+    var collector = new Collector(parts, function (err) {
+      callback_invoked = true;
+      error = err;
+    });
+
+    collector.onPart({index: 0, value: new Uint8Array([0,1])});
+    expect(callback_invoked).to.equal(false);
+
+    collector.onPart({index: 1, value: new Uint8Array([2,3])});
+    expect(callback_invoked).to.equal(false);
+
+    collector.onError('Failed');
+    expect(callback_invoked).to.equal(true);
+
+    expect(error).to.equal('Failed');
   });
 });
