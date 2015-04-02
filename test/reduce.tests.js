@@ -5,12 +5,12 @@ describe('reduce tests', function(){
   var pjs;
   var utils = require('../src/utils.js');
 
-  beforeEach(function () {
+  before(function () {
     pjs = require('../src/index.js');
     pjs.init({maxWorkers:4});
   });
 
-  afterEach(function(){
+  after(function(){
     if (pjs.config){
       pjs.terminate();
     }
@@ -32,6 +32,7 @@ describe('reduce tests', function(){
           var reducedSource = normalArray.reduce(reducer, seed);
 
           pjs(sourceArray).reduce(reducer, seed, identitiy).seq(function(err, result) {
+            if (err) { return done(err); }
             expect(result).to.equal(reducedSource);
             done();
           });
@@ -42,6 +43,7 @@ describe('reduce tests', function(){
           var normalArray = [];
           var sourceArray = new TypedArray(normalArray);
           pjs(sourceArray).reduce(reducer, seed, identitiy).seq(function(err, result){
+            if (err) { return done(err); }
             expect(result).to.equal(seed);
             done();
           });
@@ -53,6 +55,7 @@ describe('reduce tests', function(){
           var sourceArray = new TypedArray(normalArray);
           var reducedSource = normalArray.reduce(reducer, seed);
           pjs(sourceArray).reduce(reducer, seed, identitiy).seq(function(err, result){
+            if (err) { return done(err); }
             expect(result).to.equal(reducedSource);
             done();
           });

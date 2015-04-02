@@ -7,12 +7,12 @@ if(chromeVersion && chromeVersion > 39){
 
     var pjs;
 
-    beforeEach(function () {
+    before(function () {
       pjs = require('../src/index.js');
       pjs.init({maxWorkers:4});
     });
 
-    afterEach(function(){
+    after(function(){
       if (pjs.config){
         pjs.terminate();
       }
