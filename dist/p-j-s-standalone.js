@@ -270,38 +270,58 @@ var Collector = module.exports = function (parts, cb) {
   this.parts = parts;
   this.collected = new Array(parts);
   this.completed = 0;
+  this.error = null;
+};
+
+Collector.prototype.onError = function(message){
+  if (!this.error){
+    this.error = message;
+  }
+  this.updateCompleted();
 };
 
 Collector.prototype.onPart = function (data){
+  if (this.error) {
+    // we don't care about succesful results if an error ocurred
+    return this.updateCompleted();
+  }
+
   if (this.collected[data.index]) {
     throw new errors.InvalidArgumentsError(
       utils.format(errors.messages.PART_ALREADY_COLLECTED, data.index));
   }
 
   this.collected[data.index] = {value: data.value, newLength: data.newLength} ;
-  if (++this.completed === this.parts) {
-    return this.cb(this.collected);
+  this.updateCompleted();
+};
+
+Collector.prototype.updateCompleted = function(){
+  if (++this.completed === this.parts){
+    if (this.error) {
+      return this.cb(this.error);
+    }
+
+    return this.cb(null, this.collected);
   }
 };
 },{"./errors.js":2,"./utils.js":11}],8:[function(require,module,exports){
 var JobPackager = require('./job_packager');
 var ResultCollector = require('./result_collector');
 var merge_typed_arrays = require('./typed_array_merger');
-var utils = require('./utils');
 var operation_names = require('./operation_names');
 var operation_packager = require('./operation_packager');
 var errors = require('./errors');
 
 var finisher = {
   map: function (self, result, done) {
-    done(result);
+    done(null, result);
   },
   filter: function (self, result, done) {
-    done(result);
+    done(null, result);
   },
   reduce: function (self, result, done) {
     var r = Array.prototype.slice.call(result).reduce(self.operation.code, self.operation.seed);
-    done(r);
+    done(null, r);
   }
 };
 
@@ -339,7 +359,8 @@ Skeleton.prototype.seq = function (done) {
   var workers = this.workers;
   var TypedArrayConstructor = this.source.constructor;
   var packs = this.packager.generatePackages(this.operations);
-  var collector = new ResultCollector(this.parts, function(results){
+  var collector = new ResultCollector(this.parts, function(err, results){
+    if (err) { return done(err); }
     var partial_results = results.map(function(result){
       return new TypedArrayConstructor(result.value).subarray(0, result.newLength);
     });
@@ -348,9 +369,20 @@ Skeleton.prototype.seq = function (done) {
   });
 
   packs.forEach(function(pack, index){
-    utils.listenOnce(workers[index], 'message', function(event){
-      collector.onPart(event.data);
-    });
+    var onMessageHandler = function (event){
+      event.target.removeEventListener('error', onErrorHandler);
+      event.target.removeEventListener('message', onMessageHandler);
+      return collector.onPart(event.data);
+    };
+
+    var onErrorHandler = function (event){
+      event.target.removeEventListener('error', onErrorHandler);
+      event.target.removeEventListener('message', onMessageHandler);
+      return collector.onError(event.message);
+    };
+
+    workers[index].addEventListener('error', onErrorHandler);
+    workers[index].addEventListener('message', onMessageHandler);
 
     workers[index].postMessage(pack, [ pack.buffer ]);
   });
@@ -363,7 +395,7 @@ Skeleton.prototype.__verifyPreviousOperation = function () {
 };
 
 module.exports = Skeleton;
-},{"./errors":2,"./job_packager":4,"./operation_names":5,"./operation_packager":6,"./result_collector":7,"./typed_array_merger":9,"./utils":11}],9:[function(require,module,exports){
+},{"./errors":2,"./job_packager":4,"./operation_names":5,"./operation_packager":6,"./result_collector":7,"./typed_array_merger":9}],9:[function(require,module,exports){
 var errors = require('./errors.js');
 
 module.exports = function merge(arrays){
@@ -490,14 +522,6 @@ utils.format = function (template) {
   }
   return current;
 };
-
-utils.listenOnce = function(eventSource, eventName, callback){
-  eventSource.addEventListener(eventName, function messageHandler(event){
-    event.target.removeEventListener(eventName, messageHandler);
-    return callback(event);
-  });
-};
-
 },{}],12:[function(require,module,exports){
 var worker_core = require('./worker_core');
 
