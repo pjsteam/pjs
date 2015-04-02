@@ -7,8 +7,6 @@ operation_names = Object.keys(operation_names).map(function (k) {
   return operation_names[k];
 });
 
-var FUNCTION_REGEX = /^function[^(]*\(([^)]*)\)[^{]*\{([\s\S]*)\}$/;
-
 var JobPackager = module.exports = function (parts, elements) {
   if (!parts) {
     throw new errors.InvalidArgumentsError(errors.messages.INVALID_PARTS);
@@ -34,15 +32,12 @@ JobPackager.prototype.generatePackages = function (operations) {
       throw new errors.InvalidArgumentsError(errors.messages.INVALID_OPERATION);
     }
 
-    var functionString = op.code.toString();
-    var match = functionString.match(FUNCTION_REGEX);
-    var packageCodeArgs = match[1].split(',').map(function (p) { return p.trim(); });
-    var packageCode = match[2];
+    var parsed = utils.parseFunction(op.code.toString());
 
     return {
       identity: op.identity,
-      args: packageCodeArgs,
-      code: packageCode,
+      args: parsed.args,
+      code: parsed.body,
       name: op.name
     };
   });
