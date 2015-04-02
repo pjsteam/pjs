@@ -78,7 +78,7 @@ describe('chain context tests', function() {
     it ('should should generate a sibling chain from second chain', function () {
       var thirdContextBis = {
         maximize: function (e) {
-          return Math.min(e, 4);
+          return Math.max(e, 4);
         }
       }
       var thirdChainBis = contextUtils.extendChainContext(thirdContextBis, secondChain);
