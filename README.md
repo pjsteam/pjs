@@ -80,7 +80,7 @@ pjs.terminate();
 
 <a name="wrapped_typed_array"></a>
 ### `WrappedTypedArray.prototype.map(mapper)`
-Creates a new [`Skeleton`](#skeleton) whose first operation is a `map` with the specified `mapper` and returns it.
+Creates a new [`Chain`](#chain) whose first operation is a `map` with the specified `mapper` and returns it.
 
 __Parameters__
 
@@ -88,7 +88,7 @@ __Parameters__
 
 __Returns__
 
-Returns a [`Skeleton`](#skeleton) whose first operation is a `map` with the specified `mapper`.
+Returns a [`Chain`](#chain) whose first operation is a `map` with the specified `mapper`.
 
 __Example__
 ```js
@@ -100,7 +100,7 @@ pjs(new Uint32Array([1,2,3,4])).map(function(e){
 ```
 
 ### `WrappedTypedArray.prototype.filter(predicate)`
-Creates a new [`Skeleton`](#skeleton) whose first operation is a `filter` with the specified predicate and returns it.
+Creates a new [`Chain`](#chain) whose first operation is a `filter` with the specified predicate and returns it.
 
 __Parameters__
 
@@ -108,7 +108,7 @@ __Parameters__
 
 __Returns__
 
-Returns a [`Skeleton`](#skeleton) whose first operation is a `filter` with the specified `predicate`.
+Returns a [`Chain`](#chain) whose first operation is a `filter` with the specified `predicate`.
 
 __Example__
 ```js
@@ -120,7 +120,7 @@ pjs(new Uint32Array([1,2,3,4])).filter(function(e){
 ```
 
 ### `WrappedTypedArray.prototype.reduce(reducer, seed, identity)`
-Creates a new [`Skeleton`](#skeleton) whose first (and last) operation is a `reduce` with the specified `seed` and `identity` and returns it.
+Creates a new [`Chain`](#chain) whose first (and last) operation is a `reduce` with the specified `seed` and `identity` and returns it.
 
 __Parameters__
 
@@ -132,7 +132,7 @@ __Parameters__
 
 __Returns__
 
-Returns a [`Skeleton`](#skeleton) whose first (and last) operation is a `reduce` with the specified `seed` and `identity`.
+Returns a [`Chain`](#chain) whose first (and last) operation is a `reduce` with the specified `seed` and `identity`.
 
 __Example__
 ```js
@@ -143,13 +143,13 @@ pjs(new Uint32Array([1,2,3,4])).reduce(function(current, element){
 });
 ```
 
-<a name="skeleton"></a>
-### `Skeleton.prototype.map(mapper)`
-Adds a `map` operation with the provided `mapper` to the `Skeleton`. Returns the same `Skeleton` instance.
+<a name="chain"></a>
+### `Chain.prototype.map(mapper)`
+Adds a `map` operation with the provided `mapper` to the `Chain`. Returns the same `Chain` instance.
 
 __Precondition__
 
-* `reduce` has not been invoked on the `Skeleton`.
+* `reduce` has not been invoked on the `Chain`.
 
 __Parameters__
 
@@ -157,27 +157,27 @@ __Parameters__
 
 __Returns__
 
-Returns the same `Skeleton`.
+Returns the same `Chain`.
 
 __Example__
 ```js
-var skeleton = pjs(new Uint32Array([1,2,3,4])).filter(function(e){
+var chain = pjs(new Uint32Array([1,2,3,4])).filter(function(e){
     return e % 2 === 0;
 });
 
-skeleton.map(function(e){
+chain.map(function(e){
     return e * 3;
 }).seq(function(err, result){
     // result is a Uint32Array with values [6,12]
 });
 ```
 
-### `Skeleton.prototype.filter(predicate)`
-Adds a `filter` operation with the provided `predicate` to the `Skeleton`. Returns the same `Skeleton` instance.
+### `Chain.prototype.filter(predicate)`
+Adds a `filter` operation with the provided `predicate` to the `Chain`. Returns the same `Chain` instance.
 
 __Precondition__
 
-* `reduce` has not been invoked on the `Skeleton`.
+* `reduce` has not been invoked on the `Chain`.
 
 __Parameters__
 
@@ -185,23 +185,23 @@ __Parameters__
 
 __Returns__
 
-Returns the same `Skeleton`.
+Returns the same `Chain`.
 
 __Example__
 ```js
-var skeleton = pjs(new Uint32Array([1,2,3,4])).map(function(e){
+var chain = pjs(new Uint32Array([1,2,3,4])).map(function(e){
     return e * 2;
 });
 
-skeleton.filter(function(e){
+chain.filter(function(e){
     return e < 4;
 }).seq(function(err, result){
     // result is a Uint32Array with values [2]
 });
 ```
 
-### `Skeleton.prototype.reduce(reducer, seed, identity)`
-Adds a `reduce` with the specified `seed` and `identity` to the `Skeleton`. Returns the same `Skeleton` instance.
+### `Chain.prototype.reduce(reducer, seed, identity)`
+Adds a `reduce` with the specified `seed` and `identity` to the `Chain`. Returns the same `Chain` instance.
 
 __Parameters__
 
@@ -213,35 +213,35 @@ __Parameters__
 
 __Returns__
 
-Returns the same `Skeleton`.
+Returns the same `Chain`.
 
 __Example__
 ```js
-var skeleton = pjs(new Uint32Array([1,2,4])).map(function(e){
+var chain = pjs(new Uint32Array([1,2,4])).map(function(e){
   return e * 2;
 });
 
-skeleton.reduce(function(current, element){
+chain.reduce(function(current, element){
     return current + element;
 }, 1, 0).seq(function(err, result){
     // result is 15
 });
 ```
 
-### `Skeleton.prototype.seq(err, done)`
-Executes all operations in the `Skeleton` asynchronously. When the result is available or an error occurs `done` is invoked.
+### `Chain.prototype.seq(err, done)`
+Executes all operations in the `Chain` asynchronously. When the result is available or an error occurs `done` is invoked.
 
 * `done(err, result)` - the function invoked passing the `result` of the asynchronous computation when it is completed.
   * `err` - If an error ocurred, it contains the error message.
-  * `result` - The result of the skeleton's asynchronous computation.
+  * `result` - The result of the chain's asynchronous computation.
 
 __Parameters__
 ```js
-var skeleton = pjs(new Uint32Array([1,2,3,4])).map(function(e){
+var chain = pjs(new Uint32Array([1,2,3,4])).map(function(e){
   return e * 2;
 });
 
-skeleton.filter(function(e){
+chain.filter(function(e){
   return e < 8;
 }).reduce(function(c, e){
   return c + e
