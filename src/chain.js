@@ -84,6 +84,7 @@ Chain.prototype.seq = function (done) {
     };
 
     var onErrorHandler = function (event){
+      event.preventDefault();
       event.target.removeEventListener('error', onErrorHandler);
       event.target.removeEventListener('message', onMessageHandler);
       return collector.onError(event.message);
