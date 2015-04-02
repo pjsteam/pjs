@@ -1,5 +1,5 @@
 var operation_names = require('./operation_names');
-var Skeleton = require('./skeleton');
+var Chain = require('./chain');
 var operation_packager = require('./operation_packager');
 
 var WrappedTypedArray = function (source, parts, workers) {
@@ -22,7 +22,7 @@ WrappedTypedArray.prototype.reduce = function(reducer, seed, identity, context) 
 
 WrappedTypedArray.prototype.__operation = function(name, code, context, seed, identity) {
   var operation = operation_packager(name, code, seed, identity);
-  return new Skeleton(this.source, this.parts, this.workers, operation, context);
+  return new Chain(this.source, this.parts, this.workers, operation, context);
 };
 
 module.exports = WrappedTypedArray;

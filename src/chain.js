@@ -1,17 +1,16 @@
 var JobPackager = require('./job_packager');
 var ResultCollector = require('./result_collector');
 var merge_typed_arrays = require('./typed_array_merger');
-var utils = require('./utils');
 var operation_names = require('./operation_names');
 var operation_packager = require('./operation_packager');
 var errors = require('./errors');
 
 var finisher = {
   map: function (self, result, done) {
-    done(result);
+    done(null, result);
   },
   filter: function (self, result, done) {
-    done(result);
+    done(null, result);
   },
   reduce: function (self, result, done) {
     var r;
@@ -30,7 +29,7 @@ var finisher = {
   }
 };
 
-var Skeleton = function (source, parts, workers, operation, context, previousOperations) {
+var Chain = function (source, parts, workers, operation, context, previousOperations) {
   this.packager = new JobPackager(parts, source);
   this.source = source;
   this.parts = parts;
@@ -42,33 +41,34 @@ var Skeleton = function (source, parts, workers, operation, context, previousOpe
   this.operations = previousOperations;
 };
 
-Skeleton.prototype.map = function (mapper, context) {
+Chain.prototype.map = function (mapper) {
   this.__verifyPreviousOperation();
   var expandedContext = this.__expandContext(context);
   var operation = operation_packager(operation_names.MAP, mapper);
-  return new Skeleton(this.source, this.parts, this.workers, operation, expandedContext, this.operations);
+  return new Chain(this.source, this.parts, this.workers, operation, expandedContext, this.operations);
 };
 
-Skeleton.prototype.filter = function (predicate, context) {
+Chain.prototype.filter = function (predicate) {
   this.__verifyPreviousOperation();
   var expandedContext = this.__expandContext(context);
   var operation = operation_packager(operation_names.FILTER, predicate);
-  return new Skeleton(this.source, this.parts, this.workers, operation, expandedContext, this.operations);
+  return new Chain(this.source, this.parts, this.workers, operation, expandedContext, this.operations);
 };
 
-Skeleton.prototype.reduce = function (predicate, seed, identity, context) {
+Chain.prototype.reduce = function (predicate, seed, identity, context) {
   this.__verifyPreviousOperation();
   var expandedContext = this.__expandContext(context);
   var operation = operation_packager(operation_names.REDUCE, predicate, seed, identity);
-  return new Skeleton(this.source, this.parts, this.workers, operation, expandedContext, this.operations);
+  return new Chain(this.source, this.parts, this.workers, operation, expandedContext, this.operations);
 };
 
-Skeleton.prototype.seq = function (done) {
+Chain.prototype.seq = function (done) {
   var self = this;
   var workers = this.workers;
   var TypedArrayConstructor = this.source.constructor;
   var packs = this.packager.generatePackages(this.operations, this.context);
-  var collector = new ResultCollector(this.parts, function(results){
+  var collector = new ResultCollector(this.parts, function(err, results){
+    if (err) { return done(err); }
     var partial_results = results.map(function(result){
       return new TypedArrayConstructor(result.value).subarray(0, result.newLength);
     });
@@ -77,20 +77,32 @@ Skeleton.prototype.seq = function (done) {
   });
 
   packs.forEach(function(pack, index){
-    utils.listenOnce(workers[index], 'message', function(event){
-      collector.onPart(event.data);
-    });
+    var onMessageHandler = function (event){
+      event.target.removeEventListener('error', onErrorHandler);
+      event.target.removeEventListener('message', onMessageHandler);
+      return collector.onPart(event.data);
+    };
+
+    var onErrorHandler = function (event){
+      event.target.removeEventListener('error', onErrorHandler);
+      event.target.removeEventListener('message', onMessageHandler);
+      return collector.onError(event.message);
+    };
+
+    workers[index].addEventListener('error', onErrorHandler);
+    workers[index].addEventListener('message', onMessageHandler);
+
     workers[index].postMessage(pack, [ pack.buffer ]);
   });
 };
 
-Skeleton.prototype.__verifyPreviousOperation = function () {
+Chain.prototype.__verifyPreviousOperation = function () {
   if (this.operation.name === 'reduce') {
     throw new errors.InvalidOperationError(errors.messages.INVALID_CHAINING_OPERATION);
   }
 };
 
-Skeleton.prototype.__expandContext = function (context) {
+Chain.prototype.__expandContext = function (context) {
   if (context) {
     var ctx = this.context;
     if (ctx) {
@@ -106,4 +118,4 @@ Skeleton.prototype.__expandContext = function (context) {
   return this.context;
 };
 
-module.exports = Skeleton;
+module.exports = Chain;
