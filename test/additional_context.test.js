@@ -1,6 +1,6 @@
 'use strict';
 
-describe('additional context tests', function(){
+describe.skip('additional context tests', function(){
 
   var pjs;
   var utils = require('../src/utils.js');
@@ -16,7 +16,98 @@ describe('additional context tests', function(){
     }
   });
 
-  [Uint8Array, Int8Array, Uint8ClampedArray,
+  describe('create context tests', function(){
+
+    [Uint8Array, Int8Array, Uint8ClampedArray,
+    Uint16Array, Int16Array,
+    Uint32Array, Int32Array,
+    Float32Array, Float64Array].forEach(function (TypedArray) {
+      describe(utils.format('tests for {0}', utils.getTypedArrayConstructorType(TypedArray)), function(){
+        
+        var normalSourceArray = [1,2,3,5,13,16,32,63,64,129,255,500,1001,1023,1024];
+        var sourceArray = new TypedArray(normalSourceArray);
+
+        it('should initialize map chain item without context', function () {
+          var map = pjs(sourceArray).map(function (e) { return e + 1; });
+          expect(map.context).to.be.undefined;
+        });
+
+        it('should initialize filter chain item without context', function () {
+          var filter = pjs(sourceArray).filter(function (e) { return e % 2 === 0; });
+          expect(filter.context).to.be.undefined;
+        });
+
+        it('should initialize reduce chain item without context', function () {
+          var reduce = pjs(sourceArray).reduce(function (p, e) { return p + e; }, 0, 0);
+          expect(reduce.context).to.be.undefined;
+        });
+
+        it('should initialize map chain item with context', function () {
+          var map = pjs(sourceArray).map(function (e, ctx) { return e + ctc.opt; }, {opt: 1});
+          expect(map.context.opt).to.equal(1);
+        });
+
+        it('should initialize filter chain item with context', function () {
+          var filter = pjs(sourceArray).filter(function (e, ctx) { return e % ctx.opt === 0; }, {opt: 2});
+          expect(filter.context.opt).to.equal(2);
+        });
+
+        it('should initialize reduce chain item with context', function () {
+          var reduce = pjs(sourceArray).reduce(function (p, e, ctx) { return p + e + ctx.opt; }, 0, 0, { opt: 5});
+          expect(reduce.context.opt).to.equal(5);
+        });
+
+        describe("chaining tests", function () {
+
+          it('should not merge map-map contexts on chaining', function () {
+            var map = pjs(sourceArray).map(function (e, ctx) { return e + ctc.opt; }, {opt: 1});
+            var map_map = map.map(function (e, ctx) { return e + ctc.opt; }, {opt: 2});
+            expect(map.context.opt).to.equal(1);
+            expect(map_map.context.opt).to.equal(2);
+          });
+
+          it('should not merge map-filter contexts on chaining', function () {
+            var map = pjs(sourceArray).map(function (e, ctx) { return e + ctc.opt; }, {opt: 1});
+            var map_filter = map.filter(function (e, ctx) { return e % ctx.opt === 0; }, {opt: 2});
+            expect(map.context.opt).to.equal(1);
+            expect(map_filter.context.opt).to.equal(2);
+          });
+
+          it('should not merge map-reduce contexts on chaining', function () {
+            var map = pjs(sourceArray).map(function (e, ctx) { return e + ctc.opt; }, {opt: 1});
+            var map_reduce = map.reduce(function (p, e, ctx) { return p + e + ctx.opt; }, 0, 0, { opt: 5});
+            expect(map.context.opt).to.equal(1);
+            expect(map_reduce.context.opt).to.equal(5);
+          });
+
+          it('should not merge filter-filter contexts on chaining', function () {
+            var filter = pjs(sourceArray).filter(function (e, ctx) { return e % ctx.opt === 0; }, {opt: 2});
+            var filter_filter = filter.filter(function (e, ctx) { return e % ctx.opt === 0; }, {opt: 4});
+            expect(filter.context.opt).to.equal(2);
+            expect(filter_filter.context.opt).to.equal(4);
+          });
+
+          it('should not merge filter-map contexts on chaining', function () {
+            var filter = pjs(sourceArray).filter(function (e, ctx) { return e % ctx.opt === 0; }, {opt: 2});
+            var filter_map = filter.map(function (e, ctx) { return e + ctc.opt; }, {opt: 1});
+            expect(filter.context.opt).to.equal(2);
+            expect(filter_map.context.opt).to.equal(1);
+          });
+
+          it('should not merge filter-reduce contexts on chaining', function () {
+            var filter = pjs(sourceArray).filter(function (e, ctx) { return e % ctx.opt === 0; }, {opt: 2});
+            var filter_reduce = filter.reduce(function (p, e, ctx) { return p + e + ctx.opt; }, 0, 0, { opt: 5});
+            expect(filter.context.opt).to.equal(2);
+            expect(filter_reduce.context.opt).to.equal(5);
+          });
+        });
+      });
+    });
+  });
+
+  describe('use context tests', function(){
+
+    [Uint8Array, Int8Array, Uint8ClampedArray,
     Uint16Array, Int16Array,
     Uint32Array, Int32Array,
     Float32Array, Float64Array].forEach(function (TypedArray) {
@@ -189,7 +280,7 @@ describe('additional context tests', function(){
             done();
           });
         });
-
       });
     });
+  });
 });
