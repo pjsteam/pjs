@@ -77,7 +77,6 @@ Chain.prototype.seq = function (done) {
     var partial_results = results.map(function(result){
       return new TypedArrayConstructor(result.value).subarray(0, result.newLength);
     });
-    console.log('partial results', partial_results);
     var m = merge_typed_arrays(partial_results);
     return finisher[self.operation.name](self, m, done);
   });
