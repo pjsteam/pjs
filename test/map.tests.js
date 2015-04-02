@@ -5,12 +5,12 @@ describe('map tests', function(){
   var pjs;
   var utils = require('../src/utils.js');
 
-  beforeEach(function () {
+  before(function () {
     pjs = require('../src/index.js');
     pjs.init({maxWorkers:4});
   });
 
-  afterEach(function(){
+  after(function(){
     if (pjs.config){
       pjs.terminate();
     }
