@@ -15,16 +15,16 @@ var finisher = {
   },
   reduce: function (self, result, done) {
     var r;
-    var context = self.context;
+    var context = self.localContext();
     var operation = self.operation;
     var code = operation.code;
     var seed = operation.seed;
-    if (!context) {
-      r = Array.prototype.slice.call(result).reduce(code, seed);
-    } else {
+    if (context) {
       r = Array.prototype.slice.call(result).reduce(function (p, e) {
         return code(p, e, context);
       }, seed);
+    } else {
+      r = Array.prototype.slice.call(result).reduce(code, seed);
     }
     done(null, r);
   }
@@ -77,6 +77,7 @@ Chain.prototype.seq = function (done) {
     var partial_results = results.map(function(result){
       return new TypedArrayConstructor(result.value).subarray(0, result.newLength);
     });
+    console.log('partial results', partial_results);
     var m = merge_typed_arrays(partial_results);
     return finisher[self.operation.name](self, m, done);
   });

@@ -59,7 +59,6 @@ var operations = {
     return newLength;
   },
   reduce: function (array, length, f, ctx, seed) {
-    console.log('ww - reduce');
     var i = 0;
     var reduced = seed;
     for ( ; i < length; i += 1){

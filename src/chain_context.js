@@ -29,5 +29,5 @@ chainContext.extendChainContext = function (localContext, chainContext) {
 };
 
 chainContext.currentContextFromChainContext = function (chainContext) {
-  return chainContext[chainContext.currentIndex];
+  return contextUtils.deSanitizeContext(chainContext[chainContext.currentIndex]);
 };

@@ -1,6 +1,6 @@
 'use strict';
 
-describe('additional context tests', function(){
+describe.skip('additional context tests', function(){
 
   var pjs;
   var utils = require('../src/utils.js');
