@@ -14,10 +14,11 @@ chainContext.deserializeChainContext = function (chainContext) {
 chainContext.extendChainContext = function (localContext, chainContext) {
   var saneLocalContext = contextUtils.serializeFunctions(localContext);
   if (!chainContext) {
-    return {
+    var ctx = {
       currentIndex: 0,
-      "0": saneLocalContext 
     };
+    ctx[0] = saneLocalContext;
+    return ctx;
   }
 
   var nextIndex = chainContext.currentIndex + 1;

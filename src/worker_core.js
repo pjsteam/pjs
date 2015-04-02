@@ -72,7 +72,7 @@ var operations = {
 
 module.exports = function(event){
   var pack = event.data;
-  var context = createContext(pack.ctx);
+  var context = createOperationContexts(pack.ctx);
   var ops = pack.operations;
   var opsLength = ops.length;
 
@@ -135,25 +135,25 @@ function createDynamicArgumentsFunction(args, code) {
   return Function.prototype.constructor.apply(null, fArgs);
 }
 
-function createContext (context) {
-  var ctx, index;
+function createOperationContexts (context) {
+  var operationContexts, operationIndex;
   if (context) {
     context = JSON.parse(context);
-    ctx = {};
-    for (index = 0; index <= context.currentIndex; index++) {
-      var localCtx = context[index];
-      if (localCtx) {
-        var lCtx = {};
-        for (var name in localCtx) {
-          if (localCtx.hasOwnProperty(name)) {
-            lCtx[name] = createContextValue(localCtx[name]);
+    operationContexts = {};
+    for (operationIndex = 0; operationIndex <= context.currentIndex; operationIndex++) {
+      var saneLocalContext = context[operationIndex];
+      if (saneLocalContext) {
+        var localContext = {};
+        for (var name in saneLocalContext) {
+          if (saneLocalContext.hasOwnProperty(name)) {
+            localContext[name] = createContextValue(saneLocalContext[name]);
           }
         }
-        ctx[index] = lCtx;
+        operationContexts[operationIndex] = localContext;
       }
     }
   }
-  return ctx;
+  return operationContexts;
 }
 
 function createContextValue (value) {
