@@ -1,7 +1,7 @@
 var errors = require('./errors');
 var utils = require('./utils');
 var Partitioner = require('./typed_array_partitioner');
-var contextSerializer = require('./context');
+var contextSerializer = require('./chain_context');
 
 var operation_names = require('./operation_names');
 operation_names = Object.keys(operation_names).map(function (k) {
@@ -19,7 +19,7 @@ var JobPackager = module.exports = function (parts, elements) {
   this.elements = elements;
 };
 
-JobPackager.prototype.generatePackages = function (operations, context) {
+JobPackager.prototype.generatePackages = function (operations, chainContext) {
   if (!(operations && operations.length)){
     throw new errors.InvalidArgumentsError(errors.messages.INVALID_OPERATIONS);
   }
@@ -52,7 +52,7 @@ JobPackager.prototype.generatePackages = function (operations, context) {
   var partitioner = new Partitioner(this.parts);
   var partitionedElements = partitioner.partition(this.elements);
 
-  var strfyCtx = contextSerializer.serialize(context);
+  var strfyCtx = contextSerializer.serializeChainContext(chainContext);
   return partitionedElements.map(function (partitionedElement, index) {
     return {
       index: index,

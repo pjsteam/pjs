@@ -1,6 +1,6 @@
 'use strict';
 
-describe.skip('additional context tests', function(){
+describe('additional context tests', function(){
 
   var pjs;
   var utils = require('../src/utils.js');
@@ -29,32 +29,50 @@ describe.skip('additional context tests', function(){
 
         it('should initialize map chain item without context', function () {
           var map = pjs(sourceArray).map(function (e) { return e + 1; });
-          expect(map.context).to.be.undefined;
+          expect(map.context).to.not.be.undefined;
+          expect(map.context.currentIndex).to.equal(0);
+          expect(map.localContext()).to.be.undefined;
         });
 
         it('should initialize filter chain item without context', function () {
           var filter = pjs(sourceArray).filter(function (e) { return e % 2 === 0; });
-          expect(filter.context).to.be.undefined;
+          expect(filter.context).to.not.be.undefined;
+          expect(filter.context.currentIndex).to.equal(0);
+          expect(filter.localContext()).to.be.undefined;
         });
 
         it('should initialize reduce chain item without context', function () {
           var reduce = pjs(sourceArray).reduce(function (p, e) { return p + e; }, 0, 0);
-          expect(reduce.context).to.be.undefined;
+          expect(reduce.context).to.not.be.undefined;
+          expect(reduce.context.currentIndex).to.equal(0);
+          expect(reduce.localContext()).to.be.undefined;
         });
 
         it('should initialize map chain item with context', function () {
           var map = pjs(sourceArray).map(function (e, ctx) { return e + ctc.opt; }, {opt: 1});
-          expect(map.context.opt).to.equal(1);
+          expect(map.context).to.not.be.undefined;
+          expect(map.context.currentIndex).to.equal(0);
+          var localContext = map.localContext();
+          expect(localContext).to.not.be.undefined;
+          expect(localContext.opt).to.equal(1);
         });
 
         it('should initialize filter chain item with context', function () {
           var filter = pjs(sourceArray).filter(function (e, ctx) { return e % ctx.opt === 0; }, {opt: 2});
-          expect(filter.context.opt).to.equal(2);
+          expect(filter.context).to.not.be.undefined;
+          expect(filter.context.currentIndex).to.equal(0);
+          var localContext = filter.localContext();
+          expect(localContext).to.not.be.undefined;
+          expect(localContext.opt).to.equal(2);
         });
 
         it('should initialize reduce chain item with context', function () {
           var reduce = pjs(sourceArray).reduce(function (p, e, ctx) { return p + e + ctx.opt; }, 0, 0, { opt: 5});
-          expect(reduce.context.opt).to.equal(5);
+          expect(reduce.context).to.not.be.undefined;
+          expect(reduce.context.currentIndex).to.equal(0);
+          var localContext = reduce.localContext();
+          expect(localContext).to.not.be.undefined;
+          expect(localContext.opt).to.equal(5);
         });
 
         describe("chaining tests", function () {
@@ -62,43 +80,49 @@ describe.skip('additional context tests', function(){
           it('should not merge map-map contexts on chaining', function () {
             var map = pjs(sourceArray).map(function (e, ctx) { return e + ctc.opt; }, {opt: 1});
             var map_map = map.map(function (e, ctx) { return e + ctc.opt; }, {opt: 2});
-            expect(map.context.opt).to.equal(1);
-            expect(map_map.context.opt).to.equal(2);
+            expect(map.localContext().opt).to.equal(1);
+            expect(map_map.localContext().opt).to.equal(2);
+            expect(map_map.context[0].opt).to.equal(1);
           });
 
           it('should not merge map-filter contexts on chaining', function () {
             var map = pjs(sourceArray).map(function (e, ctx) { return e + ctc.opt; }, {opt: 1});
             var map_filter = map.filter(function (e, ctx) { return e % ctx.opt === 0; }, {opt: 2});
-            expect(map.context.opt).to.equal(1);
-            expect(map_filter.context.opt).to.equal(2);
+            expect(map.localContext().opt).to.equal(1);
+            expect(map_filter.localContext().opt).to.equal(2);
+            expect(map_filter.context[0].opt).to.equal(1);
           });
 
           it('should not merge map-reduce contexts on chaining', function () {
             var map = pjs(sourceArray).map(function (e, ctx) { return e + ctc.opt; }, {opt: 1});
             var map_reduce = map.reduce(function (p, e, ctx) { return p + e + ctx.opt; }, 0, 0, { opt: 5});
-            expect(map.context.opt).to.equal(1);
-            expect(map_reduce.context.opt).to.equal(5);
+            expect(map.localContext().opt).to.equal(1);
+            expect(map_reduce.localContext().opt).to.equal(5);
+            expect(map_reduce.context[0].opt).to.equal(1);
           });
 
           it('should not merge filter-filter contexts on chaining', function () {
             var filter = pjs(sourceArray).filter(function (e, ctx) { return e % ctx.opt === 0; }, {opt: 2});
             var filter_filter = filter.filter(function (e, ctx) { return e % ctx.opt === 0; }, {opt: 4});
-            expect(filter.context.opt).to.equal(2);
-            expect(filter_filter.context.opt).to.equal(4);
+            expect(filter.localContext().opt).to.equal(2);
+            expect(filter_filter.localContext().opt).to.equal(4);
+            expect(filter_filter.context[0].opt).to.equal(2);
           });
 
           it('should not merge filter-map contexts on chaining', function () {
             var filter = pjs(sourceArray).filter(function (e, ctx) { return e % ctx.opt === 0; }, {opt: 2});
             var filter_map = filter.map(function (e, ctx) { return e + ctc.opt; }, {opt: 1});
-            expect(filter.context.opt).to.equal(2);
-            expect(filter_map.context.opt).to.equal(1);
+            expect(filter.localContext().opt).to.equal(2);
+            expect(filter_map.localContext().opt).to.equal(1);
+            expect(filter_map.context[0].opt).to.equal(2);
           });
 
           it('should not merge filter-reduce contexts on chaining', function () {
             var filter = pjs(sourceArray).filter(function (e, ctx) { return e % ctx.opt === 0; }, {opt: 2});
             var filter_reduce = filter.reduce(function (p, e, ctx) { return p + e + ctx.opt; }, 0, 0, { opt: 5});
-            expect(filter.context.opt).to.equal(2);
-            expect(filter_reduce.context.opt).to.equal(5);
+            expect(filter.localContext().opt).to.equal(2);
+            expect(filter_reduce.localContext().opt).to.equal(5);
+            expect(filter_reduce.context[0].opt).to.equal(2);
           });
         });
       });
@@ -123,7 +147,7 @@ describe.skip('additional context tests', function(){
           var ctx = {
             filter: 0x0000000F
           };
-          pjs(sourceArray).map(mapper, ctx).seq(function(result){
+          pjs(sourceArray).map(mapper, ctx).seq(function(err, result){
             expect(result).to.have.length(sourceArray.length);
             expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(sourceArray));
             for (var i = sourceArray.length - 1; i >= 0; i--) {
@@ -141,7 +165,7 @@ describe.skip('additional context tests', function(){
             min: 0x0000000a,
             max: 0x00000100
           };
-          pjs(sourceArray).filter(predicate, ctx).seq(function(result){
+          pjs(sourceArray).filter(predicate, ctx).seq(function(err, result){
             expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(sourceArray));
             var index = 0;
             var i = 0;
@@ -170,7 +194,7 @@ describe.skip('additional context tests', function(){
             return reducer(p, e, ctx);
           }, seed);
           var wr = pjs(sourceArray).reduce(reducer, seed, identitiy, ctx);
-          wr.seq(function (result) {
+          wr.seq(function (err, result) {
             expect(result).to.equal(reducedSource);
             done();
           });
@@ -186,7 +210,7 @@ describe.skip('additional context tests', function(){
               return e << 2;
             }
           };
-          pjs(sourceArray).map(mapper, ctx).seq(function(result){
+          pjs(sourceArray).map(mapper, ctx).seq(function(err, result){
             expect(result).to.have.length(sourceArray.length);
             expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(sourceArray));
             for (var i = sourceArray.length - 1; i >= 0; i--) {
@@ -208,7 +232,7 @@ describe.skip('additional context tests', function(){
               return e < 0x00000100;
             }
           };
-          pjs(sourceArray).filter(predicate, ctx).seq(function(result){
+          pjs(sourceArray).filter(predicate, ctx).seq(function(err, result){
             expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(sourceArray));
             var index = 0;
             var i = 0;
@@ -239,7 +263,7 @@ describe.skip('additional context tests', function(){
             return reducer(p, e, ctx);
           }, seed);
           var wr = pjs(sourceArray).reduce(reducer, seed, identitiy, ctx);
-          wr.seq(function (result) {
+          wr.seq(function (err, result) {
             expect(result).to.equal(reducedSource);
             done();
           });
@@ -267,7 +291,7 @@ describe.skip('additional context tests', function(){
             }
           };
 
-          pjs(sourceArray).map(mapper, mapCtx).filter(predicate, filterCtx).seq(function(result){
+          pjs(sourceArray).map(mapper, mapCtx).filter(predicate, filterCtx).seq(function(err, result){
             expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(sourceArray));
             var trasformedSource = Array.prototype.slice.call(sourceArray).map(function (e) {
               return mapper(e, mapCtx);

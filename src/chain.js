@@ -4,6 +4,7 @@ var merge_typed_arrays = require('./typed_array_merger');
 var operation_names = require('./operation_names');
 var operation_packager = require('./operation_packager');
 var errors = require('./errors');
+var contextUtils = require('./chain_context');
 
 var finisher = {
   map: function (self, result, done) {
@@ -41,25 +42,29 @@ var Chain = function (source, parts, workers, operation, context, previousOperat
   this.operations = previousOperations;
 };
 
+Chain.prototype.localContext = function () {
+  return contextUtils.currentContextFromChainContext(this.context);
+};
+
 Chain.prototype.map = function (mapper, context) {
   this.__verifyPreviousOperation();
-  var expandedContext = this.__expandContext(context);
+  var extendedContext = contextUtils.extendChainContext(context, this.context);
   var operation = operation_packager(operation_names.MAP, mapper);
-  return new Chain(this.source, this.parts, this.workers, operation, expandedContext, this.operations);
+  return new Chain(this.source, this.parts, this.workers, operation, extendedContext, this.operations);
 };
 
 Chain.prototype.filter = function (predicate, context) {
   this.__verifyPreviousOperation();
-  var expandedContext = this.__expandContext(context);
+  var extendedContext = contextUtils.extendChainContext(context, this.context);
   var operation = operation_packager(operation_names.FILTER, predicate);
-  return new Chain(this.source, this.parts, this.workers, operation, expandedContext, this.operations);
+  return new Chain(this.source, this.parts, this.workers, operation, extendedContext, this.operations);
 };
 
 Chain.prototype.reduce = function (predicate, seed, identity, context) {
   this.__verifyPreviousOperation();
-  var expandedContext = this.__expandContext(context);
+  var extendedContext = contextUtils.extendChainContext(context, this.context);
   var operation = operation_packager(operation_names.REDUCE, predicate, seed, identity);
-  return new Chain(this.source, this.parts, this.workers, operation, expandedContext, this.operations);
+  return new Chain(this.source, this.parts, this.workers, operation, extendedContext, this.operations);
 };
 
 Chain.prototype.seq = function (done) {
@@ -101,22 +106,6 @@ Chain.prototype.__verifyPreviousOperation = function () {
   if (this.operation.name === 'reduce') {
     throw new errors.InvalidOperationError(errors.messages.INVALID_CHAINING_OPERATION);
   }
-};
-
-Chain.prototype.__expandContext = function (context) {
-  if (context) {
-    var ctx = this.context;
-    if (ctx) {
-      for (var name in context) {
-        if (context.hasOwnProperty(name)) {
-          ctx[name] = context[name];
-        }
-      }
-      return ctx;
-    }
-    return context;
-  }
-  return this.context;
 };
 
 module.exports = Chain;

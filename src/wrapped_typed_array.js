@@ -1,6 +1,7 @@
 var operation_names = require('./operation_names');
 var Chain = require('./chain');
 var operation_packager = require('./operation_packager');
+var contextUtils = require('./chain_context');
 
 var WrappedTypedArray = function (source, parts, workers) {
   this.source = source;
@@ -22,7 +23,8 @@ WrappedTypedArray.prototype.reduce = function(reducer, seed, identity, context) 
 
 WrappedTypedArray.prototype.__operation = function(name, code, context, seed, identity) {
   var operation = operation_packager(name, code, seed, identity);
-  return new Chain(this.source, this.parts, this.workers, operation, context);
+  var extendedContext = contextUtils.extendChainContext(context);
+  return new Chain(this.source, this.parts, this.workers, operation, extendedContext);
 };
 
 module.exports = WrappedTypedArray;

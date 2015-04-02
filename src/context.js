@@ -3,16 +3,10 @@ var utils = require('./utils');
 var context = module.exports = {}; //TODO: (mati) generate unit tests
 
 context.serialize = function (context) {
-  var ctx = sanitizeContext(context);
-  return JSON.stringify(ctx);
+  return JSON.stringify(this.sanitizeContext(context));
 };
 
-//TODO: (mati)
-// context.parse = function (context) {
-
-// };
-
-function sanitizeContext (context) {
+context.sanitizeContext = function (context) {
   var ctx;
   if (context) {
     ctx = {};
@@ -23,7 +17,7 @@ function sanitizeContext (context) {
     }
   }
   return ctx;
-}
+};
 
 function sanitizeContextValue (value) {
   if (utils.isFunction(value)) {
@@ -42,4 +36,3 @@ function sanitizeContextValue (value) {
     return value;
   }
 }
-

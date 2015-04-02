@@ -81,6 +81,7 @@ module.exports = function(event){
   var newLength = array.length;
 
   for (var i = 0; i < opsLength; i += 1) {
+    var localCtx;
     var operation = ops[i];
     var seed = operation.identity;
     var args = operation.args;
@@ -91,7 +92,10 @@ module.exports = function(event){
       f = createFunction(args, code);
       functionCache[cacheKey] = f;
     }
-    newLength = operations[operation.name](array, newLength, f, context, seed);
+    if (context) {
+      localCtx = context[i];
+    }
+    newLength = operations[operation.name](array, newLength, f, localCtx, seed);
   }
 
   return {
@@ -133,13 +137,20 @@ function createDynamicArgumentsFunction(args, code) {
 }
 
 function createContext (context) {
-  var ctx;
+  var ctx, index;
   if (context) {
     context = JSON.parse(context);
     ctx = {};
-    for (var name in context) {
-      if (context.hasOwnProperty(name)) {
-        ctx[name] = createContextValue(context[name]);
+    for (index = 0; index <= context.currentIndex; index++) {
+      var localCtx = context[index];
+      if (localCtx) {
+        var lCtx = {};
+        for (var name in localCtx) {
+          if (localCtx.hasOwnProperty(name)) {
+            lCtx[name] = createContextValue(localCtx[name]);
+          }
+        }
+        ctx[index] = lCtx;
       }
     }
   }
