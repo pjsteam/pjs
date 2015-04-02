@@ -18,7 +18,7 @@ var finisher = {
   }
 };
 
-var Skeleton = function (source, parts, workers, operation, previousOperations) {
+var Chain = function (source, parts, workers, operation, previousOperations) {
   this.packager = new JobPackager(parts, source);
   this.source = source;
   this.parts = parts;
@@ -29,25 +29,25 @@ var Skeleton = function (source, parts, workers, operation, previousOperations) 
   this.operations = previousOperations;
 };
 
-Skeleton.prototype.map = function (mapper) {
+Chain.prototype.map = function (mapper) {
   this.__verifyPreviousOperation();
   var operation = operation_packager(operation_names.MAP, mapper);
-  return new Skeleton(this.source, this.parts, this.workers, operation, this.operations);
+  return new Chain(this.source, this.parts, this.workers, operation, this.operations);
 };
 
-Skeleton.prototype.filter = function (predicate) {
+Chain.prototype.filter = function (predicate) {
   this.__verifyPreviousOperation();
   var operation = operation_packager(operation_names.FILTER, predicate);
-  return new Skeleton(this.source, this.parts, this.workers, operation, this.operations);
+  return new Chain(this.source, this.parts, this.workers, operation, this.operations);
 };
 
-Skeleton.prototype.reduce = function (predicate, seed, identity) {
+Chain.prototype.reduce = function (predicate, seed, identity) {
   this.__verifyPreviousOperation();
   var operation = operation_packager(operation_names.REDUCE, predicate, seed, identity);
-  return new Skeleton(this.source, this.parts, this.workers, operation, this.operations);
+  return new Chain(this.source, this.parts, this.workers, operation, this.operations);
 };
 
-Skeleton.prototype.seq = function (done) {
+Chain.prototype.seq = function (done) {
   var self = this;
   var workers = this.workers;
   var TypedArrayConstructor = this.source.constructor;
@@ -81,10 +81,10 @@ Skeleton.prototype.seq = function (done) {
   });
 };
 
-Skeleton.prototype.__verifyPreviousOperation = function () {
+Chain.prototype.__verifyPreviousOperation = function () {
   if (this.operation.name === 'reduce') {
     throw new errors.InvalidOperationError(errors.messages.INVALID_CHAINING_OPERATION);
   }
 };
 
-module.exports = Skeleton;
+module.exports = Chain;

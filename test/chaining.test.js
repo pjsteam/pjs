@@ -4,7 +4,7 @@ describe('chaining tests', function(){
 
   var pjs;
   var utils = require('../src/utils.js');
-  var Skeleton = require('../src/skeleton');
+  var Chain = require('../src/chain');
   var errors = require('../src/errors');
 
   beforeEach(function () {
@@ -27,10 +27,10 @@ describe('chaining tests', function(){
         var sourceArray = new TypedArray(normalSourceArray);
 
         describe('map skeleton', function () {
-          it ('map should return Skeleton', function () {
+          it ('map should return Chain', function () {
             var wrapped = pjs(sourceArray);
             var skeleton = wrapped.map(function (e) { return e; });
-            expect(skeleton.constructor).to.be.equal(Skeleton);
+            expect(skeleton.constructor).to.be.equal(Chain);
           });
 
           it('sequenced map should return mapped array in callback', function (done) {
@@ -92,10 +92,10 @@ describe('chaining tests', function(){
         });
 
         describe('filter skeleton', function () {
-          it ('filter should return Skeleton', function () {
+          it ('filter should return Chain', function () {
             var wrapped = pjs(sourceArray);
             var skeleton = wrapped.filter(function () {return true; } );
-            expect(skeleton.constructor).to.be.equal(Skeleton);
+            expect(skeleton.constructor).to.be.equal(Chain);
           });
 
           it ('sequenced filter should return filtered array in callback', function (done) {
@@ -161,10 +161,10 @@ describe('chaining tests', function(){
         });
 
         describe('reduce skeleton', function () {
-          it ('reduce should return Skeleton', function () {
+          it ('reduce should return Chain', function () {
             var wrapped = pjs(sourceArray);
             var skeleton = wrapped.reduce(function (p, e) { return p + e; }, 0, 0);
-            expect(skeleton.constructor).to.be.equal(Skeleton);
+            expect(skeleton.constructor).to.be.equal(Chain);
           });
 
           it('sequenced reduce should return reduced element in callback', function(done) {
