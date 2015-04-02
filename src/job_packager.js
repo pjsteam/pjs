@@ -33,17 +33,12 @@ JobPackager.prototype.generatePackages = function (operations, chainContext) {
       throw new errors.InvalidArgumentsError(errors.messages.INVALID_OPERATION);
     }
 
-    var packageCodeArgs;
-    var packageCode;
-    utils.parseFunction(op.code, function (args, body) {
-      packageCodeArgs = args;
-      packageCode = body;
-    });
+    var parsed = utils.parseFunction(op.code.toString());
 
     return {
       identity: op.identity,
-      args: packageCodeArgs,
-      code: packageCode,
+      args: parsed.args,
+      code: parsed.body,
       name: op.name
     };
   });

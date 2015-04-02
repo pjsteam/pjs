@@ -12,7 +12,7 @@ chainContext.deserializeChainContext = function (chainContext) {
 };
 
 chainContext.extendChainContext = function (localContext, chainContext) {
-  var saneLocalContext = contextUtils.sanitizeContext(localContext);
+  var saneLocalContext = contextUtils.serializeFunctions(localContext);
   if (!chainContext) {
     return {
       currentIndex: 0,
@@ -29,5 +29,9 @@ chainContext.extendChainContext = function (localContext, chainContext) {
 };
 
 chainContext.currentContextFromChainContext = function (chainContext) {
-  return contextUtils.deSanitizeContext(chainContext[chainContext.currentIndex]);
+  var currentContext = chainContext[chainContext.currentIndex];
+  if (currentContext) {
+    return contextUtils.deserializeFunctions(currentContext);
+  }
+  return undefined;
 };

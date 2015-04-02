@@ -1,60 +1,73 @@
 var utils = require('./utils');
 
-var contextUtils = module.exports = {}; //TODO: (mati) generate unit tests
+var ctx = {};
+module.exports = ctx;
 
-contextUtils.serialize = function (context) {
-  return JSON.stringify(this.sanitizeContext(context));
-};
+ctx.deserializeFunctions = function(obj){
+  return Object.keys(obj).reduce(function(c,v){
+    var value = obj[v];
 
-contextUtils.sanitizeContext = function (context) {
-  var ctx;
-  if (context) {
-    ctx = {};
-    for (var name in context) {
-      if (context.hasOwnProperty(name)) {
-        ctx[name] = sanitizeContextValue(context[name]);
+    if (utils.isObject(value)){
+      if (value.__isFunction){
+        c[v] = deserializeFunction(value);
+      } else {
+        ctx.deserializeFunctions(value);
       }
     }
-  }
-  return ctx;
+
+    return c;
+  }, obj);
 };
 
-contextUtils.deSanitizeContext = function (context) {
-  var ctx;
-  if (context) {
-    ctx = {};
-    for (var name in context) {
-      if (context.hasOwnProperty(name)) {
-        ctx[name] = deSanitizeContextValue(context[name]);
+ctx.serializeFunctions = function (obj) {
+  var res;
+  if (obj) {
+    res = Object.keys(obj).reduce(function(c,v){
+      var value = obj[v];
+      if (utils.isFunction(value)){
+        c[v] = serializeFunction(value);
+      } else if (utils.isObject(value)){
+        c[v] = ctx.serializeFunctions(value);
+      } else {
+        c[v] = value;
       }
-    }
+
+      return c;
+    }, {});
   }
-  return ctx;
+  return res;
 };
 
-function sanitizeContextValue (value) {
-  if (utils.isFunction(value)) {
-    var packageCodeArgs;
-    var packageCode;
-    utils.parseFunction(value, function (args, body) {
-      packageCodeArgs = args;
-      packageCode = body;
-    });
-    return {
-      __isFunction: true,
-      args: packageCodeArgs,
-      code: packageCode
-    };
-  } else { //TODO: (mati) ver que pasa con otros tipos
-    return value;
-  }
+function serializeFunction (value) {
+  var parsed = utils.parseFunction(value);
+  return {
+    __isFunction: true,
+    args: parsed.args,
+    code: parsed.body
+  };
 }
 
-function deSanitizeContextValue (value) {
-  if (value && value.__isFunction && value.args && value.code) {
-    return createDynamicArgumentsFunction(value.args, value.code);
-  } else {
-    return value;
+function deserializeFunction(value) {
+  var args = value.args;
+  var code = value.code;
+  switch (args.length) {
+    case 0:
+      /*jslint evil: true */
+      return new Function(code);
+    case 1:
+      /*jslint evil: true */
+      return new Function(args[0], code);
+    case 2:
+      /*jslint evil: true */
+      return new Function(args[0], args[1], code);
+    case 3:
+      /*jslint evil: true */
+      return new Function(args[0], args[1], args[2], code);
+    case 4:
+      /*jslint evil: true */
+      return new Function(args[0], args[1], args[2], args[3], code);
+    default:
+      return createDynamicArgumentsFunction(args, code);
   }
 }
 
