@@ -19,7 +19,14 @@ describe('operation context functions', function(){
       },
       l1: {
         f: function(x) { return x + 10; },
-        g: function(x) { return x >= 3; }
+        g: function(x) { return x >= 3; },
+        r: function(c, x) { return c + x + 10; }
+      },
+      r: function(c, x){
+        return c + x + 2;
+      },
+      s: function(c, x, ctx){
+        return c + ctx.f(x);
       }
     }, done);
   });
@@ -185,6 +192,73 @@ describe('operation context functions', function(){
       pjs(sourceArray).filter('g.h.i').seq(function(err){
         expect(err.name).to.equal('WorkerError');
         expect(err.message).to.equal('Uncaught Error: Cannot get nested path g.h.i from context');
+        done();
+      });
+    });
+  });
+
+  describe('reduce', function(){
+    it('should be able to execute not nested function', function(done){
+      var sourceArray = new Uint32Array([1,2,3,4,5]);
+      pjs(sourceArray).reduce('r', 0, function(c, v){
+        return c + v;
+      }, 0).seq(function(err, result){
+        if (err) { return done(err); }
+        expect(result).to.equal(25);
+        done();
+      });
+    });
+
+    it('should be able to execute nested function', function(done){
+      var sourceArray = new Uint32Array([1,2,3,4,5]);
+      pjs(sourceArray).reduce('l1.r', 0, function(c, v){
+        return c + v;
+      }, 0).seq(function(err, result){
+        if (err) { return done(err); }
+        expect(result).to.equal(65);
+        done();
+      });
+    });
+
+    it('should be able context function then parameter function', function(done){
+      var sourceArray = new Uint32Array([1,2,3,4,5]);
+      pjs(sourceArray).map('f').reduce(function(c, v){
+        return c * v;
+      }, 1, 1).seq(function(err, result){
+        if (err) { return done(err); }
+        expect(result).to.equal(2520);
+        done();
+      });
+    });
+
+    it('should be able parameter function then context function', function(done){
+      var sourceArray = new Uint32Array([1,2,3,4,5]);
+      pjs(sourceArray).map(function(e){
+        return e + 3;
+      }).reduce('r', 0, function(c,v) { return c + v; }, 0)
+      .seq(function(err, result){
+        if (err) { return done(err); }
+        expect(result).to.equal(40);
+        done();
+      });
+    });
+
+    it('should be able to use context from context function', function(done){
+      var sourceArray = new Uint32Array([1,2,3,4,5]);
+      pjs(sourceArray).reduce('s', 0, function(c,v){
+        return c + v;
+      }, 0).seq(function(err, result){
+        if (err) { return done(err); }
+        expect(result).to.equal(25);
+        done();
+      });
+    });
+
+    it('should fail if context function does not exist', function(done){
+      var sourceArray = new Uint32Array([1,2,3,4,5]);
+      pjs(sourceArray).reduce('r.s.t', 0, 0).seq(function(err){
+        expect(err.name).to.equal('WorkerError');
+        expect(err.message).to.equal('Uncaught Error: Cannot get nested path r.s.t from context');
         done();
       });
     });
