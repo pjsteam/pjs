@@ -36,7 +36,7 @@ errors.messages = {
   INVALID_PARTS: 'Invalid number of parts.',
   INVALID_CONTEXT: 'Invalid context.',
   PART_ALREADY_COLLECTED: 'Tried to collect part {0} more than once',
-  INVALID_CODE: 'Invalid code argument to package.',
+  MISSING_CODE_OR_PATH: 'Missing "code" or "functionPath" argument to package.',
   INVALID_IDENTITY_CODE: 'Invalid identity code argument to package.',
   INVALID_ELEMENTS: 'Invalid number of elements to package.',
   INVALID_PACKAGE_INDEX: 'Package index should be not negative and less than {0}.',

@@ -1,4 +1,5 @@
 var errors = require('./errors');
+var utils = require('./utils');
 var operation_names = require('./operation_names');
 operation_names = Object.keys(operation_names).map(function (k) {
   return operation_names[k];
@@ -21,11 +22,16 @@ module.exports = function (name, code, seed, identity, identityCode) {
     throw new errors.InvalidArgumentsError(errors.messages.MISSING_IDENTITY);
   }
 
-  return {
+  var toReturn = {
     name: name,
-    code: code,
     seed: seed,
     identity: identity,
     identityCode: identityCode
   };
+
+  var key = utils.isFunction(code) ? 'code' : 'functionPath';
+
+  toReturn[key] = code;
+
+  return toReturn;
 };

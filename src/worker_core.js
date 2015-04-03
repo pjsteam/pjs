@@ -78,6 +78,23 @@ var operations = {
   }
 };
 
+function getFunction(operation){
+  if (operation.functionPath){
+    return globalContext[operation.functionPath];
+  }
+
+  var args = operation.args;
+  var code = operation.code;
+  var cacheKey = args.join(',') + code;
+  var f = functionCache[cacheKey];
+  if (!f){
+    f = utils.createFunction(args, code);
+    functionCache[cacheKey] = f;
+  }
+
+  return f;
+}
+
 module.exports = function(event){
   var pack = event.data;
 
@@ -104,14 +121,7 @@ module.exports = function(event){
     var localCtx;
     var operation = ops[i];
     var seed = operation.identity;
-    var args = operation.args;
-    var code = operation.code;
-    var cacheKey = args.join(',') + code;
-    var f = functionCache[cacheKey];
-    if (!f){
-      f = utils.createFunction(args, code);
-      functionCache[cacheKey] = f;
-    }
+    var f = getFunction(operation);
 
     if (context) {
       localCtx = immutableExtend(globalContext, context[i]);
