@@ -111,7 +111,8 @@ describe('result collector', function(){
     collector.onPart({index: 2, value: new Uint8Array([2,3])});
     expect(callback_invoked).to.equal(true);
 
-    expect(error).to.equal('Failed');
+    expect(error.name).to.equal('WorkerError');
+    expect(error.message).to.equal('Failed');
   });
 
   it('should invoke callback when all parts are completed if middle has error', function () {
@@ -131,7 +132,8 @@ describe('result collector', function(){
     collector.onPart({index: 2, value: new Uint8Array([2,3])});
     expect(callback_invoked).to.equal(true);
 
-    expect(error).to.equal('Failed');
+    expect(error.name).to.equal('WorkerError');
+    expect(error.message).to.equal('Failed');
   });
 
   it('should invoke callback when all parts are completed if last has error', function () {
@@ -151,6 +153,7 @@ describe('result collector', function(){
     collector.onError('Failed');
     expect(callback_invoked).to.equal(true);
 
-    expect(error).to.equal('Failed');
+    expect(error.name).to.equal('WorkerError');
+    expect(error.message).to.equal('Failed');
   });
 });

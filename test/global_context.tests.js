@@ -161,7 +161,7 @@ describe('global context tests', function(){
     });
   });
 
-  describe.only('with local context', function(){
+  describe('with local context', function(){
     it('should have local properties accessible', function(done){
       var sourceArray = new Uint32Array([1,2,3,4,5]);
       pjs(sourceArray).map(function(e, ctx){

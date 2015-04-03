@@ -358,7 +358,8 @@ describe('local context tests', function(){
                 mask: 0x000000F0
               };
               pjs(sourceArray).map(mapper1, ctx1).map(mapper2, ctx2).seq(function (err, result){
-                expect(err).to.equal('Uncaught TypeError: undefined is not a function');
+                expect(err.name).to.equal('WorkerError');
+                expect(err.message).to.equal('Uncaught TypeError: undefined is not a function');
                 done();
               });
             });
@@ -375,7 +376,8 @@ describe('local context tests', function(){
                 aux: function (e) { return e >> 2; }
               };
               pjs(sourceArray).map(mapper1, ctx1).map(mapper2, ctx2).seq(function (err, result){
-                expect(err).to.equal('Uncaught TypeError: Cannot read property \'r\' of undefined');
+                expect(err.name).to.equal('WorkerError');
+                expect(err.message).to.equal('Uncaught TypeError: Cannot read property \'r\' of undefined');
                 done();
               });
             });
