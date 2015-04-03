@@ -21,10 +21,10 @@ WrappedTypedArray.prototype.reduce = function(reducer, seed, identity, context) 
   return this.__operation(operation_names.REDUCE, reducer, context, seed, identity);
 };
 
-WrappedTypedArray.prototype.__operation = function(name, code, context, seed, identity) {
+WrappedTypedArray.prototype.__operation = function(name, code, localContext, seed, identity) {
   var operation = operation_packager(name, code, seed, identity);
-  var extendedContext = contextUtils.extendChainContext(context);
-  return new Chain(this.source, this.parts, this.workers, operation, extendedContext);
+  var chainContext = contextUtils.extendChainContext(localContext);
+  return new Chain(this.source, this.parts, this.workers, operation, chainContext);
 };
 
 module.exports = WrappedTypedArray;

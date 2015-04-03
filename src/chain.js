@@ -30,13 +30,13 @@ var finisher = {
   }
 };
 
-var Chain = function (source, parts, workers, operation, context, previousOperations) {
+var Chain = function (source, parts, workers, operation, chainContext, previousOperations) {
   this.packager = new JobPackager(parts, source);
   this.source = source;
   this.parts = parts;
   this.workers = workers;
   this.operation = operation; //todo: (mati) por ahora lo dejo para finalizar el reduce correctamente
-  this.context = context;
+  this.context = chainContext;
   previousOperations = previousOperations || [];
   previousOperations.push(operation);
   this.operations = previousOperations;
@@ -48,23 +48,23 @@ Chain.prototype.localContext = function () {
 
 Chain.prototype.map = function (mapper, context) {
   this.__verifyPreviousOperation();
-  var extendedContext = contextUtils.extendChainContext(context, this.context);
+  var nextChainContext = contextUtils.extendChainContext(context, this.context);
   var operation = operation_packager(operation_names.MAP, mapper);
-  return new Chain(this.source, this.parts, this.workers, operation, extendedContext, this.operations);
+  return new Chain(this.source, this.parts, this.workers, operation, nextChainContext, this.operations);
 };
 
 Chain.prototype.filter = function (predicate, context) {
   this.__verifyPreviousOperation();
-  var extendedContext = contextUtils.extendChainContext(context, this.context);
+  var nextChainContext = contextUtils.extendChainContext(context, this.context);
   var operation = operation_packager(operation_names.FILTER, predicate);
-  return new Chain(this.source, this.parts, this.workers, operation, extendedContext, this.operations);
+  return new Chain(this.source, this.parts, this.workers, operation, nextChainContext, this.operations);
 };
 
 Chain.prototype.reduce = function (predicate, seed, identity, context) {
   this.__verifyPreviousOperation();
-  var extendedContext = contextUtils.extendChainContext(context, this.context);
+  var nextChainContext = contextUtils.extendChainContext(context, this.context);
   var operation = operation_packager(operation_names.REDUCE, predicate, seed, identity);
-  return new Chain(this.source, this.parts, this.workers, operation, extendedContext, this.operations);
+  return new Chain(this.source, this.parts, this.workers, operation, nextChainContext, this.operations);
 };
 
 Chain.prototype.seq = function (done) {
