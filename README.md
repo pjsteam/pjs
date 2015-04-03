@@ -156,7 +156,7 @@ __Parameters__
   * `element` - the current `TypedArray` element.
   * `context` - optional. The union context from pjs' global context and chain's local context.
 * `seed` - the initial value for current when the `reducer` when executing the reduction on the Web Worker results.
-* `identityReducer(current, element[, context])` - the function to invoke for each web worker result.
+* `identityReducer(current, element[, context])` - optional. The function to invoke for each web worker result. It will be used `reducer` in case it is not provided.
   * `current` - the value of returned by `identityReducer` for the previous `element`. First time is initialized with `seed`.
   * `element` - the current `TypedArray` element.
   * `context` - optional. The union context from pjs' global context and chain's local context.
@@ -269,7 +269,7 @@ __Parameters__
   * `element` - the current `TypedArray` element.
   * `context` - optional. The union context from pjs' global context and chain's local context.
 * `seed` - the initial value for current when the `reducer` when executing the reduction on the Web Worker results.
-* `identityReducer(current, element[, context])` - the function to invoke for each web worker result.
+* `identityReducer(current, element[, context])` - optional. The function to invoke for each web worker result. It will be used `reducer` in case it is not provided.
   * `current` - the value of returned by `identityReducer` for the previous `element`. First time is initialized with `seed`.
   * `element` - the current `TypedArray` element.
   * `context` - optional. The union context from pjs' global context and chain's local context.
