@@ -343,39 +343,43 @@ describe('local context tests', function(){
             });
           });
 
-          it('should not access other chain local context\'s functions', function(done){
-            var sourceArray = new TypedArray(normalSourceArray);
-            var mapper1 = function (e, ctx) { return ctx.aux(e & ctx.mask); };
-            var ctx1 = {
-              mask: 0x0000000F,
-              aux: function (e) { return e << 2; }
-            };
-            var mapper2 = function (e, ctx) { return ctx.aux(e & ctx.mask); };
-            var ctx2 = {
-              mask: 0x000000F0
-            };
-            pjs(sourceArray).map(mapper1, ctx1).map(mapper2, ctx2).seq(function (err, result){
-              expect(err).to.equal('Uncaught TypeError: undefined is not a function');
-              done();
-            });
-          });
+          var chromeVersion = parseInt(window.navigator.appVersion.match(/Chrome\/(\d+)\./)[1], 10);
 
-          it('should not access other chain local context\'s values', function(done){
-            var sourceArray = new TypedArray(normalSourceArray);
-            var mapper1 = function (e, ctx) { return ctx.aux(e & ctx.mask.r); };
-            var ctx1 = {
-              mask: {r: 0x0000000F},
-              aux: function (e) { return e << 2; }
-            };
-            var mapper2 = function (e, ctx) { return ctx.aux(e & ctx.mask.r); };
-            var ctx2 = {
-              aux: function (e) { return e >> 2; }
-            };
-            pjs(sourceArray).map(mapper1, ctx1).map(mapper2, ctx2).seq(function (err, result){
-              expect(err).to.equal('Uncaught TypeError: Cannot read property \'r\' of undefined');
-              done();
+          if(chromeVersion && chromeVersion > 39){
+            it('should not access other chain local context\'s functions', function(done){
+              var sourceArray = new TypedArray(normalSourceArray);
+              var mapper1 = function (e, ctx) { return ctx.aux(e & ctx.mask); };
+              var ctx1 = {
+                mask: 0x0000000F,
+                aux: function (e) { return e << 2; }
+              };
+              var mapper2 = function (e, ctx) { return ctx.aux(e & ctx.mask); };
+              var ctx2 = {
+                mask: 0x000000F0
+              };
+              pjs(sourceArray).map(mapper1, ctx1).map(mapper2, ctx2).seq(function (err, result){
+                expect(err).to.equal('Uncaught TypeError: undefined is not a function');
+                done();
+              });
             });
-          });
+
+            it('should not access other chain local context\'s values', function(done){
+              var sourceArray = new TypedArray(normalSourceArray);
+              var mapper1 = function (e, ctx) { return ctx.aux(e & ctx.mask.r); };
+              var ctx1 = {
+                mask: {r: 0x0000000F},
+                aux: function (e) { return e << 2; }
+              };
+              var mapper2 = function (e, ctx) { return ctx.aux(e & ctx.mask.r); };
+              var ctx2 = {
+                aux: function (e) { return e >> 2; }
+              };
+              pjs(sourceArray).map(mapper1, ctx1).map(mapper2, ctx2).seq(function (err, result){
+                expect(err).to.equal('Uncaught TypeError: Cannot read property \'r\' of undefined');
+                done();
+              });
+            });
+          }
         });
       });
     });

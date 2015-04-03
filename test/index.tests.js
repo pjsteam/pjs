@@ -57,6 +57,7 @@ describe('initialization', function(){
   });
 
   it('should clear globalContext when terminating', function(done){
+    this.timeout(4000);
     pjs.init();
     pjs.updateContext({
       value: 10
