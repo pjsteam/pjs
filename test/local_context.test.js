@@ -6,12 +6,12 @@ describe('local context tests', function(){
   var utils = require('../src/utils.js');
   var normalSourceArray = [1,2,3,5,13,16,32,63,64,129,255,500,1001,1023,1024]
 
-  beforeEach(function () {
+  before(function () {
     pjs = require('../src/index.js');
     pjs.init({maxWorkers:4});
   });
 
-  afterEach(function(){
+  after(function(){
     if (pjs.config){
       pjs.terminate();
     }
@@ -174,7 +174,8 @@ describe('local context tests', function(){
             min: 0x0000000a,
             max: 0x00000100
           };
-          pjs(sourceArray).filter(predicate, ctx).seq(function(err, result){
+          pjs(sourceArray).filter(predicate, ctx).seq(function (err, result){
+            if (err) { return done(err); }
             expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(sourceArray));
             var index = 0;
             var i = 0;
@@ -205,6 +206,7 @@ describe('local context tests', function(){
           }, seed);
           var wr = pjs(sourceArray).reduce(reducer, seed, identitiy, ctx);
           wr.seq(function (err, result) {
+            if (err) { return done(err); }
             expect(result).to.equal(reducedSource);
             done();
           });
@@ -221,7 +223,8 @@ describe('local context tests', function(){
               return e << 2;
             }
           };
-          pjs(sourceArray).map(mapper, ctx).seq(function(err, result){
+          pjs(sourceArray).map(mapper, ctx).seq(function (err, result){
+            if (err) { return done(err); }
             expect(result).to.have.length(sourceArray.length);
             expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(sourceArray));
             for (var i = sourceArray.length - 1; i >= 0; i--) {
@@ -244,7 +247,8 @@ describe('local context tests', function(){
               return e < 0x00000100;
             }
           };
-          pjs(sourceArray).filter(predicate, ctx).seq(function(err, result){
+          pjs(sourceArray).filter(predicate, ctx).seq(function (err, result){
+            if (err) { return done(err); }
             expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(sourceArray));
             var index = 0;
             var i = 0;
@@ -277,45 +281,101 @@ describe('local context tests', function(){
           }, seed);
           var wr = pjs(sourceArray).reduce(reducer, seed, identitiy, ctx);
           wr.seq(function (err, result) {
+            if (err) { return done(err); }
             expect(result).to.equal(reducedSource);
             done();
           });
         });
 
-        it('should merge context', function(done){
-          var sourceArray = new TypedArray(normalSourceArray);
-          var mapper = function (e, ctx) {
-            return ctx.shifter(e & ctx.filter);
-          };
-          var mapCtx = {
-            filter: 0x0000000F,
-            shifter: function (e) {
-              return e << 2;
-            }
-          };
+        describe("chaining tests", function () {
 
-          var predicate = function (e, ctx) {
-            var red = e & ctx.redMask;
-            return ctx.redValidator(red);
-          };
-          var filterCtx = {
-            redMask: 0x000000FF,
-            redValidator: function (e) {
-              return e < 0x00000010;
-            }
-          };
+          it('should use local context on each chain', function(done){
+            var sourceArray = new TypedArray(normalSourceArray);
+            var mapper = function (e, ctx) { return ctx.shifter(e & ctx.filter); };
+            var mapCtx = {
+              filter: 0x0000000F,
+              shifter: function (e) { return e << 2; }
+            };
+            var predicate = function (e, ctx) { return ctx.redValidator(e & ctx.redMask); };
+            var filterCtx = {
+              redMask: 0x000000FF,
+              redValidator: function (e) { return e < 0x00000010; }
+            };
 
-          pjs(sourceArray).map(mapper, mapCtx).filter(predicate, filterCtx).seq(function(err, result){
-            expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(sourceArray));
-            var trasformedSource = Array.prototype.slice.call(sourceArray).map(function (e) {
-              return mapper(e, mapCtx);
-            }).filter(function (e) {
-              return predicate(e, filterCtx);
+            pjs(sourceArray).map(mapper, mapCtx).filter(predicate, filterCtx).seq(function(err, result){
+              if (err) { return done(err); }
+              expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(sourceArray));
+              var trasformedSource = Array.prototype.slice.call(sourceArray).map(function (e) {
+                return mapper(e, mapCtx);
+              }).filter(function (e) {
+                return predicate(e, filterCtx);
+              });
+              for (var i = 0; i < trasformedSource.length; i++) {
+                expect(result[i]).to.equal(trasformedSource[i]);
+              }
+              done();
             });
-            for (var i = 0; i < trasformedSource.length; i++) {
-              expect(result[i]).to.equal(trasformedSource[i]);
-            }
-            done();
+          });
+
+          it('should preserve local context on each chain', function(done){
+            var sourceArray = new TypedArray(normalSourceArray);
+            var mapper1 = function (e, ctx) { return ctx.aux(e & ctx.mask); };
+            var ctx1 = {
+              mask: 0x0000000F,
+              aux: function (e) { return e << 2; }
+            };
+            var mapper2 = function (e, ctx) { return ctx.aux(e & ctx.mask); };
+            var ctx2 = {
+              mask: 0x000000F0,
+              aux: function (e) { return e >> 2; }
+            };
+            pjs(sourceArray).map(mapper1, ctx1).map(mapper2, ctx2).seq(function (err, result){
+              if (err) { return done(err); }
+              expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(sourceArray));
+              var trasformedSource = Array.prototype.slice.call(sourceArray).map(function (e) {
+                return mapper1(e, ctx1);
+              }).map(function (e) {
+                return mapper2(e, ctx2);
+              });
+              for (var i = 0; i < trasformedSource.length; i++) {
+                expect(result[i]).to.equal(trasformedSource[i]);
+              }
+              done();
+            });
+          });
+
+          it('should not access other chain local context\'s functions', function(done){
+            var sourceArray = new TypedArray(normalSourceArray);
+            var mapper1 = function (e, ctx) { return ctx.aux(e & ctx.mask); };
+            var ctx1 = {
+              mask: 0x0000000F,
+              aux: function (e) { return e << 2; }
+            };
+            var mapper2 = function (e, ctx) { return ctx.aux(e & ctx.mask); };
+            var ctx2 = {
+              mask: 0x000000F0
+            };
+            pjs(sourceArray).map(mapper1, ctx1).map(mapper2, ctx2).seq(function (err, result){
+              expect(err).to.equal('Uncaught TypeError: undefined is not a function');
+              done();
+            });
+          });
+
+          it('should not access other chain local context\'s values', function(done){
+            var sourceArray = new TypedArray(normalSourceArray);
+            var mapper1 = function (e, ctx) { return ctx.aux(e & ctx.mask.r); };
+            var ctx1 = {
+              mask: {r: 0x0000000F},
+              aux: function (e) { return e << 2; }
+            };
+            var mapper2 = function (e, ctx) { return ctx.aux(e & ctx.mask.r); };
+            var ctx2 = {
+              aux: function (e) { return e >> 2; }
+            };
+            pjs(sourceArray).map(mapper1, ctx1).map(mapper2, ctx2).seq(function (err, result){
+              expect(err).to.equal('Uncaught TypeError: Cannot read property \'r\' of undefined');
+              done();
+            });
           });
         });
       });
