@@ -1,4 +1,4 @@
-// http://jsperf.com/additional-clonningdata-comparison-long
+// http://jsperf.com/additional-clonningdata-comparison-long/2
 
 // HTML setup
 <script>
@@ -47,7 +47,7 @@
       var data = event.data;
       var strfyCtx = data.ctx;
       var ctx = JSON.parse(strfyCtx);
-      if (data.pack) {
+      if (data.pack && ctx) {
         postMessage(data.pack.buffer, [data.pack.buffer]);
       }
     };
