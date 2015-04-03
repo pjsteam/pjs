@@ -5,12 +5,12 @@ describe('map tests', function(){
   var pjs;
   var utils = require('../src/utils.js');
 
-  beforeEach(function () {
+  before(function () {
     pjs = require('../src/index.js');
     pjs.init({maxWorkers:4});
   });
 
-  afterEach(function(){
+  after(function(){
     if (pjs.config){
       pjs.terminate();
     }
@@ -26,11 +26,12 @@ describe('map tests', function(){
           pjs(sourceArray).map(function(e){
             return e * 2;
           }).seq(function(err, result){
+            if (err) { return done(err); }
             expect(result).to.have.length(sourceArray.length);
             expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(sourceArray));
             for (var i = sourceArray.length - 1; i >= 0; i--) {
               expect(result[i]).to.equal(sourceArray[i] * 2);
-            };
+            }
             done();
           });
         });
@@ -40,6 +41,7 @@ describe('map tests', function(){
           pjs(emptySourceArray).map(function(e){
             return e * 2;
           }).seq(function(err, result){
+            if (err) { return done(err); }
             expect(result).to.have.length(0);
             expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(emptySourceArray));
             done();
@@ -51,6 +53,7 @@ describe('map tests', function(){
           pjs(singleElementSourceArray).map(function(e){
             return e * 2;
           }).seq(function(err, result){
+            if (err) { return done(err); }
             expect(result).to.have.length(singleElementSourceArray.length);
             expect(result[0]).to.equal(singleElementSourceArray[0] * 2);
             expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(singleElementSourceArray));

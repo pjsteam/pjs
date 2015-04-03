@@ -15,7 +15,6 @@ describe('job packager', function(){
   var packager = new JobPackager(parts, elements);
   var invalidOperation = 'add';
   var packages = packager.generatePackages([{ code: code, name: operationFilter}]);
-  var ctxPackages = packager.generatePackages([{ code: code, name: operationFilter}], {name: 'pjs'});
 
   it('should not support empty initialization', function () {
     expect(function () {
@@ -98,20 +97,6 @@ describe('job packager', function(){
   it('should generate packaged buffer on all packages', function () {
     packages.forEach(function (jobPackage) {
       expect(jobPackage.buffer).to.not.be.undefined;
-    });
-  });
-
-  it('should not generate packaged context on all packages', function () {
-    packages.forEach(function (jobPackage) {
-      expect(jobPackage.ctx).to.be.undefined;
-    });
-  });
-
-  it('should generate packaged context on all packages', function () {
-    ctxPackages.forEach(function (jobPackage) {
-      expect(jobPackage.ctx).to.not.be.undefined;
-      var jobCtx = JSON.parse(jobPackage.ctx);
-      expect(jobCtx.name).to.equal('pjs');
     });
   });
 

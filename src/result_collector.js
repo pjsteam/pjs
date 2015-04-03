@@ -18,7 +18,7 @@ var Collector = module.exports = function (parts, cb) {
 
 Collector.prototype.onError = function(message){
   if (!this.error){
-    this.error = message;
+    this.error = new errors.WorkerError(message);
   }
   this.updateCompleted();
 };

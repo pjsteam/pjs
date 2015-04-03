@@ -40,6 +40,9 @@ module.exports = function(config) {
       'test/**/*.js': ['browserify']
     },
 
+    browserify:{
+      debug: true
+    },
 
     // test results reporter to use
     // possible values: 'dots', 'progress'

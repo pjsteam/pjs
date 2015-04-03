@@ -19,6 +19,14 @@ InvalidArgumentsError.prototype = new Error();
 InvalidArgumentsError.prototype.constructor = InvalidArgumentsError;
 errors.InvalidArgumentsError = InvalidArgumentsError;
 
+var WorkerError = function WorkerError(message){
+  this.name = 'WorkerError';
+  this.message = message || 'An unknown error ocurred in the worker';
+};
+
+WorkerError.prototype = new Error();
+WorkerError.prototype.constructor = WorkerError;
+errors.WorkerError = WorkerError;
 
 errors.messages = {
   CONSECUTIVE_INITS: 'You should not recall init if the library is already initialized.',
@@ -26,8 +34,10 @@ errors.messages = {
   PARTITIONER_ARGUMENT_IS_NOT_TYPED_ARRAY: 'Expected TypedArray argument.',
   ZERO_ARRAYS_TO_MERGE: 'Zero arrays to merge. Provide at least one.',
   INVALID_PARTS: 'Invalid number of parts.',
+  INVALID_CONTEXT: 'Invalid context.',
   PART_ALREADY_COLLECTED: 'Tried to collect part {0} more than once',
-  INVALID_CODE: 'Invalid code argument to package.',
+  MISSING_CODE_OR_PATH: 'Missing "code" or "functionPath" argument to package.',
+  INVALID_IDENTITY_CODE: 'Invalid identity code argument to package.',
   INVALID_ELEMENTS: 'Invalid number of elements to package.',
   INVALID_PACKAGE_INDEX: 'Package index should be not negative and less than {0}.',
   INVALID_TYPED_ARRAY: 'Invalid argument. It should be of TypedArray.',

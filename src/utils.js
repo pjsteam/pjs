@@ -1,5 +1,23 @@
 var utils = module.exports = {};
 
+var FUNCTION_REGEX = /^function[^(]*\(([^)]*)\)[^{]*\{([\s\S]*)\}$/;
+
+utils.parseFunction = function (code) {
+  var functionString = code.toString();
+  var match = functionString.match(FUNCTION_REGEX);
+  var args = match[1].split(',').map(function (p) { return p.trim(); });
+  var body = match[2];
+  return { args: args, body: body };
+};
+
+utils.isObject = function(object){
+  return typeof object === 'object' && !Array.isArray(object);
+};
+
+utils.isFunction = function (object) { //http://jsperf.com/alternative-isfunction-implementations
+  return !!(object && object.constructor && object.call && object.apply);
+};
+
 utils.getter = function (obj, name, value) {
   Object.defineProperty(obj, name, {
     enumerable: true,
@@ -49,3 +67,54 @@ utils.format = function (template) {
   }
   return current;
 };
+
+utils.createFunction = function(args, code){
+  switch (args.length) {
+    case 0:
+      /*jslint evil: true */
+      return new Function(code);
+    case 1:
+      /*jslint evil: true */
+      return new Function(args[0], code);
+    case 2:
+      /*jslint evil: true */
+      return new Function(args[0], args[1], code);
+    case 3:
+      /*jslint evil: true */
+      return new Function(args[0], args[1], args[2], code);
+    case 4:
+      /*jslint evil: true */
+      return new Function(args[0], args[1], args[2], args[3], code);
+    default:
+      return createDynamicArgumentsFunction(args, code);
+  }
+};
+
+var innerGetNested = function(obj, names, index, fail){
+  var next = obj[names[index]];
+  if (names.length - 1 === index){
+    return next;
+  }
+
+  if (!utils.isObject(next)){
+    fail();
+  }
+
+  return innerGetNested(next, names, ++index);
+};
+
+utils.getNested = function(obj, path){
+  var parts = path.split('.');
+
+  return innerGetNested(obj, parts, 0, function(){
+    throw new Error(
+      utils.format('Cannot get nested path {0} from context',
+        path));
+  });
+};
+
+function createDynamicArgumentsFunction(args, code) {
+  var fArgs = new Array(args);
+  fArgs.push(code);
+  return Function.prototype.constructor.apply(null, fArgs);
+}

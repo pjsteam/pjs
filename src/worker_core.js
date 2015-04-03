@@ -1,3 +1,9 @@
+var mutableExtend = require('xtend/mutable');
+var utils = require('./utils');
+var immutableExtend = require('xtend/immutable');
+var contextUtils = require('./context');
+var chainContext = require('./chain_context');
+
 // param can be either length (number) or buffer
 function createTypedArray(type, param){
   switch(type){
@@ -40,38 +46,71 @@ var mapFactory = getMapFactory();
 
 var functionCache = mapFactory();
 
+var globalContext = {};
+
 var operations = {
-  map: function (array, length, f) {
+  map: function (array, length, f, ctx) {
     var i = 0;
     for ( ; i < length; i += 1){
-      array[i] = f(array[i]);
+      array[i] = f(array[i], ctx);
     }
     return length;
   },
-  filter: function (array, length, f) {
+  filter: function (array, length, f, ctx) {
     var i = 0, newLength = 0;
     for ( ; i < length; i += 1){
       var e = array[i];
-      if (f(e)) {
+      if (f(e, ctx)) {
         array[newLength++] = e;
       }
     }
     return newLength;
   },
-  reduce: function (array, length, f, seed) {
+  reduce: function (array, length, f, ctx, seed) {
     var i = 0;
     var reduced = seed;
     for ( ; i < length; i += 1){
       var e = array[i];
-      reduced = f(reduced, e);
+      reduced = f(reduced, e, ctx);
     }
     array[0] = reduced;
     return 1;
   }
 };
 
+function getFunction(operation){
+  if (operation.functionPath){
+    return utils.getNested(globalContext, operation.functionPath);
+  }
+
+  var args = operation.args;
+  var code = operation.code;
+  var cacheKey = args.join(',') + code;
+  var f = functionCache[cacheKey];
+  if (!f){
+    f = utils.createFunction(args, code);
+    functionCache[cacheKey] = f;
+  }
+
+  return f;
+}
+
 module.exports = function(event){
   var pack = event.data;
+
+  if (pack.contextUpdate){
+    var deserialized = contextUtils.deserializeFunctions(
+      JSON.parse(pack.contextUpdate));
+    mutableExtend(globalContext, deserialized);
+
+    return {
+      message: {
+        index: pack.index
+      }
+    };
+  }
+
+  var context = createOperationContexts(pack.ctx);
   var ops = pack.operations;
   var opsLength = ops.length;
 
@@ -79,17 +118,18 @@ module.exports = function(event){
   var newLength = array.length;
 
   for (var i = 0; i < opsLength; i += 1) {
+    var localCtx;
     var operation = ops[i];
     var seed = operation.identity;
-    var args = operation.args;
-    var code = operation.code;
-    var cacheKey = args.join(',') + code;
-    var f = functionCache[cacheKey];
-    if (!f){
-      f = createFunction(args, code);
-      functionCache[cacheKey] = f;
+    var f = getFunction(operation);
+
+    if (context) {
+      localCtx = immutableExtend(globalContext, context[i]);
+    } else {
+      localCtx = globalContext;
     }
-    newLength = operations[operation.name](array, newLength, f, seed);
+
+    newLength = operations[operation.name](array, newLength, f, localCtx, seed);
   }
 
   return {
@@ -102,13 +142,16 @@ module.exports = function(event){
   };
 };
 
-function createFunction(args, code) {
-  if (1 === args.length) {
-    /*jslint evil: true */
-    return new Function(args[0], code);
+function createOperationContexts (context) {
+  var operationContexts;
+  if (context) {
+    context = chainContext.deserializeChainContext(context);
+    operationContexts = {};
+    for (var i = 0; i <= context.currentIndex; i++) {
+      if (context[i]){
+        operationContexts[i] = contextUtils.deserializeFunctions(context[i]);
+      }
+    }
   }
-  if (2 === args.length) {
-    /*jslint evil: true */
-    return new Function(args[0], args[1], code);
-  }
+  return operationContexts;
 }

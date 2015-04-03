@@ -18,16 +18,16 @@ describe('operation packager', function () {
     var operation = 'filter';
     var code = function (e) { return true; };
     var pack = operationPackager(operation, code);
-    expect(pack.name).to.be.equal(operation);
-    expect(pack.code).to.be.equal(code);
+    expect(pack.name).to.equal(operation);
+    expect(pack.code).to.equal(code);
   });
 
   it('should package map operation', function () {
     var operation = 'map';
     var code = function (e) { return e + 1; };
     var pack = operationPackager(operation, code);
-    expect(pack.name).to.be.equal(operation);
-    expect(pack.code).to.be.equal(code);
+    expect(pack.name).to.equal(operation);
+    expect(pack.code).to.equal(code);
   });
 
   it('should not package reduce operation without seed', function () {
@@ -47,13 +47,31 @@ describe('operation packager', function () {
     }).to.throw(errors.InvalidArgumentsError);
   });
 
+  it('should not package reduce operation without identity code', function () {
+    var operation = 'reduce';
+    var code = function (p, e) { return p + e; };
+    var seed = 1;
+    expect(function () {
+      operationPackager(operation, code, seed, 0);
+    }).to.throw(errors.InvalidArgumentsError);
+  });
+
   it('should package reduce operation', function () {
     var operation = 'reduce';
     var code = function (p, e) { return p + e; };
     var seed = 1;
     var identity = 0;
+    var identityCode = function (p, e) { return p + e; };
     expect(function () {
-      operationPackager(operation, code, seed, identity);
+      operationPackager(operation, code, seed, identity, identityCode);
     }).to.not.throw(errors.InvalidArgumentsError);
+  });
+
+  it('should package functionPath if code is string an not function', function(){
+    var operation = 'map';
+    var pack = operationPackager(operation, 'f');
+    expect(pack.name).to.equal(operation);
+    expect(pack.code).to.be.undefined;
+    expect(pack.functionPath).to.equal('f');
   });
 });

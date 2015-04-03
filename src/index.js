@@ -1,17 +1,19 @@
 var errors = require('./errors');
 var utils = require('./utils');
-var work = require('webworkify');
+var workers = require('./workers');
 var WrappedTypedArray = require('./wrapped_typed_array');
+var ContextUpdatePackager = require('./context_update_packager');
+var mutableExtend = require('xtend/mutable');
 var pjs;
 
 var initialized = false;
-var workers = [];
+var globalContext = {};
 
 function wrap(typedArray){
 	if (!utils.isTypedArray(typedArray)) {
 		throw new errors.InvalidArgumentsError(errors.messages.INVALID_TYPED_ARRAY);
 	}
-	return new WrappedTypedArray(typedArray, pjs.config.workers, workers);
+	return new WrappedTypedArray(typedArray, workers.length, globalContext);
 }
 
 function init(options) {
@@ -23,11 +25,7 @@ function init(options) {
 	var cpus = navigator.hardwareConcurrency || 1;
 	var maxWorkers = options.maxWorkers || cpus;
 	var workersCount = Math.min(maxWorkers, cpus);
-
-	while (workersCount--) {
-		var worker = work(require('./worker.js'));
-		workers.push(worker);
-	}
+  workers.init(workersCount);
 
 	var config = {
   	get workers () {
@@ -36,8 +34,24 @@ function init(options) {
   };
 
   utils.getter(pjs, 'config', config);
+  utils.getter(pjs, 'contextUpdatePackager', new ContextUpdatePackager(workers.length));
 
 	initialized = true;
+}
+
+function updateContext(updates, done){
+  var self = this;
+  return new Promise(function (resolve, reject) {
+    var packs = self.contextUpdatePackager.generatePackages(updates);
+    workers.sendPacks(packs, function(err){
+      if (err) { if (done) { done(err); } reject(err); return; }
+      mutableExtend(globalContext, updates);
+      if (done) {
+        done();
+      }
+      resolve();
+    });
+  });
 }
 
 function terminate() {
@@ -45,9 +59,11 @@ function terminate() {
 		throw new errors.InvalidOperationError(errors.messages.TERMINATE_WITHOUT_INIT);
 	}
 
-	workers.forEach(function (w) { w.terminate(); });
-	workers = [];
+  workers.terminate();
+
+  globalContext = {};
 	delete pjs.config;
+	delete pjs.contextUpdatePackager;
 
 	initialized = false;
 }
@@ -56,3 +72,4 @@ pjs = module.exports = wrap;
 
 pjs.init = init;
 pjs.terminate = terminate;
+pjs.updateContext = updateContext;

@@ -30,7 +30,7 @@ Partitioner.prototype.validateTypedArray = function (array) {
 Partitioner.prototype.doPartition = function (array) {
   var parts = this.parts;
   var elementsCount = array.length;
-  var subElementsCount = (elementsCount / parts) | 0;
+  var subElementsCount = Math.floor(elementsCount / parts) | 0;
   var from = 0;
   var to = 0;
 
