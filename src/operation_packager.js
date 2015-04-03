@@ -4,12 +4,15 @@ operation_names = Object.keys(operation_names).map(function (k) {
   return operation_names[k];
 });
 
-module.exports = function (name, code, seed, identity) {
+module.exports = function (name, code, seed, identity, identityCode) {
   if (!name || -1 === operation_names.indexOf(name)) {
     throw new errors.InvalidArgumentsError(errors.messages.INVALID_OPERATION);
   }
   if (!code) {
     throw new errors.InvalidArgumentsError(errors.messages.INVALID_CODE);
+  }
+  if (name === 'reduce' && undefined === identityCode) {
+    throw new errors.InvalidArgumentsError(errors.messages.INVALID_IDENTITY_CODE);
   }
   if (name === 'reduce' && undefined === seed) {
     throw new errors.InvalidArgumentsError(errors.messages.MISSING_SEED);
@@ -22,6 +25,7 @@ module.exports = function (name, code, seed, identity) {
     name: name,
     code: code,
     seed: seed,
-    identity: identity
+    identity: identity,
+    identityCode: identityCode
   };
 };

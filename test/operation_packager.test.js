@@ -47,13 +47,24 @@ describe('operation packager', function () {
     }).to.throw(errors.InvalidArgumentsError);
   });
 
-  it('should package reduce operation', function () {
+  it('should not package reduce operation without identity code', function () {
     var operation = 'reduce';
     var code = function (p, e) { return p + e; };
     var seed = 1;
     var identity = 0;
     expect(function () {
-      operationPackager(operation, code, seed, identity);
+      operationPackager(operation, code, seed, 0);
+    }).to.throw(errors.InvalidArgumentsError);
+  });
+
+  it('should package reduce operation', function () {
+    var operation = 'reduce';
+    var code = function (p, e) { return p + e; };
+    var seed = 1;
+    var identity = 0;
+    var identityCode = function (p, e) { return p + e; };
+    expect(function () {
+      operationPackager(operation, code, seed, identity, identityCode);
     }).to.not.throw(errors.InvalidArgumentsError);
   });
 });

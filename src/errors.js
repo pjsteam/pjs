@@ -28,6 +28,7 @@ errors.messages = {
   INVALID_PARTS: 'Invalid number of parts.',
   PART_ALREADY_COLLECTED: 'Tried to collect part {0} more than once',
   INVALID_CODE: 'Invalid code argument to package.',
+  INVALID_IDENTITY_CODE: 'Invalid identity code argument to package.',
   INVALID_ELEMENTS: 'Invalid number of elements to package.',
   INVALID_PACKAGE_INDEX: 'Package index should be not negative and less than {0}.',
   INVALID_TYPED_ARRAY: 'Invalid argument. It should be of TypedArray.',

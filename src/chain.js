@@ -4,6 +4,7 @@ var merge_typed_arrays = require('./typed_array_merger');
 var operation_names = require('./operation_names');
 var operation_packager = require('./operation_packager');
 var errors = require('./errors');
+var utils = require('./utils');
 var contextUtils = require('./chain_context');
 
 var finisher = {
@@ -60,10 +61,15 @@ Chain.prototype.filter = function (predicate, context) {
   return new Chain(this.source, this.parts, this.workers, operation, nextChainContext, this.operations);
 };
 
-Chain.prototype.reduce = function (predicate, seed, identity, context) {
+Chain.prototype.reduce = function (reducer, seed, identityReducer, identity, context) {
+  if (!utils.isFunction(identityReducer)) {
+    context = identity;
+    identity = identityReducer;
+    identityReducer = reducer;
+  }
   this.__verifyPreviousOperation();
   var nextChainContext = contextUtils.extendChainContext(context, this.context);
-  var operation = operation_packager(operation_names.REDUCE, predicate, seed, identity);
+  var operation = operation_packager(operation_names.REDUCE, reducer, seed, identity, identityReducer);
   return new Chain(this.source, this.parts, this.workers, operation, nextChainContext, this.operations);
 };
 
