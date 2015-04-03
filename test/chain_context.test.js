@@ -7,7 +7,7 @@ describe('chain context tests', function() {
   it ('should create a first chain context with a local context', function () {
     var firstChain = contextUtils.extendChainContext({name:'test', age: 8});
     expect(firstChain).to.not.be.undefined;
-    expect(firstChain.currentIndex).to.equals(0);
+    expect(firstChain.currentIndex).to.equal(0);
     expect(firstChain[0]).to.not.be.undefined;
   });
 
@@ -15,8 +15,8 @@ describe('chain context tests', function() {
     var firstChain = contextUtils.extendChainContext({name:'test', age: 8});
     var secondChain = contextUtils.extendChainContext({max: 8, min: 16}, firstChain);
     expect(secondChain).to.not.be.undefined;
-    expect(firstChain.currentIndex).to.equals(0);
-    expect(secondChain.currentIndex).to.equals(1);
+    expect(firstChain.currentIndex).to.equal(0);
+    expect(secondChain.currentIndex).to.equal(1);
     expect(secondChain[0]).to.not.be.undefined;
     expect(secondChain[1]).to.not.be.undefined;
   });
@@ -24,7 +24,7 @@ describe('chain context tests', function() {
   it ('should create a first chain context without a local context', function () {
     var firstChain = contextUtils.extendChainContext();
     expect(firstChain).to.not.be.undefined;
-    expect(firstChain.currentIndex).to.equals(0);
+    expect(firstChain.currentIndex).to.equal(0);
     expect(firstChain[0]).to.be.undefined;
   });
 
@@ -32,8 +32,8 @@ describe('chain context tests', function() {
     var firstChain = contextUtils.extendChainContext();
     var secondChain = contextUtils.extendChainContext(null, firstChain);
     expect(secondChain).to.not.be.undefined;
-    expect(firstChain.currentIndex).to.equals(0);
-    expect(secondChain.currentIndex).to.equals(1);
+    expect(firstChain.currentIndex).to.equal(0);
+    expect(secondChain.currentIndex).to.equal(1);
     expect(secondChain[0]).to.be.undefined;
     expect(secondChain[1]).to.be.undefined;
   });
@@ -57,8 +57,8 @@ describe('chain context tests', function() {
     it ('should retrieve first context from first chain', function () {
       var c = contextUtils.currentContextFromChainContext(firstChain);
       expect(c).to.not.be.undefined;
-      expect(c.max).to.equals(8);
-      expect(c.min).to.equals(2);
+      expect(c.max).to.equal(8);
+      expect(c.min).to.equal(2);
     });
 
     it ('should retrieve second context from second chain', function () {
@@ -70,9 +70,9 @@ describe('chain context tests', function() {
       var c = contextUtils.currentContextFromChainContext(thirdChain);
       expect(c).to.not.be.undefined;
       expect(c.minimize).to.not.be.undefined;
-      expect(c.minimize(5)).to.equals(4);
-      expect(c.minimize(3)).to.equals(3);
-      expect(c.minimize(1)).to.equals(1);
+      expect(c.minimize(5)).to.equal(4);
+      expect(c.minimize(3)).to.equal(3);
+      expect(c.minimize(1)).to.equal(1);
     });
 
     it ('should should generate a sibling chain from second chain', function () {
@@ -86,16 +86,16 @@ describe('chain context tests', function() {
       var c = contextUtils.currentContextFromChainContext(thirdChain);
       expect(c).to.not.be.undefined;
       expect(c.minimize).to.not.be.undefined;
-      expect(c.minimize(5)).to.equals(4);
-      expect(c.minimize(3)).to.equals(3);
-      expect(c.minimize(1)).to.equals(1);
+      expect(c.minimize(5)).to.equal(4);
+      expect(c.minimize(3)).to.equal(3);
+      expect(c.minimize(1)).to.equal(1);
 
       var cBis = contextUtils.currentContextFromChainContext(thirdChainBis);
       expect(cBis).to.not.be.undefined;
       expect(cBis.maximize).to.not.be.undefined;
-      expect(cBis.maximize(5)).to.equals(5);
-      expect(cBis.maximize(3)).to.equals(4);
-      expect(cBis.maximize(1)).to.equals(4);
+      expect(cBis.maximize(5)).to.equal(5);
+      expect(cBis.maximize(3)).to.equal(4);
+      expect(cBis.maximize(1)).to.equal(4);
     });
   });
 
