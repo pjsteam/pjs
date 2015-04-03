@@ -18,7 +18,7 @@ var finisher = {
     var r;
     var context = self.__localContext();
     var operation = self.operation;
-    var code = operation.code;
+    var code = operation.identityCode;
     var seed = operation.seed;
     if (context) {
       r = Array.prototype.slice.call(result).reduce(function (p, e) {
