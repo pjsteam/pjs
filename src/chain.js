@@ -15,7 +15,7 @@ var finisher = {
   },
   reduce: function (self, result, done) {
     var r;
-    var context = self.localContext();
+    var context = self.__localContext();
     var operation = self.operation;
     var code = operation.code;
     var seed = operation.seed;
@@ -42,7 +42,7 @@ var Chain = function (source, parts, workers, operation, chainContext, previousO
   this.operations = previousOperations;
 };
 
-Chain.prototype.localContext = function () {
+Chain.prototype.__localContext = function () {
   return contextUtils.currentContextFromChainContext(this.context);
 };
 
