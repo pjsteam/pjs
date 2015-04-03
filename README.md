@@ -38,7 +38,7 @@ The `filter` operation invokes the `predicate` function on each element of the w
 ### `reduce`
 The `reduce` operation invokes the `reducer` function on each element of the wrapped `TypedArray` passing the value of the previous invocation as `current`.
 
-The reduction is first performed in the Web Workers using `identity` as the intial value for `current`. The results from the Web Workers are collected and a new reduction is performed on them using `seed`.
+The reduction is first performed in the Web Workers using `identity` as the intial value for `current`. The results from the Web Workers are collected and a new reduction is performed on them using `seed` and `identityReducer` function.
 
 ## API
 
@@ -79,12 +79,14 @@ pjs.terminate();
 ```
 
 <a name="wrapped_typed_array"></a>
-### `WrappedTypedArray.prototype.map(mapper)`
+### `WrappedTypedArray.prototype.map(mapper[, context])`
 Creates a new [`Chain`](#chain) whose first operation is a `map` with the specified `mapper` and returns it.
 
 __Parameters__
 
-* `mapper(element)` - the function to invoke for each element. Must return the mapped element.
+* `mapper(element[, context])` - the function to invoke for each element. Must return the mapped element.
+
+* `context` - optional. Value used as `mapper`'s `context` parameter which is previously merged with pjs' global context.
 
 __Returns__
 
@@ -99,12 +101,27 @@ pjs(new Uint32Array([1,2,3,4])).map(function(e){
 });
 ```
 
-### `WrappedTypedArray.prototype.filter(predicate)`
+```js
+pjs(new Uint32Array([1,2,3,4])).map(function(e, ctx){
+    return ctx.minimizer(ctx.factor * e);
+}, {
+  factor: 2,
+  minimizer: function (e) {
+    return Math.min(e, 5);
+  }
+}).seq(function(err, result){
+    // result is a Uint32Array with values [2,4,5,5]
+});
+```
+
+### `WrappedTypedArray.prototype.filter(predicate[, context])`
 Creates a new [`Chain`](#chain) whose first operation is a `filter` with the specified predicate and returns it.
 
 __Parameters__
 
-* `predicate(element)` - the function to invoke for each element. Must return `true` (or a [_truthy_ value](http://www.sitepoint.com/javascript-truthy-falsy/)) if the element is to be included in the resulting `TypedArray`, otherwise `false` (or a not _truthy_ value).
+* `predicate(element[, context])` - the function to invoke for each element. Must return `true` (or a [_truthy_ value](http://www.sitepoint.com/javascript-truthy-falsy/)) if the element is to be included in the resulting `TypedArray`, otherwise `false` (or a not _truthy_ value).
+
+* `context` - optional. Value used as `predicate`'s `context` parameter which is previously merged with pjs' global context.
 
 __Returns__
 
@@ -119,20 +136,36 @@ pjs(new Uint32Array([1,2,3,4])).filter(function(e){
 });
 ```
 
-### `WrappedTypedArray.prototype.reduce(reducer, seed, identity)`
-Creates a new [`Chain`](#chain) whose first (and last) operation is a `reduce` with the specified `seed` and `identity` and returns it.
+```js
+pjs(new Uint32Array([1,2,3,4])).filter(function(e, ctx){
+    return e % ctx.module === 0;
+}, {
+  module: 2
+}).seq(function(err, result){
+    // result is a Uint32Array with values [2,4]
+});
+```
+
+### `WrappedTypedArray.prototype.reduce(reducer, seed[, identityReducer], identity[, context])`
+Creates a new [`Chain`](#chain) whose first (and last) operation is a `reduce` with the specified `seed`, `identity` and `identityReducer` function and returns it.
 
 __Parameters__
 
-* `reducer(current, element)` - the function to invoke for each element. Must return the resulting value.
-  * `current` - the value of returned by `reducer` for the previous `element`.
+* `reducer(current, element[, context])` - the function to invoke for each element. Must return the resulting value.
+  * `current` - the value of returned by `reducer` for the previous `element`. First time is initialized with `identity`.
   * `element` - the current `TypedArray` element.
+  * `context` - optional. The union context from pjs' global context and chain's local context.
 * `seed` - the initial value for current when the `reducer` when executing the reduction on the Web Worker results.
+* `identityReducer(current, element[, context])` - the function to invoke for each web worker result.
+  * `current` - the value of returned by `identityReducer` for the previous `element`. First time is initialized with `seed`.
+  * `element` - the current `TypedArray` element.
+  * `context` - optional. The union context from pjs' global context and chain's local context.
 * `identity` - the initial value for `current` when executing the reduction in the Web Workers.
+* `context` - optional. Value used as `reducer`'s `context` parameter which is previously merged with pjs' global context.
 
 __Returns__
 
-Returns a [`Chain`](#chain) whose first (and last) operation is a `reduce` with the specified `seed` and `identity`.
+Returns a [`Chain`](#chain) whose first (and last) operation is a `reduce` with the specified `seed`, `identity` and `identityReducer` function.
 
 __Example__
 ```js
@@ -143,9 +176,33 @@ pjs(new Uint32Array([1,2,3,4])).reduce(function(current, element){
 });
 ```
 
+```js
+pjs(new Uint32Array([1,2,3,4])).reduce(function(current, element){
+    return current + element + 2;
+}, 3, function (current, element) {
+  return current + element;
+}, 0).seq(function(err, result){
+    // result is 21
+});
+```
+
+```js
+pjs(new Uint32Array([1,2,3,4])).reduce(function(current, element, context){
+    return current + context.adder(element);
+}, 3, function (current, element) {
+  return current + element;
+}, 0, {
+  adder: function (element) {
+    return element + 2;
+  }
+}).seq(function(err, result){
+    // result is 21
+});
+```
+
 <a name="chain"></a>
-### `Chain.prototype.map(mapper)`
-Adds a `map` operation with the provided `mapper` to the `Chain`. Returns the same `Chain` instance.
+### `Chain.prototype.map(mapper[, context])`
+Adds a `map` operation with the provided `mapper` to the `Chain`. Returns a new `Chain` instance.
 
 __Precondition__
 
@@ -153,11 +210,12 @@ __Precondition__
 
 __Parameters__
 
-* `mapper(element)` - the function to invoke for each element. Must return the mapped element.
+* `mapper(element[, context])` - the function to invoke for each element. Must return the mapped element.
+* `context` - optional. Value used as `mapper`'s `context` parameter which is previously merged with pjs' global context.
 
 __Returns__
 
-Returns the same `Chain`.
+Returns a new `Chain` instance.
 
 __Example__
 ```js
@@ -172,8 +230,8 @@ chain.map(function(e){
 });
 ```
 
-### `Chain.prototype.filter(predicate)`
-Adds a `filter` operation with the provided `predicate` to the `Chain`. Returns the same `Chain` instance.
+### `Chain.prototype.filter(predicate[, context])`
+Adds a `filter` operation with the provided `predicate` to the `Chain`. Returns a new `Chain` instance.
 
 __Precondition__
 
@@ -181,11 +239,12 @@ __Precondition__
 
 __Parameters__
 
-* `predicate(element)` - the function to invoke for each element. Must return `true` (or a [_truthy_ value](http://www.sitepoint.com/javascript-truthy-falsy/)) if the element is to be included in the resulting `TypedArray`, otherwise `false` (or a not _truthy_ value).
+* `predicate(element[, context])` - the function to invoke for each element. Must return `true` (or a [_truthy_ value](http://www.sitepoint.com/javascript-truthy-falsy/)) if the element is to be included in the resulting `TypedArray`, otherwise `false` (or a not _truthy_ value).
+* `context` - optional. Value used as `predicate`'s `context` parameter which is previously merged with pjs' global context.
 
 __Returns__
 
-Returns the same `Chain`.
+Returns a new `Chain` instance.
 
 __Example__
 ```js
@@ -200,20 +259,26 @@ chain.filter(function(e){
 });
 ```
 
-### `Chain.prototype.reduce(reducer, seed, identity)`
-Adds a `reduce` with the specified `seed` and `identity` to the `Chain`. Returns the same `Chain` instance.
+### `Chain.prototype.reduce(reducer, seed[, identityReducer], identity[, context])`
+Adds a `reduce` with the specified `seed` and `identity` to the `Chain`. Returns a new `Chain` instance.
 
 __Parameters__
 
-* `reducer(current, element)` - the function to invoke for each element. Must return the resulting value.
-  * `current` - the value of returned by `reducer` for the previous `element`.
+* `reducer(current, element[, context])` - the function to invoke for each element. Must return the resulting value.
+  * `current` - the value of returned by `reducer` for the previous `element`. First time is initialized with `identity`.
   * `element` - the current `TypedArray` element.
+  * `context` - optional. The union context from pjs' global context and chain's local context.
 * `seed` - the initial value for current when the `reducer` when executing the reduction on the Web Worker results.
+* `identityReducer(current, element[, context])` - the function to invoke for each web worker result.
+  * `current` - the value of returned by `identityReducer` for the previous `element`. First time is initialized with `seed`.
+  * `element` - the current `TypedArray` element.
+  * `context` - optional. The union context from pjs' global context and chain's local context.
 * `identity` - the initial value for `current` when executing the reduction in the Web Workers.
+* `context` - optional. Value used as `reducer`'s and `identityReducer`'s `context` parameter which is previously merged with pjs' global context.
 
 __Returns__
 
-Returns the same `Chain`.
+Returns a new `Chain` instance.
 
 __Example__
 ```js
