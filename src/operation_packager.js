@@ -11,13 +11,13 @@ module.exports = function (name, code, seed, identity, identityCode) {
   if (!code) {
     throw new errors.InvalidArgumentsError(errors.messages.INVALID_CODE);
   }
-  if (name === 'reduce' && undefined === identityCode) {
+  if (name === 'reduce' && typeof identityCode === 'undefined') {
     throw new errors.InvalidArgumentsError(errors.messages.INVALID_IDENTITY_CODE);
   }
-  if (name === 'reduce' && undefined === seed) {
+  if (name === 'reduce' && typeof seed === 'undefined') {
     throw new errors.InvalidArgumentsError(errors.messages.MISSING_SEED);
   }
-  if (name === 'reduce' && undefined === identity) {
+  if (name === 'reduce' && typeof identity === 'undefined') {
     throw new errors.InvalidArgumentsError(errors.messages.MISSING_IDENTITY);
   }
 
