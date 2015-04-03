@@ -3,7 +3,7 @@
 describe('promises tests', function () {
   var pjs;
   var errors = require('../src/errors');
-  var chromeHelper = require('../src/chrome_version_helper');
+  var chromeHelper = require('./chrome_version_helper');
 
   before(function () {
     pjs = require('../src/index.js');

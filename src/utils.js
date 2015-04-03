@@ -90,6 +90,29 @@ utils.createFunction = function(args, code){
   }
 };
 
+var innerGetNested = function(obj, names, index, fail){
+  var next = obj[names[index]];
+  if (names.length - 1 === index){
+    return next;
+  }
+
+  if (!utils.isObject(next)){
+    fail();
+  }
+
+  return innerGetNested(next, names, ++index);
+};
+
+utils.getNested = function(obj, path){
+  var parts = path.split('.');
+
+  return innerGetNested(obj, parts, 0, function(){
+    throw new Error(
+      utils.format('Cannot get nested path {0} from context',
+        path));
+  });
+};
+
 function createDynamicArgumentsFunction(args, code) {
   var fArgs = new Array(args);
   fArgs.push(code);

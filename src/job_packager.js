@@ -25,21 +25,29 @@ JobPackager.prototype.generatePackages = function (operations, chainContext) {
   }
 
   var parsedOperations = operations.map(function(op){
-    if (!op.code) {
-      throw new errors.InvalidArgumentsError(errors.messages.INVALID_CODE);
+    if (!(op.code || op.functionPath)) {
+      throw new errors.InvalidArgumentsError(errors.messages.MISSING_CODE_OR_PATH);
     }
 
     if (!op.name || -1 === operation_names.indexOf(op.name)) {
       throw new errors.InvalidArgumentsError(errors.messages.INVALID_OPERATION);
     }
 
-    var parsed = utils.parseFunction(op.code.toString());
+    if (!op.functionPath){
+      var parsed = utils.parseFunction(op.code.toString());
+
+      return {
+        identity: op.identity,
+        args: parsed.args,
+        code: parsed.body,
+        name: op.name
+      };
+    }
 
     return {
       identity: op.identity,
-      args: parsed.args,
-      code: parsed.body,
-      name: op.name
+      name: op.name,
+      functionPath: op.functionPath
     };
   });
 

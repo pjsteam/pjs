@@ -3,7 +3,7 @@
 describe('local context tests', function(){
 
   var pjs;
-  var chromeHelper = require('../src/chrome_version_helper');
+  var chromeHelper = require('./chrome_version_helper');
   var utils = require('../src/utils.js');
   var normalSourceArray = [1,2,3,5,13,16,32,63,64,129,255,500,1001,1023,1024];
 

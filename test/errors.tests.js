@@ -1,6 +1,6 @@
 'use strict';
 
-var chromeHelper = require('../src/chrome_version_helper');
+var chromeHelper = require('./chrome_version_helper');
 
 chromeHelper(39, function () {
   describe('error tests', function(){
