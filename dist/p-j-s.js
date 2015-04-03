@@ -49,13 +49,295 @@ module.exports = function (fn) {
     ;
     
     var URL = window.URL || window.webkitURL || window.mozURL || window.msURL;
-    
+
     return new Worker(URL.createObjectURL(
         new Blob([src], { type: 'text/javascript' })
     ));
 };
 
 },{}],2:[function(require,module,exports){
+module.exports = extend
+
+function extend() {
+    var target = {}
+
+    for (var i = 0; i < arguments.length; i++) {
+        var source = arguments[i]
+
+        for (var key in source) {
+            if (source.hasOwnProperty(key)) {
+                target[key] = source[key]
+            }
+        }
+    }
+
+    return target
+}
+
+},{}],3:[function(require,module,exports){
+module.exports = extend
+
+function extend(target) {
+    for (var i = 1; i < arguments.length; i++) {
+        var source = arguments[i]
+
+        for (var key in source) {
+            if (source.hasOwnProperty(key)) {
+                target[key] = source[key]
+            }
+        }
+    }
+
+    return target
+}
+
+},{}],4:[function(require,module,exports){
+var JobPackager = require('./job_packager');
+var workers = require('./workers');
+var merge_typed_arrays = require('./typed_array_merger');
+var operation_names = require('./operation_names');
+var operation_packager = require('./operation_packager');
+var errors = require('./errors');
+var utils = require('./utils');
+var contextUtils = require('./chain_context');
+var immutableExtend = require('xtend/immutable');
+
+var finisher = {
+  map: function (self, result, done, resolve) {
+    if (done) {
+      done(null, result);
+    }
+    resolve(result);
+  },
+  filter: function (self, result, done, resolve) {
+    if (done) {
+      done(null, result);
+    }
+    resolve(result);
+  },
+  reduce: function (self, result, done, resolve) {
+    var r;
+    var context = immutableExtend(self.globalContext, self.__localContext());
+    var operation = self.operation;
+    var code = operation.identityCode;
+    var seed = operation.seed;
+    if (context) {
+      r = Array.prototype.slice.call(result).reduce(function (p, e) {
+        return code(p, e, context);
+      }, seed);
+    } else {
+      r = Array.prototype.slice.call(result).reduce(code, seed);
+    }
+    if (done) {
+      done(null, r);
+    }
+    resolve(r);
+  }
+};
+
+var Chain = function (source, parts, operation, globalContext, chainContext, previousOperations) {
+  this.packager = new JobPackager(parts, source);
+  this.source = source;
+  this.parts = parts;
+  this.operation = operation; //todo: (mati) por ahora lo dejo para finalizar el reduce correctamente
+  this.globalContext = globalContext;
+  this.chainContext = chainContext;
+  previousOperations = previousOperations || [];
+  previousOperations.push(operation);
+  this.operations = previousOperations;
+};
+
+Chain.prototype.__localContext = function () {
+  return contextUtils.currentContextFromChainContext(this.chainContext);
+};
+
+Chain.prototype.map = function (mapper, localContext) {
+  return createChain(this, {
+    localContext: localContext,
+    f: mapper,
+    operation: operation_names.MAP
+  });
+};
+
+Chain.prototype.filter = function (predicate, localContext) {
+  return createChain(this, {
+    localContext: localContext,
+    f: predicate,
+    operation: operation_names.FILTER
+  });
+};
+
+Chain.prototype.reduce = function (reducer, seed, identityReducer, identity, localContext) {
+  if (!utils.isFunction(identityReducer)) {
+    localContext = identity;
+    identity = identityReducer;
+    identityReducer = reducer;
+  }
+
+  return createChain(this, {
+    localContext: localContext,
+    f: reducer,
+    seed: seed,
+    identity: identity,
+    identityReducer: identityReducer,
+    operation: operation_names.REDUCE
+  });
+};
+
+function createChain(oldChain, options){
+  oldChain.__verifyPreviousOperation();
+  var extendChainContext = contextUtils.extendChainContext(options.localContext, oldChain.chainContext);
+  var operation = operation_packager(options.operation, options.f, options.seed, options.identity, options.identityReducer);
+  return new Chain(oldChain.source, oldChain.parts, operation, oldChain.globalContext, extendChainContext, oldChain.operations);
+}
+
+Chain.prototype.seq = function (done) {
+  var self = this;
+  return new Promise(function (resolve, reject) {
+    var TypedArrayConstructor = self.source.constructor;
+    var packs = self.packager.generatePackages(self.operations, self.chainContext);
+
+    workers.sendPacks(packs, function(err, results){
+      if (err) { if (done) { done(err); } reject(err); return; }
+      var partial_results = results.map(function(result){
+        return new TypedArrayConstructor(result.value).subarray(0, result.newLength);
+      });
+      var m = merge_typed_arrays(partial_results);
+      return finisher[self.operation.name](self, m, done, resolve);
+    });
+  });
+};
+
+Chain.prototype.__verifyPreviousOperation = function () {
+  if (this.operation.name === 'reduce') {
+    throw new errors.InvalidOperationError(errors.messages.INVALID_CHAINING_OPERATION);
+  }
+};
+
+module.exports = Chain;
+
+},{"./chain_context":5,"./errors":8,"./job_packager":9,"./operation_names":10,"./operation_packager":11,"./typed_array_merger":13,"./utils":15,"./workers":18,"xtend/immutable":2}],5:[function(require,module,exports){
+var contextUtils = require('./context');
+var extend = require("xtend");
+
+var chainContext = module.exports = {};
+
+chainContext.serializeChainContext = function (chainContext) {
+  return JSON.stringify(chainContext);
+};
+
+chainContext.deserializeChainContext = function (chainContext) {
+  return JSON.parse(chainContext);
+};
+
+chainContext.extendChainContext = function (localContext, chainContext) {
+  var saneLocalContext = contextUtils.serializeFunctions(localContext);
+  if (!chainContext) {
+    var ctx = {
+      currentIndex: 0,
+    };
+    ctx[0] = saneLocalContext;
+    return ctx;
+  }
+
+  var nextIndex = chainContext.currentIndex + 1;
+  var nextContext = {
+    currentIndex: nextIndex,
+  };
+  nextContext[nextIndex] = saneLocalContext;
+  return extend(chainContext, nextContext);
+};
+
+chainContext.currentContextFromChainContext = function (chainContext) {
+  var currentContext = chainContext[chainContext.currentIndex];
+  if (currentContext) {
+    return contextUtils.deserializeFunctions(currentContext);
+  }
+  return undefined;
+};
+
+},{"./context":6,"xtend":2}],6:[function(require,module,exports){
+var utils = require('./utils');
+
+var ctx = {};
+module.exports = ctx;
+
+ctx.deserializeFunctions = function(obj){
+  return Object.keys(obj).reduce(function(c,v){
+    var value = obj[v];
+
+    if (utils.isObject(value)){
+      if (value.__isFunction){
+        c[v] = deserializeFunction(value);
+      } else {
+        ctx.deserializeFunctions(value);
+      }
+    }
+
+    return c;
+  }, obj);
+};
+
+ctx.serializeFunctions = function (obj) {
+  var res;
+  if (obj) {
+    res = Object.keys(obj).reduce(function(c,v){
+      var value = obj[v];
+      if (utils.isFunction(value)){
+        c[v] = serializeFunction(value);
+      } else if (utils.isObject(value)){
+        c[v] = ctx.serializeFunctions(value);
+      } else {
+        c[v] = value;
+      }
+
+      return c;
+    }, {});
+  }
+  return res;
+};
+
+function serializeFunction (value) {
+  var parsed = utils.parseFunction(value);
+  return {
+    __isFunction: true,
+    args: parsed.args,
+    code: parsed.body
+  };
+}
+
+function deserializeFunction(value) {
+  return utils.createFunction(value.args, value.code);
+}
+},{"./utils":15}],7:[function(require,module,exports){
+var errors = require('./errors');
+var contextUtils = require('./context');
+
+var ContextUpdatePackager = module.exports = function (parts) {
+  if (!parts) {
+    throw new errors.InvalidArgumentsError(errors.messages.INVALID_PARTS);
+  }
+  this.parts = parts;
+};
+
+ContextUpdatePackager.prototype.generatePackages = function (contextUpdate) {
+  if (!contextUpdate) {
+    throw new errors.InvalidArgumentsError(errors.messages.INVALID_CONTEXT);
+  }
+
+  var parts = new Array(this.parts);
+
+  for (var i = 0; i < this.parts; i++) {
+    parts[i] = {
+      index: i,
+      contextUpdate: JSON.stringify(contextUtils.serializeFunctions(contextUpdate))
+    };
+  }
+
+  return parts;
+};
+
+},{"./context":6,"./errors":8}],8:[function(require,module,exports){
 var errors = module.exports = {};
 
 var InvalidOperationError = function InvalidOperationError(message) {
@@ -77,6 +359,14 @@ InvalidArgumentsError.prototype = new Error();
 InvalidArgumentsError.prototype.constructor = InvalidArgumentsError;
 errors.InvalidArgumentsError = InvalidArgumentsError;
 
+var WorkerError = function WorkerError(message){
+  this.name = 'WorkerError';
+  this.message = message || 'An unknown error ocurred in the worker';
+};
+
+WorkerError.prototype = new Error();
+WorkerError.prototype.constructor = WorkerError;
+errors.WorkerError = WorkerError;
 
 errors.messages = {
   CONSECUTIVE_INITS: 'You should not recall init if the library is already initialized.',
@@ -84,8 +374,10 @@ errors.messages = {
   PARTITIONER_ARGUMENT_IS_NOT_TYPED_ARRAY: 'Expected TypedArray argument.',
   ZERO_ARRAYS_TO_MERGE: 'Zero arrays to merge. Provide at least one.',
   INVALID_PARTS: 'Invalid number of parts.',
+  INVALID_CONTEXT: 'Invalid context.',
   PART_ALREADY_COLLECTED: 'Tried to collect part {0} more than once',
-  INVALID_CODE: 'Invalid code argument to package.',
+  MISSING_CODE_OR_PATH: 'Missing "code" or "functionPath" argument to package.',
+  INVALID_IDENTITY_CODE: 'Invalid identity code argument to package.',
   INVALID_ELEMENTS: 'Invalid number of elements to package.',
   INVALID_PACKAGE_INDEX: 'Package index should be not negative and less than {0}.',
   INVALID_TYPED_ARRAY: 'Invalid argument. It should be of TypedArray.',
@@ -96,17 +388,16 @@ errors.messages = {
   INVALID_CHAINING_OPERATION: 'Can not perform more chaining after reduce operation.'
 };
 
-},{}],3:[function(require,module,exports){
+},{}],9:[function(require,module,exports){
 var errors = require('./errors');
 var utils = require('./utils');
 var Partitioner = require('./typed_array_partitioner');
+var contextSerializer = require('./chain_context');
 
 var operation_names = require('./operation_names');
 operation_names = Object.keys(operation_names).map(function (k) {
   return operation_names[k];
 });
-
-var FUNCTION_REGEX = /^function[^(]*\(([^)]*)\)[^{]*\{([\s\S]*)\}$/;
 
 var JobPackager = module.exports = function (parts, elements) {
   if (!parts) {
@@ -119,32 +410,35 @@ var JobPackager = module.exports = function (parts, elements) {
   this.elements = elements;
 };
 
-JobPackager.prototype.generatePackages = function (operations, context) {
+JobPackager.prototype.generatePackages = function (operations, chainContext) {
   if (!(operations && operations.length)){
     throw new errors.InvalidArgumentsError(errors.messages.INVALID_OPERATIONS);
   }
 
   var parsedOperations = operations.map(function(op){
-    if (!op.code) {
-      throw new errors.InvalidArgumentsError(errors.messages.INVALID_CODE);
+    if (!(op.code || op.functionPath)) {
+      throw new errors.InvalidArgumentsError(errors.messages.MISSING_CODE_OR_PATH);
     }
 
     if (!op.name || -1 === operation_names.indexOf(op.name)) {
       throw new errors.InvalidArgumentsError(errors.messages.INVALID_OPERATION);
     }
 
-    var packageCodeArgs;
-    var packageCode;
-    parseFunction(op.code, function (args, body) {
-      packageCodeArgs = args;
-      packageCode = body;
-    });
+    if (!op.functionPath){
+      var parsed = utils.parseFunction(op.code.toString());
+
+      return {
+        identity: op.identity,
+        args: parsed.args,
+        code: parsed.body,
+        name: op.name
+      };
+    }
 
     return {
       identity: op.identity,
-      args: packageCodeArgs,
-      code: packageCode,
-      name: op.name
+      name: op.name,
+      functionPath: op.functionPath
     };
   });
 
@@ -152,8 +446,7 @@ JobPackager.prototype.generatePackages = function (operations, context) {
   var partitioner = new Partitioner(this.parts);
   var partitionedElements = partitioner.partition(this.elements);
 
-  var ctx = sanitizeContext(context);
-  var strfyCtx = JSON.stringify(ctx);
+  var strfyCtx = contextSerializer.serializeChainContext(chainContext);
   return partitionedElements.map(function (partitionedElement, index) {
     return {
       index: index,
@@ -165,80 +458,52 @@ JobPackager.prototype.generatePackages = function (operations, context) {
   });
 };
 
-function parseFunction (code, callback) {  
-  var functionString = code.toString();
-  var match = functionString.match(FUNCTION_REGEX);
-  var args = match[1].split(',').map(function (p) { return p.trim(); });
-  var body = match[2];
-  callback(args, body);
-}
-
-function sanitizeContext (context) {
-  var ctx;
-  if (context) {
-    ctx = {};
-    for (var name in context) {
-      if (context.hasOwnProperty(name)) {
-        ctx[name] = sanitizeContextValue(context[name]);
-      }
-    }
-  }
-  return ctx;
-}
-
-function sanitizeContextValue (value) {
-  if (utils.isFunction(value)) {
-    var packageCodeArgs;
-    var packageCode;
-    parseFunction(value, function (args, body) {
-      packageCodeArgs = args;
-      packageCode = body;
-    });
-    return {
-      isFunction: true,
-      args: packageCodeArgs,
-      code: packageCode
-    };
-  } else { //TODO: (mati) ver que pasa con otros tipos
-    return value;
-  }
-}
-},{"./errors":2,"./operation_names":4,"./typed_array_partitioner":9,"./utils":10}],4:[function(require,module,exports){
+},{"./chain_context":5,"./errors":8,"./operation_names":10,"./typed_array_partitioner":14,"./utils":15}],10:[function(require,module,exports){
 module.exports = {
   MAP: 'map',
   FILTER: 'filter',
   REDUCE: 'reduce'
 };
-},{}],5:[function(require,module,exports){
+},{}],11:[function(require,module,exports){
 var errors = require('./errors');
+var utils = require('./utils');
 var operation_names = require('./operation_names');
 operation_names = Object.keys(operation_names).map(function (k) {
   return operation_names[k];
 });
 
-module.exports = function (name, code, seed, identity) {
+module.exports = function (name, code, seed, identity, identityCode) {
   if (!name || -1 === operation_names.indexOf(name)) {
     throw new errors.InvalidArgumentsError(errors.messages.INVALID_OPERATION);
   }
   if (!code) {
     throw new errors.InvalidArgumentsError(errors.messages.INVALID_CODE);
   }
-  if (name === 'reduce' && undefined === seed) {
+  if (name === 'reduce' && typeof identityCode === 'undefined') {
+    throw new errors.InvalidArgumentsError(errors.messages.INVALID_IDENTITY_CODE);
+  }
+  if (name === 'reduce' && typeof seed === 'undefined') {
     throw new errors.InvalidArgumentsError(errors.messages.MISSING_SEED);
   }
-  if (name === 'reduce' && undefined === identity) {
+  if (name === 'reduce' && typeof identity === 'undefined') {
     throw new errors.InvalidArgumentsError(errors.messages.MISSING_IDENTITY);
   }
 
-  return {
+  var toReturn = {
     name: name,
-    code: code,
     seed: seed,
-    identity: identity
+    identity: identity,
+    identityCode: identityCode
   };
+
+  var key = utils.isFunction(code) ? 'code' : 'functionPath';
+
+  toReturn[key] = code;
+
+  return toReturn;
 };
 
-},{"./errors":2,"./operation_names":4}],6:[function(require,module,exports){
+},{"./errors":8,"./operation_names":10,"./utils":15}],12:[function(require,module,exports){
 var errors = require('./errors.js');
 var utils = require('./utils.js');
 
@@ -254,130 +519,41 @@ var Collector = module.exports = function (parts, cb) {
   this.parts = parts;
   this.collected = new Array(parts);
   this.completed = 0;
+  this.error = null;
+};
+
+Collector.prototype.onError = function(message){
+  if (!this.error){
+    this.error = new errors.WorkerError(message);
+  }
+  this.updateCompleted();
 };
 
 Collector.prototype.onPart = function (data){
+  if (this.error) {
+    // we don't care about succesful results if an error ocurred
+    return this.updateCompleted();
+  }
+
   if (this.collected[data.index]) {
     throw new errors.InvalidArgumentsError(
       utils.format(errors.messages.PART_ALREADY_COLLECTED, data.index));
   }
 
   this.collected[data.index] = {value: data.value, newLength: data.newLength} ;
-  if (++this.completed === this.parts) {
-    return this.cb(this.collected);
-  }
+  this.updateCompleted();
 };
-},{"./errors.js":2,"./utils.js":10}],7:[function(require,module,exports){
-var JobPackager = require('./job_packager');
-var ResultCollector = require('./result_collector');
-var merge_typed_arrays = require('./typed_array_merger');
-var utils = require('./utils');
-var operation_names = require('./operation_names');
-var operation_packager = require('./operation_packager');
-var errors = require('./errors');
 
-var finisher = {
-  map: function (self, result, done) {
-    done(result);
-  },
-  filter: function (self, result, done) {
-    done(result);
-  },
-  reduce: function (self, result, done) {
-    var r;
-    var context = self.context;
-    var operation = self.operation;
-    var code = operation.code;
-    var seed = operation.seed;
-    if (!context) {
-      r = Array.prototype.slice.call(result).reduce(code, seed);
-    } else {
-      r = Array.prototype.slice.call(result).reduce(function (p, e) {
-        return code(p, e, context);
-      }, seed);
+Collector.prototype.updateCompleted = function(){
+  if (++this.completed === this.parts){
+    if (this.error) {
+      return this.cb(this.error);
     }
-    done(r);
+
+    return this.cb(null, this.collected);
   }
 };
-
-var Skeleton = function (source, parts, workers, operation, context, previousOperations) {
-  this.packager = new JobPackager(parts, source);
-  this.source = source;
-  this.parts = parts;
-  this.workers = workers;
-  this.operation = operation; //todo: (mati) por ahora lo dejo para finalizar el reduce correctamente
-  this.context = context;
-  previousOperations = previousOperations || [];
-  previousOperations.push(operation);
-  this.operations = previousOperations;
-};
-
-Skeleton.prototype.map = function (mapper, context) {
-  this.__verifyPreviousOperation();
-  this.__expandContext(context);
-  var operation = operation_packager(operation_names.MAP, mapper);
-  return new Skeleton(this.source, this.parts, this.workers, operation, this.context, this.operations);
-};
-
-Skeleton.prototype.filter = function (predicate, context) {
-  this.__verifyPreviousOperation();
-  this.__expandContext(context);
-  var operation = operation_packager(operation_names.FILTER, predicate);
-  return new Skeleton(this.source, this.parts, this.workers, operation, this.context, this.operations);
-};
-
-Skeleton.prototype.reduce = function (predicate, seed, identity, context) {
-  this.__verifyPreviousOperation();
-  this.__expandContext(context);
-  var operation = operation_packager(operation_names.REDUCE, predicate, seed, identity);
-  return new Skeleton(this.source, this.parts, this.workers, operation, this.context, this.operations);
-};
-
-Skeleton.prototype.seq = function (done) {
-  var self = this;
-  var workers = this.workers;
-  var TypedArrayConstructor = this.source.constructor;
-  var packs = this.packager.generatePackages(this.operations, this.context);
-  var collector = new ResultCollector(this.parts, function(results){
-    var partial_results = results.map(function(result){
-      return new TypedArrayConstructor(result.value).subarray(0, result.newLength);
-    });
-    var m = merge_typed_arrays(partial_results);
-    return finisher[self.operation.name](self, m, done);
-  });
-
-  packs.forEach(function(pack, index){
-    utils.listenOnce(workers[index], 'message', function(event){
-      collector.onPart(event.data);
-    });
-    workers[index].postMessage(pack, [ pack.buffer ]);
-  });
-};
-
-Skeleton.prototype.__verifyPreviousOperation = function () {
-  if (this.operation.name === 'reduce') {
-    throw new errors.InvalidOperationError(errors.messages.INVALID_CHAINING_OPERATION);
-  }
-};
-
-Skeleton.prototype.__expandContext = function (context) {
-  if (context) {
-    var ctx = this.context;
-    if (ctx) {
-      for (var name in context) {
-        if (context.hasOwnProperty(name)) {
-          ctx[name] = context[name];
-        }
-      }
-    } else {
-      ctx = context;
-    }
-    this.context = ctx;
-  }
-};
-
-module.exports = Skeleton;
-},{"./errors":2,"./job_packager":3,"./operation_names":4,"./operation_packager":5,"./result_collector":6,"./typed_array_merger":8,"./utils":10}],8:[function(require,module,exports){
+},{"./errors.js":8,"./utils.js":15}],13:[function(require,module,exports){
 var errors = require('./errors.js');
 
 module.exports = function merge(arrays){
@@ -402,7 +578,7 @@ module.exports = function merge(arrays){
 
   return result;
 };
-},{"./errors.js":2}],9:[function(require,module,exports){
+},{"./errors.js":8}],14:[function(require,module,exports){
 var utils = require('./utils.js');
 var errors = require('./errors.js');
 
@@ -435,7 +611,7 @@ Partitioner.prototype.validateTypedArray = function (array) {
 Partitioner.prototype.doPartition = function (array) {
   var parts = this.parts;
   var elementsCount = array.length;
-  var subElementsCount = (elementsCount / parts) | 0;
+  var subElementsCount = Math.floor(elementsCount / parts) | 0;
   var from = 0;
   var to = 0;
 
@@ -452,8 +628,22 @@ Partitioner.prototype.doPartition = function (array) {
   return arrays;
 };
 
-},{"./errors.js":2,"./utils.js":10}],10:[function(require,module,exports){
+},{"./errors.js":8,"./utils.js":15}],15:[function(require,module,exports){
 var utils = module.exports = {};
+
+var FUNCTION_REGEX = /^function[^(]*\(([^)]*)\)[^{]*\{([\s\S]*)\}$/;
+
+utils.parseFunction = function (code) {
+  var functionString = code.toString();
+  var match = functionString.match(FUNCTION_REGEX);
+  var args = match[1].split(',').map(function (p) { return p.trim(); });
+  var body = match[2];
+  return { args: args, body: body };
+};
+
+utils.isObject = function(object){
+  return typeof object === 'object' && !Array.isArray(object);
+};
 
 utils.isFunction = function (object) { //http://jsperf.com/alternative-isfunction-implementations
   return !!(object && object.constructor && object.call && object.apply);
@@ -509,24 +699,72 @@ utils.format = function (template) {
   return current;
 };
 
-utils.listenOnce = function(eventSource, eventName, callback){
-  eventSource.addEventListener(eventName, function messageHandler(event){
-    event.target.removeEventListener(eventName, messageHandler);
-    return callback(event);
+utils.createFunction = function(args, code){
+  switch (args.length) {
+    case 0:
+      /*jslint evil: true */
+      return new Function(code);
+    case 1:
+      /*jslint evil: true */
+      return new Function(args[0], code);
+    case 2:
+      /*jslint evil: true */
+      return new Function(args[0], args[1], code);
+    case 3:
+      /*jslint evil: true */
+      return new Function(args[0], args[1], args[2], code);
+    case 4:
+      /*jslint evil: true */
+      return new Function(args[0], args[1], args[2], args[3], code);
+    default:
+      return createDynamicArgumentsFunction(args, code);
+  }
+};
+
+var innerGetNested = function(obj, names, index, fail){
+  var next = obj[names[index]];
+  if (names.length - 1 === index){
+    return next;
+  }
+
+  if (!utils.isObject(next)){
+    fail();
+  }
+
+  return innerGetNested(next, names, ++index);
+};
+
+utils.getNested = function(obj, path){
+  var parts = path.split('.');
+
+  return innerGetNested(obj, parts, 0, function(){
+    throw new Error(
+      utils.format('Cannot get nested path {0} from context',
+        path));
   });
 };
 
-},{}],11:[function(require,module,exports){
+function createDynamicArgumentsFunction(args, code) {
+  var fArgs = new Array(args);
+  fArgs.push(code);
+  return Function.prototype.constructor.apply(null, fArgs);
+}
+},{}],16:[function(require,module,exports){
 var worker_core = require('./worker_core');
 
 module.exports = function (self) {
   self.addEventListener('message', function (event){
     var result = worker_core(event);
-
     self.postMessage(result.message, result.transferables);
   });
 };
-},{"./worker_core":12}],12:[function(require,module,exports){
+},{"./worker_core":17}],17:[function(require,module,exports){
+var mutableExtend = require('xtend/mutable');
+var utils = require('./utils');
+var immutableExtend = require('xtend/immutable');
+var contextUtils = require('./context');
+var chainContext = require('./chain_context');
+
 // param can be either length (number) or buffer
 function createTypedArray(type, param){
   switch(type){
@@ -569,6 +807,8 @@ var mapFactory = getMapFactory();
 
 var functionCache = mapFactory();
 
+var globalContext = {};
+
 var operations = {
   map: function (array, length, f, ctx) {
     var i = 0;
@@ -588,7 +828,6 @@ var operations = {
     return newLength;
   },
   reduce: function (array, length, f, ctx, seed) {
-    console.log('ww - reduce');
     var i = 0;
     var reduced = seed;
     for ( ; i < length; i += 1){
@@ -600,9 +839,39 @@ var operations = {
   }
 };
 
+function getFunction(operation){
+  if (operation.functionPath){
+    return utils.getNested(globalContext, operation.functionPath);
+  }
+
+  var args = operation.args;
+  var code = operation.code;
+  var cacheKey = args.join(',') + code;
+  var f = functionCache[cacheKey];
+  if (!f){
+    f = utils.createFunction(args, code);
+    functionCache[cacheKey] = f;
+  }
+
+  return f;
+}
+
 module.exports = function(event){
   var pack = event.data;
-  var context = createContext(pack.ctx);
+
+  if (pack.contextUpdate){
+    var deserialized = contextUtils.deserializeFunctions(
+      JSON.parse(pack.contextUpdate));
+    mutableExtend(globalContext, deserialized);
+
+    return {
+      message: {
+        index: pack.index
+      }
+    };
+  }
+
+  var context = createOperationContexts(pack.ctx);
   var ops = pack.operations;
   var opsLength = ops.length;
 
@@ -610,17 +879,18 @@ module.exports = function(event){
   var newLength = array.length;
 
   for (var i = 0; i < opsLength; i += 1) {
+    var localCtx;
     var operation = ops[i];
     var seed = operation.identity;
-    var args = operation.args;
-    var code = operation.code;
-    var cacheKey = args.join(',') + code;
-    var f = functionCache[cacheKey];
-    if (!f){
-      f = createFunction(args, code);
-      functionCache[cacheKey] = f;
+    var f = getFunction(operation);
+
+    if (context) {
+      localCtx = immutableExtend(globalContext, context[i]);
+    } else {
+      localCtx = globalContext;
     }
-    newLength = operations[operation.name](array, newLength, f, context, seed);
+
+    newLength = operations[operation.name](array, newLength, f, localCtx, seed);
   }
 
   return {
@@ -633,42 +903,80 @@ module.exports = function(event){
   };
 };
 
-function createFunction(args, code) {
-  var fArgs = new Array(args);
-  fArgs.push(code);
-  return Function.prototype.constructor.apply(null, fArgs);
-}
-
-function createContext (context) {
-  var ctx;
+function createOperationContexts (context) {
+  var operationContexts;
   if (context) {
-    context = JSON.parse(context);
-    ctx = {};
-    for (var name in context) {
-      if (context.hasOwnProperty(name)) {
-        ctx[name] = createContextValue(context[name]);
+    context = chainContext.deserializeChainContext(context);
+    operationContexts = {};
+    for (var i = 0; i <= context.currentIndex; i++) {
+      if (context[i]){
+        operationContexts[i] = contextUtils.deserializeFunctions(context[i]);
       }
     }
   }
-  return ctx;
+  return operationContexts;
 }
+},{"./chain_context":5,"./context":6,"./utils":15,"xtend/immutable":2,"xtend/mutable":3}],18:[function(require,module,exports){
+var ResultCollector = require('./result_collector');
+var work = require('webworkify');
 
-function createContextValue (value) {
-  if (value && value.isFunction && value.args && value.code) {
-    return createFunction(value.args, value.code);
-  } else {
-    return value;
+var workers = [];
+
+Object.defineProperty(module.exports, 'length', {
+  get: function(){
+    return workers.length;
   }
-}
-},{}],13:[function(require,module,exports){
-var operation_names = require('./operation_names');
-var Skeleton = require('./skeleton');
-var operation_packager = require('./operation_packager');
+});
 
-var WrappedTypedArray = function (source, parts, workers) {
+module.exports.init = function(workersCount){
+  while (workersCount--) {
+    var worker = work(require('./worker.js'));
+    workers.push(worker);
+  }
+};
+
+module.exports.terminate = function(){
+  workers.forEach(function(w){
+    w.terminate();
+  });
+
+  workers = [];
+};
+
+module.exports.sendPacks = function(packs, callback){
+  var collector = new ResultCollector(workers.length, callback);
+
+  packs.forEach(function(pack, index){
+    var onMessageHandler = function (event){
+      event.target.removeEventListener('error', onErrorHandler);
+      event.target.removeEventListener('message', onMessageHandler);
+      return collector.onPart(event.data);
+    };
+
+    var onErrorHandler = function (event){
+      event.preventDefault();
+      event.target.removeEventListener('error', onErrorHandler);
+      event.target.removeEventListener('message', onMessageHandler);
+      return collector.onError(event.message);
+    };
+
+    workers[index].addEventListener('error', onErrorHandler);
+    workers[index].addEventListener('message', onMessageHandler);
+
+    workers[index].postMessage(pack);
+  });
+};
+},{"./result_collector":12,"./worker.js":16,"webworkify":1}],19:[function(require,module,exports){
+var operation_names = require('./operation_names');
+var Chain = require('./chain');
+var operation_packager = require('./operation_packager');
+var contextUtils = require('./chain_context');
+var utils = require('./utils');
+
+var WrappedTypedArray = function (source, parts, globalContext) {
   this.source = source;
   this.parts = parts;
-  this.workers = workers;
+  this.globalContext = globalContext;
 };
 
 WrappedTypedArray.prototype.map = function(mapper, context) {
@@ -679,31 +987,39 @@ WrappedTypedArray.prototype.filter = function(predicate, context) {
   return this.__operation(operation_names.FILTER, predicate, context);
 };
 
-WrappedTypedArray.prototype.reduce = function(reducer, seed, identity, context) {
-  return this.__operation(operation_names.REDUCE, reducer, context, seed, identity);
+WrappedTypedArray.prototype.reduce = function(reducer, seed, identityReducer, identity, context) {
+  if (!utils.isFunction(identityReducer)) {
+    context = identity;
+    identity = identityReducer;
+    identityReducer = reducer;
+  }
+  return this.__operation(operation_names.REDUCE, reducer, context, seed, identity, identityReducer);
 };
 
-WrappedTypedArray.prototype.__operation = function(name, code, context, seed, identity) {
-  var operation = operation_packager(name, code, seed, identity);
-  return new Skeleton(this.source, this.parts, this.workers, operation, context);
+WrappedTypedArray.prototype.__operation = function(name, code, localContext, seed, identity, identityCode) {
+  var operation = operation_packager(name, code, seed, identity, identityCode);
+  var chainContext = contextUtils.extendChainContext(localContext);
+  return new Chain(this.source, this.parts, operation, this.globalContext, chainContext);
 };
 
 module.exports = WrappedTypedArray;
-},{"./operation_names":4,"./operation_packager":5,"./skeleton":7}],"p-j-s":[function(require,module,exports){
+},{"./chain":4,"./chain_context":5,"./operation_names":10,"./operation_packager":11,"./utils":15}],"p-j-s":[function(require,module,exports){
 var errors = require('./errors');
 var utils = require('./utils');
-var work = require('webworkify');
+var workers = require('./workers');
 var WrappedTypedArray = require('./wrapped_typed_array');
+var ContextUpdatePackager = require('./context_update_packager');
+var mutableExtend = require('xtend/mutable');
 var pjs;
 
 var initialized = false;
-var workers = [];
+var globalContext = {};
 
 function wrap(typedArray){
 	if (!utils.isTypedArray(typedArray)) {
 		throw new errors.InvalidArgumentsError(errors.messages.INVALID_TYPED_ARRAY);
 	}
-	return new WrappedTypedArray(typedArray, pjs.config.workers, workers);
+	return new WrappedTypedArray(typedArray, workers.length, globalContext);
 }
 
 function init(options) {
@@ -715,11 +1031,7 @@ function init(options) {
 	var cpus = navigator.hardwareConcurrency || 1;
 	var maxWorkers = options.maxWorkers || cpus;
 	var workersCount = Math.min(maxWorkers, cpus);
-
-	while (workersCount--) {
-		var worker = work(require('./worker.js'));
-		workers.push(worker);
-	}
+  workers.init(workersCount);
 
 	var config = {
   	get workers () {
@@ -728,8 +1040,24 @@ function init(options) {
   };
 
   utils.getter(pjs, 'config', config);
+  utils.getter(pjs, 'contextUpdatePackager', new ContextUpdatePackager(workers.length));
 
 	initialized = true;
+}
+
+function updateContext(updates, done){
+  var self = this;
+  return new Promise(function (resolve, reject) {
+    var packs = self.contextUpdatePackager.generatePackages(updates);
+    workers.sendPacks(packs, function(err){
+      if (err) { if (done) { done(err); } reject(err); return; }
+      mutableExtend(globalContext, updates);
+      if (done) {
+        done();
+      }
+      resolve();
+    });
+  });
 }
 
 function terminate() {
@@ -737,9 +1065,11 @@ function terminate() {
 		throw new errors.InvalidOperationError(errors.messages.TERMINATE_WITHOUT_INIT);
 	}
 
-	workers.forEach(function (w) { w.terminate(); });
-	workers = [];
+  workers.terminate();
+
+  globalContext = {};
 	delete pjs.config;
+	delete pjs.contextUpdatePackager;
 
 	initialized = false;
 }
@@ -748,4 +1078,5 @@ pjs = module.exports = wrap;
 
 pjs.init = init;
 pjs.terminate = terminate;
-},{"./errors":2,"./utils":10,"./worker.js":11,"./wrapped_typed_array":13,"webworkify":1}]},{},[]);
+pjs.updateContext = updateContext;
+},{"./context_update_packager":7,"./errors":8,"./utils":15,"./workers":18,"./wrapped_typed_array":19,"xtend/mutable":3}]},{},[]);
