@@ -40,11 +40,17 @@ function init(options) {
 }
 
 function updateContext(updates, done){
-  var packs = this.contextUpdatePackager.generatePackages(updates);
-  workers.sendPacks(packs, function(err){
-    if (err) { return done(err); }
-    mutableExtend(globalContext, updates);
-    done();
+  var self = this;
+  return new Promise(function (resolve, reject) {
+    var packs = self.contextUpdatePackager.generatePackages(updates);
+    workers.sendPacks(packs, function(err){
+      if (err) { if (done) { done(err); } reject(err); return; }
+      mutableExtend(globalContext, updates);
+      if (done) {
+        done();
+      }
+      resolve();
+    });
   });
 }
 

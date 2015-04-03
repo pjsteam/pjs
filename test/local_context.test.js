@@ -3,6 +3,7 @@
 describe('local context tests', function(){
 
   var pjs;
+  var chromeHelper = require('../src/chrome_version_helper');
   var utils = require('../src/utils.js');
   var normalSourceArray = [1,2,3,5,13,16,32,63,64,129,255,500,1001,1023,1024];
 
@@ -343,9 +344,7 @@ describe('local context tests', function(){
             });
           });
 
-          var chromeVersion = parseInt(window.navigator.appVersion.match(/Chrome\/(\d+)\./)[1], 10);
-
-          if(chromeVersion && chromeVersion > 39){
+          chromeHelper(39, function () {
             it('should not access other chain local context\'s functions', function(done){
               var sourceArray = new TypedArray(normalSourceArray);
               var mapper1 = function (e, ctx) { return ctx.aux(e & ctx.mask); };
@@ -381,7 +380,7 @@ describe('local context tests', function(){
                 done();
               });
             });
-          }
+          });
         });
       });
     });

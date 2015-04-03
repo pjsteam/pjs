@@ -9,13 +9,19 @@ var contextUtils = require('./chain_context');
 var immutableExtend = require('xtend/immutable');
 
 var finisher = {
-  map: function (self, result, done) {
-    done(null, result);
+  map: function (self, result, done, resolve) {
+    if (done) {
+      done(null, result);
+    }
+    resolve(result);
   },
-  filter: function (self, result, done) {
-    done(null, result);
+  filter: function (self, result, done, resolve) {
+    if (done) {
+      done(null, result);
+    }
+    resolve(result);
   },
-  reduce: function (self, result, done) {
+  reduce: function (self, result, done, resolve) {
     var r;
     var context = immutableExtend(self.globalContext, self.__localContext());
     var operation = self.operation;
@@ -28,7 +34,10 @@ var finisher = {
     } else {
       r = Array.prototype.slice.call(result).reduce(code, seed);
     }
-    done(null, r);
+    if (done) {
+      done(null, r);
+    }
+    resolve(r);
   }
 };
 
@@ -90,16 +99,18 @@ function createChain(oldChain, options){
 
 Chain.prototype.seq = function (done) {
   var self = this;
-  var TypedArrayConstructor = this.source.constructor;
-  var packs = this.packager.generatePackages(this.operations, this.chainContext);
+  return new Promise(function (resolve, reject) {
+    var TypedArrayConstructor = self.source.constructor;
+    var packs = self.packager.generatePackages(self.operations, self.chainContext);
 
-  workers.sendPacks(packs, function(err, results){
-    if (err) { return done(err); }
-    var partial_results = results.map(function(result){
-      return new TypedArrayConstructor(result.value).subarray(0, result.newLength);
+    workers.sendPacks(packs, function(err, results){
+      if (err) { if (done) { done(err); } reject(err); return; }
+      var partial_results = results.map(function(result){
+        return new TypedArrayConstructor(result.value).subarray(0, result.newLength);
+      });
+      var m = merge_typed_arrays(partial_results);
+      return finisher[self.operation.name](self, m, done, resolve);
     });
-    var m = merge_typed_arrays(partial_results);
-    return finisher[self.operation.name](self, m, done);
   });
 };
 
