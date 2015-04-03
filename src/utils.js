@@ -108,8 +108,8 @@ utils.getNested = function(obj, path){
 
   return innerGetNested(obj, parts, 0, function(){
     throw new Error(
-      utils.format('Cannot get nested path {0} for {1}',
-        path, JSON.stringify(obj)));
+      utils.format('Cannot get nested path {0} from context',
+        path));
   });
 };
 
