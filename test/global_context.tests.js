@@ -145,5 +145,5 @@ describe('global context tests', function(){
         done();
       });
     });
-  });
+  }); 
 });

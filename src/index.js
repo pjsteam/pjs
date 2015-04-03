@@ -46,31 +46,35 @@ function init(options) {
 }
 
 function updateContext(updates, done){
-  var packs = this.contextUpdatePackager.generatePackages(updates);
-  var collector = new ResultCollector(workers.length, function(err){
-    if (err) { return done(err); }
-    mutableExtend(globalContext, updates);
-    done();
-  });
+  var self = this;
+  return new Promise(function (resolve, rejected) {
+    var packs = self.contextUpdatePackager.generatePackages(updates);
+    var collector = new ResultCollector(workers.length, function(err){
+      if (err) { if (done) { done(err); } rejected(err); return; }
+      mutableExtend(globalContext, updates);
+      if (done) { done(); }
+      resolve();
+    });
 
-	packs.forEach(function(pack, index){
-    var onMessageHandler = function (event){
-      event.target.removeEventListener('error', onErrorHandler);
-      event.target.removeEventListener('message', onMessageHandler);
-      return collector.onPart(event.data);
-    };
+    packs.forEach(function(pack, index){
+      var onMessageHandler = function (event){
+        event.target.removeEventListener('error', onErrorHandler);
+        event.target.removeEventListener('message', onMessageHandler);
+        return collector.onPart(event.data);
+      };
 
-    var onErrorHandler = function (event){
-      event.preventDefault();
-      event.target.removeEventListener('error', onErrorHandler);
-      event.target.removeEventListener('message', onMessageHandler);
-      return collector.onError(event.message);
-    };
+      var onErrorHandler = function (event){
+        event.preventDefault();
+        event.target.removeEventListener('error', onErrorHandler);
+        event.target.removeEventListener('message', onMessageHandler);
+        return collector.onError(event.message);
+      };
 
-    workers[index].addEventListener('error', onErrorHandler);
-    workers[index].addEventListener('message', onMessageHandler);
+      workers[index].addEventListener('error', onErrorHandler);
+      workers[index].addEventListener('message', onMessageHandler);
 
-    workers[index].postMessage(pack);
+      workers[index].postMessage(pack);
+    });
   });
 }
 

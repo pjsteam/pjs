@@ -9,13 +9,19 @@ var contextUtils = require('./chain_context');
 var immutableExtend = require('xtend/immutable');
 
 var finisher = {
-  map: function (self, result, done) {
-    done(null, result);
+  map: function (self, result, done, resolve) {
+    if (done) {
+      done(null, result);
+    }
+    resolve(result);
   },
-  filter: function (self, result, done) {
-    done(null, result);
+  filter: function (self, result, done, resolve) {
+    if (done) {
+      done(null, result);
+    }
+    resolve(result);
   },
-  reduce: function (self, result, done) {
+  reduce: function (self, result, done, resolve) {
     var r;
     var context = immutableExtend(self.globalContext, self.__localContext());
     var operation = self.operation;
@@ -28,7 +34,10 @@ var finisher = {
     } else {
       r = Array.prototype.slice.call(result).reduce(code, seed);
     }
-    done(null, r);
+    if (done) {
+      done(null, r);
+    }
+    resolve(r);
   }
 };
 
@@ -77,36 +86,38 @@ Chain.prototype.reduce = function (reducer, seed, identityReducer, identity, loc
 
 Chain.prototype.seq = function (done) {
   var self = this;
-  var workers = this.workers;
-  var TypedArrayConstructor = this.source.constructor;
-  var packs = this.packager.generatePackages(this.operations, this.chainContext);
-  var collector = new ResultCollector(this.parts, function(err, results){
-    if (err) { return done(err); }
-    var partial_results = results.map(function(result){
-      return new TypedArrayConstructor(result.value).subarray(0, result.newLength);
+  return new Promise(function (resolve, reject) {
+    var workers = self.workers;
+    var TypedArrayConstructor = self.source.constructor;
+    var packs = self.packager.generatePackages(self.operations, self.chainContext);
+    var collector = new ResultCollector(self.parts, function(err, results){
+      if (err) { if (done) { done(err); } reject(err); return; }
+      var partial_results = results.map(function(result){
+        return new TypedArrayConstructor(result.value).subarray(0, result.newLength);
+      });
+      var m = merge_typed_arrays(partial_results);
+      return finisher[self.operation.name](self, m, done, resolve);
     });
-    var m = merge_typed_arrays(partial_results);
-    return finisher[self.operation.name](self, m, done);
-  });
 
-  packs.forEach(function(pack, index){
-    var onMessageHandler = function (event){
-      event.target.removeEventListener('error', onErrorHandler);
-      event.target.removeEventListener('message', onMessageHandler);
-      return collector.onPart(event.data);
-    };
+    packs.forEach(function(pack, index){
+      var onMessageHandler = function (event){
+        event.target.removeEventListener('error', onErrorHandler);
+        event.target.removeEventListener('message', onMessageHandler);
+        return collector.onPart(event.data);
+      };
 
-    var onErrorHandler = function (event){
-      event.preventDefault();
-      event.target.removeEventListener('error', onErrorHandler);
-      event.target.removeEventListener('message', onMessageHandler);
-      return collector.onError(event.message);
-    };
+      var onErrorHandler = function (event){
+        event.preventDefault();
+        event.target.removeEventListener('error', onErrorHandler);
+        event.target.removeEventListener('message', onMessageHandler);
+        return collector.onError(event.message);
+      };
 
-    workers[index].addEventListener('error', onErrorHandler);
-    workers[index].addEventListener('message', onMessageHandler);
+      workers[index].addEventListener('error', onErrorHandler);
+      workers[index].addEventListener('message', onMessageHandler);
 
-    workers[index].postMessage(pack, [ pack.buffer ]);
+      workers[index].postMessage(pack, [ pack.buffer ]);
+    });
   });
 };
 
