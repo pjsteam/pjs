@@ -25,13 +25,10 @@ describe('promises tests', function () {
       expect(promise.constructor).to.equal(Promise);
     });
 
-    it('should resolve promise', function (done) {
-      var promise = pjs.updateContext({
+    it('should resolve promise', function () {
+      return pjs.updateContext({
         add: function (x) { return x + 2; },
         max: 5
-      });
-      promise.then(done, function (err) {
-        done(err);
       });
     });
   });

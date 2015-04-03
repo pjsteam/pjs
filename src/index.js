@@ -41,10 +41,10 @@ function init(options) {
 
 function updateContext(updates, done){
   var self = this;
-  return new Promise(function (resolve, rejected) {
+  return new Promise(function (resolve, reject) {
     var packs = self.contextUpdatePackager.generatePackages(updates);
     workers.sendPacks(packs, function(err){
-      if (err) { if (done) { done(err); } rejected(err); return; }
+      if (err) { if (done) { done(err); } reject(err); return; }
       mutableExtend(globalContext, updates);
       if (done) {
         done();
