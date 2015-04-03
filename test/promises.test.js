@@ -3,6 +3,7 @@
 describe('promises tests', function () {
   var pjs;
   var errors = require('../src/errors');
+  var chromeHelper = require('../src/chrome_version_helper');
 
   before(function () {
     pjs = require('../src/index.js');
@@ -94,42 +95,44 @@ describe('promises tests', function () {
       });
     });
 
-    it('should fail promise with invalid mapper function', function (done) {
-      var sourceArray = new TypedArray(normalSourceArray);
-      var mapper = function (e, ctx) { return ctx.aux(e); };
-      var promise = pjs(sourceArray).map(mapper).seq();
-      promise.then(function (result) {
-        done('should fail');
-      }, function (err) {
-        expect(err.name).to.equal('WorkerError');
-        expect(err.message).to.equal('Uncaught TypeError: undefined is not a function');
-        done();
+    chromeHelper(39, function () {
+      it('should fail promise with invalid mapper function', function (done) {
+        var sourceArray = new TypedArray(normalSourceArray);
+        var mapper = function (e, ctx) { return ctx.aux(e); };
+        var promise = pjs(sourceArray).map(mapper).seq();
+        promise.then(function (result) {
+          done('should fail');
+        }, function (err) {
+          expect(err.name).to.equal('WorkerError');
+          expect(err.message).to.equal('Uncaught TypeError: undefined is not a function');
+          done();
+        });
       });
-    });
 
-    it('should fail promise with invalid predicate function', function (done) {
-      var sourceArray = new TypedArray(normalSourceArray);
-      var predicate = function (e, ctx) { return ctx.aux(e) & 0x2 === 0x2; };
-      var promise = pjs(sourceArray).filter(predicate).seq();
-      promise.then(function (result) {
-        done('should fail');
-      }, function (err) {
-        expect(err.name).to.equal('WorkerError');
-        expect(err.message).to.equal('Uncaught TypeError: undefined is not a function');
-        done();
+      it('should fail promise with invalid predicate function', function (done) {
+        var sourceArray = new TypedArray(normalSourceArray);
+        var predicate = function (e, ctx) { return ctx.aux(e) & 0x2 === 0x2; };
+        var promise = pjs(sourceArray).filter(predicate).seq();
+        promise.then(function (result) {
+          done('should fail');
+        }, function (err) {
+          expect(err.name).to.equal('WorkerError');
+          expect(err.message).to.equal('Uncaught TypeError: undefined is not a function');
+          done();
+        });
       });
-    });
 
-    it('should fail promise with invalid reducer function', function (done) {
-      var sourceArray = new TypedArray(normalSourceArray);
-      var reducer = function (p, e, ctx) { return p * ctx.aux(e); };
-      var promise = pjs(sourceArray).reduce(reducer, 1, 1).seq();
-      promise.then(function (result) {
-        done('should fail');
-      }, function (err) {
-        expect(err.name).to.equal('WorkerError');
-        expect(err.message).to.equal('Uncaught TypeError: undefined is not a function');
-        done();
+      it('should fail promise with invalid reducer function', function (done) {
+        var sourceArray = new TypedArray(normalSourceArray);
+        var reducer = function (p, e, ctx) { return p * ctx.aux(e); };
+        var promise = pjs(sourceArray).reduce(reducer, 1, 1).seq();
+        promise.then(function (result) {
+          done('should fail');
+        }, function (err) {
+          expect(err.name).to.equal('WorkerError');
+          expect(err.message).to.equal('Uncaught TypeError: undefined is not a function');
+          done();
+        });
       });
     });
   });

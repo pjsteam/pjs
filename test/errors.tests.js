@@ -1,8 +1,8 @@
 'use strict';
 
-var chromeVersion = parseInt(window.navigator.appVersion.match(/Chrome\/(\d+)\./)[1], 10);
+var chromeHelper = require('../src/chrome_version_helper');
 
-if(chromeVersion && chromeVersion > 39){
+chromeHelper(39, function () {
   describe('error tests', function(){
 
     var pjs;
@@ -60,4 +60,4 @@ if(chromeVersion && chromeVersion > 39){
       });
     });
   });
-}
+});
