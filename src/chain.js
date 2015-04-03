@@ -49,17 +49,19 @@ Chain.prototype.__localContext = function () {
 };
 
 Chain.prototype.map = function (mapper, localContext) {
-  this.__verifyPreviousOperation();
-  var extendChainContext = contextUtils.extendChainContext(localContext, this.chainContext);
-  var operation = operation_packager(operation_names.MAP, mapper);
-  return new Chain(this.source, this.parts, operation, this.globalContext, extendChainContext, this.operations);
+  return createChain(this, {
+    localContext: localContext,
+    f: mapper,
+    operation: operation_names.MAP
+  });
 };
 
 Chain.prototype.filter = function (predicate, localContext) {
-  this.__verifyPreviousOperation();
-  var extendChainContext = contextUtils.extendChainContext(localContext, this.chainContext);
-  var operation = operation_packager(operation_names.FILTER, predicate);
-  return new Chain(this.source, this.parts, operation, this.globalContext, extendChainContext, this.operations);
+  return createChain(this, {
+    localContext: localContext,
+    f: predicate,
+    operation: operation_names.FILTER
+  });
 };
 
 Chain.prototype.reduce = function (reducer, seed, identityReducer, identity, localContext) {
@@ -68,11 +70,23 @@ Chain.prototype.reduce = function (reducer, seed, identityReducer, identity, loc
     identity = identityReducer;
     identityReducer = reducer;
   }
-  this.__verifyPreviousOperation();
-  var extendChainContext = contextUtils.extendChainContext(localContext, this.chainContext);
-  var operation = operation_packager(operation_names.REDUCE, reducer, seed, identity, identityReducer);
-  return new Chain(this.source, this.parts, operation, this.globalContext, extendChainContext, this.operations);
+
+  return createChain(this, {
+    localContext: localContext,
+    f: reducer,
+    seed: seed,
+    identity: identity,
+    identityReducer: identityReducer,
+    operation: operation_names.REDUCE
+  });
 };
+
+function createChain(oldChain, options){
+  oldChain.__verifyPreviousOperation();
+  var extendChainContext = contextUtils.extendChainContext(options.localContext, oldChain.chainContext);
+  var operation = operation_packager(options.operation, options.f, options.seed, options.identity, options.identityReducer);
+  return new Chain(oldChain.source, oldChain.parts, operation, oldChain.globalContext, extendChainContext, oldChain.operations);
+}
 
 Chain.prototype.seq = function (done) {
   var self = this;
