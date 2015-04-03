@@ -48,31 +48,5 @@ function serializeFunction (value) {
 }
 
 function deserializeFunction(value) {
-  var args = value.args;
-  var code = value.code;
-  switch (args.length) {
-    case 0:
-      /*jslint evil: true */
-      return new Function(code);
-    case 1:
-      /*jslint evil: true */
-      return new Function(args[0], code);
-    case 2:
-      /*jslint evil: true */
-      return new Function(args[0], args[1], code);
-    case 3:
-      /*jslint evil: true */
-      return new Function(args[0], args[1], args[2], code);
-    case 4:
-      /*jslint evil: true */
-      return new Function(args[0], args[1], args[2], args[3], code);
-    default:
-      return createDynamicArgumentsFunction(args, code);
-  }
-}
-
-function createDynamicArgumentsFunction(args, code) {
-  var fArgs = new Array(args);
-  fArgs.push(code);
-  return Function.prototype.constructor.apply(null, fArgs);
+  return utils.createFunction(value.args, value.code);
 }
