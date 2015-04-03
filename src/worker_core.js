@@ -80,7 +80,7 @@ var operations = {
 
 function getFunction(operation){
   if (operation.functionPath){
-    return globalContext[operation.functionPath];
+    return utils.getNested(globalContext, operation.functionPath);
   }
 
   var args = operation.args;
