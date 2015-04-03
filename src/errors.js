@@ -19,6 +19,14 @@ InvalidArgumentsError.prototype = new Error();
 InvalidArgumentsError.prototype.constructor = InvalidArgumentsError;
 errors.InvalidArgumentsError = InvalidArgumentsError;
 
+var WorkerError = function WorkerError(message){
+  this.name = 'WorkerError';
+  this.message = message || 'An unknown error ocurred in the worker';
+};
+
+WorkerError.prototype = new Error();
+WorkerError.prototype.constructor = WorkerError;
+errors.WorkerError = WorkerError;
 
 errors.messages = {
   CONSECUTIVE_INITS: 'You should not recall init if the library is already initialized.',

@@ -1,6 +1,6 @@
 'use strict';
 
-describe.only('promises tests', function () {
+describe('promises tests', function () {
   var pjs;
   var errors = require('../src/errors');
 

@@ -15,6 +15,7 @@ describe('global context tests', function(){
         lower: function(x) { return x > 3; },
         upper: function(x) { return x < 5; }
       },
+      val: 3,
       max: 5
     }, done);
   });
@@ -145,5 +146,76 @@ describe('global context tests', function(){
         done();
       });
     });
-  }); 
+  });
+
+  it('should work with reduce', function(done){
+    var sourceArray = new Uint32Array([1,2,3,4,5]);
+    pjs(sourceArray).reduce(function(c,v,ctx){
+      return c + ctx.add2(v);
+    }, 0, function(c, v, ctx){
+      return c + v + ctx.val;
+    }, 0).seq(function(err, result){
+      if (err) { return done(err); }
+      expect(result).to.equal(37);
+      done();
+    });
+  });
+
+  describe('with local context', function(){
+    it('should have local properties accessible', function(done){
+      var sourceArray = new Uint32Array([1,2,3,4,5]);
+      pjs(sourceArray).map(function(e, ctx){
+        return ctx.add2(ctx.add3(e));
+      }, { add3: function(y){ return y + 3; }}).seq(function(err, result){
+        if (err) { return done(err); }
+        expect(result).to.have.length(sourceArray.length);
+        expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(sourceArray));
+        for (var i = sourceArray.length - 1; i >= 0; i--) {
+          expect(result[i]).to.equal(sourceArray[i] + 5);
+        }
+        done();
+      });
+    });
+
+    it('should overwrite global value if local has same key', function(done){
+      var sourceArray = new Uint32Array([1,2,3,4,5]);
+      pjs(sourceArray).map(function(e, ctx){
+        return ctx.add2(e);
+      }, { add2: function(y){ return y + 4; }}).seq(function(err, result){
+        if (err) { return done(err); }
+        expect(result).to.have.length(sourceArray.length);
+        expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(sourceArray));
+        for (var i = sourceArray.length - 1; i >= 0; i--) {
+          expect(result[i]).to.equal(sourceArray[i] + 4);
+        }
+        done();
+      });
+    });
+
+    it('should overwrite global value if local has same key only for that execution', function(done){
+      var sourceArray = new Uint32Array([1,2,3,4,5]);
+      pjs(sourceArray).map(function(e, ctx){
+        return ctx.add2(e);
+      }, { add2: function(y){ return y + 4; }}).seq(function(err, result){
+        if (err) { return done(err); }
+        expect(result).to.have.length(sourceArray.length);
+        expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(sourceArray));
+        for (var i = sourceArray.length - 1; i >= 0; i--) {
+          expect(result[i]).to.equal(sourceArray[i] + 4);
+        }
+        // same again but without local context
+        pjs(sourceArray).map(function(e, ctx){
+          return ctx.add2(e);
+        }).seq(function(err, result){
+          if (err) { return done(err); }
+          expect(result).to.have.length(sourceArray.length);
+          expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(sourceArray));
+          for (var i = sourceArray.length - 1; i >= 0; i--) {
+            expect(result[i]).to.equal(sourceArray[i] + 2);
+          }
+          done();
+        });
+      });
+    });
+  });
 });

@@ -1,21 +1,19 @@
 var errors = require('./errors');
 var utils = require('./utils');
-var work = require('webworkify');
+var workers = require('./workers');
 var WrappedTypedArray = require('./wrapped_typed_array');
 var ContextUpdatePackager = require('./context_update_packager');
-var ResultCollector = require('./result_collector');
 var mutableExtend = require('xtend/mutable');
 var pjs;
 
 var initialized = false;
-var workers = [];
 var globalContext = {};
 
 function wrap(typedArray){
 	if (!utils.isTypedArray(typedArray)) {
 		throw new errors.InvalidArgumentsError(errors.messages.INVALID_TYPED_ARRAY);
 	}
-	return new WrappedTypedArray(typedArray, pjs.config.workers, workers, globalContext);
+	return new WrappedTypedArray(typedArray, workers.length, globalContext);
 }
 
 function init(options) {
@@ -27,11 +25,7 @@ function init(options) {
 	var cpus = navigator.hardwareConcurrency || 1;
 	var maxWorkers = options.maxWorkers || cpus;
 	var workersCount = Math.min(maxWorkers, cpus);
-
-	while (workersCount--) {
-		var worker = work(require('./worker.js'));
-		workers.push(worker);
-	}
+  workers.init(workersCount);
 
 	var config = {
   	get workers () {
@@ -49,31 +43,13 @@ function updateContext(updates, done){
   var self = this;
   return new Promise(function (resolve, rejected) {
     var packs = self.contextUpdatePackager.generatePackages(updates);
-    var collector = new ResultCollector(workers.length, function(err){
+    workers.sendPacks(packs, function(err){
       if (err) { if (done) { done(err); } rejected(err); return; }
       mutableExtend(globalContext, updates);
-      if (done) { done(); }
+      if (done) {
+        done();
+      }
       resolve();
-    });
-
-    packs.forEach(function(pack, index){
-      var onMessageHandler = function (event){
-        event.target.removeEventListener('error', onErrorHandler);
-        event.target.removeEventListener('message', onMessageHandler);
-        return collector.onPart(event.data);
-      };
-
-      var onErrorHandler = function (event){
-        event.preventDefault();
-        event.target.removeEventListener('error', onErrorHandler);
-        event.target.removeEventListener('message', onMessageHandler);
-        return collector.onError(event.message);
-      };
-
-      workers[index].addEventListener('error', onErrorHandler);
-      workers[index].addEventListener('message', onMessageHandler);
-
-      workers[index].postMessage(pack);
     });
   });
 }
@@ -83,8 +59,8 @@ function terminate() {
 		throw new errors.InvalidOperationError(errors.messages.TERMINATE_WITHOUT_INIT);
 	}
 
-	workers.forEach(function (w) { w.terminate(); });
-	workers = [];
+  workers.terminate();
+
   globalContext = {};
 	delete pjs.config;
 	delete pjs.contextUpdatePackager;

@@ -22,7 +22,8 @@ if(chromeVersion && chromeVersion > 39){
       pjs(new Uint32Array([1,2,3,4])).map(function(){
         throw new Error('Failed');
       }).seq(function(err){
-        expect(err).to.equal('Uncaught Error: Failed');
+        expect(err.name).to.equal('WorkerError');
+        expect(err.message).to.equal('Uncaught Error: Failed');
         done();
       });
     });
@@ -31,7 +32,8 @@ if(chromeVersion && chromeVersion > 39){
       pjs(new Uint32Array([1,2,3,4])).map(function(element){
         return element.inexistent();
       }).seq(function(err){
-        expect(err).to.equal('Uncaught TypeError: undefined is not a function');
+        expect(err.name).to.equal('WorkerError');
+        expect(err.message).to.equal('Uncaught TypeError: undefined is not a function');
         done();
       });
     });
@@ -40,7 +42,8 @@ if(chromeVersion && chromeVersion > 39){
       pjs(new Uint32Array([1,2,3,4])).map(function(element){
         return element.inexistent();
       }).seq(function(err){
-        expect(err).to.equal('Uncaught TypeError: undefined is not a function');
+        expect(err.name).to.equal('WorkerError');
+        expect(err.message).to.equal('Uncaught TypeError: undefined is not a function');
 
         pjs(new Uint32Array([1,2,3,4])).map(function(e){
           return e * 2;
