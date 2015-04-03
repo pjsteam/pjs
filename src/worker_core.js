@@ -1,3 +1,8 @@
+var mutableExtend = require('xtend/mutable');
+var utils = require('./utils');
+var immutableExtend = require('xtend/immutable');
+var contextUtils = require('./context');
+
 // param can be either length (number) or buffer
 function createTypedArray(type, param){
   switch(type){
@@ -40,6 +45,8 @@ var mapFactory = getMapFactory();
 
 var functionCache = mapFactory();
 
+var globalContext = {};
+
 var operations = {
   map: function (array, length, f, ctx) {
     var i = 0;
@@ -72,6 +79,19 @@ var operations = {
 
 module.exports = function(event){
   var pack = event.data;
+
+  if (pack.contextUpdate){
+    var deserialized = contextUtils.deserializeFunctions(
+      JSON.parse(pack.contextUpdate));
+    mutableExtend(globalContext, deserialized);
+
+    return {
+      message: {
+        index: pack.index
+      }
+    };
+  }
+
   var context = createOperationContexts(pack.ctx);
   var ops = pack.operations;
   var opsLength = ops.length;
@@ -88,12 +108,16 @@ module.exports = function(event){
     var cacheKey = args.join(',') + code;
     var f = functionCache[cacheKey];
     if (!f){
-      f = createFunction(args, code);
+      f = utils.createFunction(args, code);
       functionCache[cacheKey] = f;
     }
+
     if (context) {
-      localCtx = context[i];
+      localCtx = immutableExtend(globalContext, context[i]);
+    } else {
+      localCtx = globalContext;
     }
+
     newLength = operations[operation.name](array, newLength, f, localCtx, seed);
   }
 
@@ -107,59 +131,16 @@ module.exports = function(event){
   };
 };
 
-function createFunction(args, code) {
-  switch (args.length) {
-    case 0: 
-      /*jslint evil: true */
-      return new Function(code);
-    case 1: 
-      /*jslint evil: true */
-      return new Function(args[0], code);
-    case 2:
-      /*jslint evil: true */
-    return new Function(args[0], args[1], code);
-    case 3:
-      /*jslint evil: true */
-      return new Function(args[0], args[1], args[2], code);
-    case 4:
-      /*jslint evil: true */
-      return new Function(args[0], args[1], args[2], args[3], code);
-    default:
-      return createDynamicArgumentsFunction(args, code);
-  }
-}
-
-function createDynamicArgumentsFunction(args, code) {
-  var fArgs = new Array(args);
-  fArgs.push(code);
-  return Function.prototype.constructor.apply(null, fArgs);
-}
-
 function createOperationContexts (context) {
-  var operationContexts, operationIndex;
+  var operationContexts;
   if (context) {
     context = JSON.parse(context);
     operationContexts = {};
-    for (operationIndex = 0; operationIndex <= context.currentIndex; operationIndex++) {
-      var saneLocalContext = context[operationIndex];
-      if (saneLocalContext) {
-        var localContext = {};
-        for (var name in saneLocalContext) {
-          if (saneLocalContext.hasOwnProperty(name)) {
-            localContext[name] = createContextValue(saneLocalContext[name]);
-          }
-        }
-        operationContexts[operationIndex] = localContext;
+    for (var i = 0; i <= context.currentIndex; i++) {
+      if (context[i]){
+        operationContexts[i] = contextUtils.deserializeFunctions(context[i]);
       }
     }
   }
   return operationContexts;
-}
-
-function createContextValue (value) {
-  if (value && value.__isFunction && value.args && value.code) {
-    return createFunction(value.args, value.code);
-  } else {
-    return value;
-  }
 }

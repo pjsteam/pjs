@@ -6,6 +6,7 @@ var operation_packager = require('./operation_packager');
 var errors = require('./errors');
 var utils = require('./utils');
 var contextUtils = require('./chain_context');
+var immutableExtend = require('xtend/immutable');
 
 var finisher = {
   map: function (self, result, done) {
@@ -16,7 +17,7 @@ var finisher = {
   },
   reduce: function (self, result, done) {
     var r;
-    var context = self.__localContext();
+    var context = immutableExtend(self.globalContext, self.__localContext());
     var operation = self.operation;
     var code = operation.identityCode;
     var seed = operation.seed;
@@ -31,53 +32,54 @@ var finisher = {
   }
 };
 
-var Chain = function (source, parts, workers, operation, chainContext, previousOperations) {
+var Chain = function (source, parts, workers, operation, globalContext, chainContext, previousOperations) {
   this.packager = new JobPackager(parts, source);
   this.source = source;
   this.parts = parts;
   this.workers = workers;
   this.operation = operation; //todo: (mati) por ahora lo dejo para finalizar el reduce correctamente
-  this.context = chainContext;
+  this.globalContext = globalContext;
+  this.chainContext = chainContext;
   previousOperations = previousOperations || [];
   previousOperations.push(operation);
   this.operations = previousOperations;
 };
 
 Chain.prototype.__localContext = function () {
-  return contextUtils.currentContextFromChainContext(this.context);
+  return contextUtils.currentContextFromChainContext(this.chainContext);
 };
 
-Chain.prototype.map = function (mapper, context) {
+Chain.prototype.map = function (mapper, localContext) {
   this.__verifyPreviousOperation();
-  var nextChainContext = contextUtils.extendChainContext(context, this.context);
+  var extendChainContext = contextUtils.extendChainContext(localContext, this.chainContext);
   var operation = operation_packager(operation_names.MAP, mapper);
-  return new Chain(this.source, this.parts, this.workers, operation, nextChainContext, this.operations);
+  return new Chain(this.source, this.parts, this.workers, operation, this.globalContext, extendChainContext, this.operations);
 };
 
-Chain.prototype.filter = function (predicate, context) {
+Chain.prototype.filter = function (predicate, localContext) {
   this.__verifyPreviousOperation();
-  var nextChainContext = contextUtils.extendChainContext(context, this.context);
+  var extendChainContext = contextUtils.extendChainContext(localContext, this.chainContext);
   var operation = operation_packager(operation_names.FILTER, predicate);
-  return new Chain(this.source, this.parts, this.workers, operation, nextChainContext, this.operations);
+  return new Chain(this.source, this.parts, this.workers, operation, this.globalContext, extendChainContext, this.operations);
 };
 
-Chain.prototype.reduce = function (reducer, seed, identityReducer, identity, context) {
+Chain.prototype.reduce = function (reducer, seed, identityReducer, identity, localContext) {
   if (!utils.isFunction(identityReducer)) {
-    context = identity;
+    localContext = identity;
     identity = identityReducer;
     identityReducer = reducer;
   }
   this.__verifyPreviousOperation();
-  var nextChainContext = contextUtils.extendChainContext(context, this.context);
+  var extendChainContext = contextUtils.extendChainContext(localContext, this.chainContext);
   var operation = operation_packager(operation_names.REDUCE, reducer, seed, identity, identityReducer);
-  return new Chain(this.source, this.parts, this.workers, operation, nextChainContext, this.operations);
+  return new Chain(this.source, this.parts, this.workers, operation, this.globalContext, extendChainContext, this.operations);
 };
 
 Chain.prototype.seq = function (done) {
   var self = this;
   var workers = this.workers;
   var TypedArrayConstructor = this.source.constructor;
-  var packs = this.packager.generatePackages(this.operations, this.context);
+  var packs = this.packager.generatePackages(this.operations, this.chainContext);
   var collector = new ResultCollector(this.parts, function(err, results){
     if (err) { return done(err); }
     var partial_results = results.map(function(result){

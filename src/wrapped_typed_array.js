@@ -4,10 +4,11 @@ var operation_packager = require('./operation_packager');
 var contextUtils = require('./chain_context');
 var utils = require('./utils');
 
-var WrappedTypedArray = function (source, parts, workers) {
+var WrappedTypedArray = function (source, parts, workers, globalContext) {
   this.source = source;
   this.parts = parts;
   this.workers = workers;
+  this.globalContext = globalContext;
 };
 
 WrappedTypedArray.prototype.map = function(mapper, context) {
@@ -30,7 +31,7 @@ WrappedTypedArray.prototype.reduce = function(reducer, seed, identityReducer, id
 WrappedTypedArray.prototype.__operation = function(name, code, localContext, seed, identity, identityCode) {
   var operation = operation_packager(name, code, seed, identity, identityCode);
   var chainContext = contextUtils.extendChainContext(localContext);
-  return new Chain(this.source, this.parts, this.workers, operation, chainContext);
+  return new Chain(this.source, this.parts, this.workers, operation, this.globalContext, chainContext);
 };
 
 module.exports = WrappedTypedArray;

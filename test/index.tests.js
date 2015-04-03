@@ -4,7 +4,6 @@ describe('initialization', function(){
 
   var pjs;
   var errors = require('../src/errors.js');
-  var utils = require('../src/utils.js');
 
   beforeEach(function () {
 	  pjs = require('../src/index.js');
@@ -55,6 +54,34 @@ describe('initialization', function(){
     expect(pjs.config).to.equal(undefined);
     pjs.init();
     expect(pjs.config.workers).to.equal(navigator.hardwareConcurrency);
+  });
+
+  it('should clear globalContext when terminating', function(done){
+    this.timeout(4000);
+    pjs.init();
+    pjs.updateContext({
+      value: 10
+    }, function(err){
+      if (err) { return done(err); }
+      pjs(new Uint32Array([1,2,3,4,5])).reduce(function(e, v, ctx){
+        return ctx.value;
+      }, 0, 0).seq(function(err, result){
+        if (err) { return done(err); }
+
+        expect(result).to.equal(10);
+
+        pjs.terminate();
+        pjs.init();
+
+        pjs(new Uint32Array([1,2,3,4,5])).reduce(function(e, v, ctx){
+          return ctx.value;
+        }, 0, 0).seq(function(err, result){
+          if (err) { return done(err); }
+          expect(result).to.be.undefined;
+          done();
+        });
+      });
+    });
   });
 
   it('should have workers count equal to navigator.hardwareConcurrency - 1 if that value is passed as maxWorkers option.', function () {
