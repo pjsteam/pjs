@@ -2,6 +2,7 @@ var mutableExtend = require('xtend/mutable');
 var utils = require('./utils');
 var immutableExtend = require('xtend/immutable');
 var contextUtils = require('./context');
+var chainContext = require('./chain_context');
 
 // param can be either length (number) or buffer
 function createTypedArray(type, param){
@@ -134,7 +135,7 @@ module.exports = function(event){
 function createOperationContexts (context) {
   var operationContexts;
   if (context) {
-    context = JSON.parse(context);
+    context = chainContext.deserializeChainContext(context);
     operationContexts = {};
     for (var i = 0; i <= context.currentIndex; i++) {
       if (context[i]){
