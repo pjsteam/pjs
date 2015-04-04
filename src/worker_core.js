@@ -5,8 +5,10 @@ var contextUtils = require('./context');
 var chainContext = require('./chain_context');
 
 // param can be either length (number) or buffer
-function createTypedArray(type, param){
+function createTypedArray(type, param, from, to){
   switch(type){
+    case 'SharedUint32Array':
+      return new SharedUint32Array(param, from * 4, to);
     case 'Uint8Array':
       return new Uint8Array(param);
     case 'Uint8ClampedArray':
@@ -114,7 +116,7 @@ module.exports = function(event){
   var ops = pack.operations;
   var opsLength = ops.length;
 
-  var array = createTypedArray(pack.elementsType, pack.buffer);
+  var array = createTypedArray(pack.elementsType, pack.buffer, pack.from, pack.to);
   var newLength = array.length;
 
   for (var i = 0; i < opsLength; i += 1) {

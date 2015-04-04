@@ -59,7 +59,9 @@ JobPackager.prototype.generatePackages = function (operations, chainContext) {
   return partitionedElements.map(function (partitionedElement, index) {
     return {
       index: index,
-      buffer: partitionedElement.buffer,
+      start: partitionedElement.from,
+      end: partitionedElement.to,
+      buffer: this.elements.buffer,
       operations: parsedOperations,
       elementsType: elementsType,
       ctx: strfyCtx

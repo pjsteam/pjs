@@ -41,7 +41,7 @@ Partitioner.prototype.doPartition = function (array) {
     } else {
       to += subElementsCount;
     }
-    arrays[i] = typedArraySlice(array, from, to);
+    arrays[i] = { from:from, to: to };
     from += subElementsCount;
   }
   return arrays;

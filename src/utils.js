@@ -34,6 +34,7 @@ utils.isTypedArray = function (obj) {
   }
   var type = utils.getTypedArrayType(obj);
   switch(type){
+    case 'SharedUint32Array':
     case 'Uint8Array':
     case 'Int8Array':
     case 'Uint8ClampedArray':
