@@ -4,32 +4,6 @@ var immutableExtend = require('xtend/immutable');
 var contextUtils = require('./context');
 var chainContext = require('./chain_context');
 
-// param can be either length (number) or buffer
-function createTypedArray(type, param, from, to){
-  switch(type){
-    case 'SharedUint32Array':
-      return new SharedUint32Array(param, from * 4, to);
-    case 'Uint8Array':
-      return new Uint8Array(param);
-    case 'Uint8ClampedArray':
-      return new Uint8ClampedArray(param);
-    case 'Uint16Array':
-      return new Uint16Array(param);
-    case 'Uint32Array':
-      return new Uint32Array(param);
-    case 'Int8Array':
-      return new Int8Array(param);
-    case 'Int16Array':
-      return new Int16Array(param);
-    case 'Int32Array':
-      return new Int32Array(param);
-    case 'Float32Array':
-      return new Float32Array(param);
-    case 'Float64Array':
-      return new Float64Array(param);
-  }
-}
-
 function getMapFactory(){
   if (typeof Map === 'function'){
     return function(){
@@ -51,31 +25,31 @@ var functionCache = mapFactory();
 var globalContext = {};
 
 var operations = {
-  map: function (array, length, f, ctx) {
+  map: function (source, target, length, f, ctx) {
     var i = 0;
     for ( ; i < length; i += 1){
-      array[i] = f(array[i], ctx);
+      target[i] = f(source[i], ctx);
     }
     return length;
   },
-  filter: function (array, length, f, ctx) {
+  filter: function (source, target, length, f, ctx) {
     var i = 0, newLength = 0;
     for ( ; i < length; i += 1){
-      var e = array[i];
+      var e = source[i];
       if (f(e, ctx)) {
-        array[newLength++] = e;
+        target[newLength++] = e;
       }
     }
     return newLength;
   },
-  reduce: function (array, length, f, ctx, seed) {
+  reduce: function (source, target, length, f, ctx, seed) {
     var i = 0;
     var reduced = seed;
     for ( ; i < length; i += 1){
-      var e = array[i];
+      var e = source[i];
       reduced = f(reduced, e, ctx);
     }
-    array[0] = reduced;
+    target[0] = reduced;
     return 1;
   }
 };
@@ -116,8 +90,13 @@ module.exports = function(event){
   var ops = pack.operations;
   var opsLength = ops.length;
 
-  var array = createTypedArray(pack.elementsType, pack.buffer, pack.from, pack.to);
-  var newLength = array.length;
+  var partLength = pack.end - pack.start;
+
+  var target = utils.createTypedArray(pack.elementsType.replace('Shared', ''), partLength);
+
+  var source = utils.createTypedArray(pack.elementsType, pack.buffer, pack.start, partLength);
+
+  var newLength = source.length;
 
   for (var i = 0; i < opsLength; i += 1) {
     var localCtx;
@@ -131,16 +110,16 @@ module.exports = function(event){
       localCtx = globalContext;
     }
 
-    newLength = operations[operation.name](array, newLength, f, localCtx, seed);
+    newLength = operations[operation.name](source, target, newLength, f, localCtx, seed);
   }
 
   return {
     message: {
       index: pack.index,
-      value: array.buffer,
-      newLength: newLength
+      value: target.buffer,
+      newLength: newLength,
     },
-    transferables: [ array.buffer ]
+    transferables: [ target.buffer ]
   };
 };
 

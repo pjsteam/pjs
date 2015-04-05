@@ -18,6 +18,34 @@ utils.isFunction = function (object) { //http://jsperf.com/alternative-isfunctio
   return !!(object && object.constructor && object.call && object.apply);
 };
 
+
+// param can be either length (number) or buffer
+utils.createTypedArray = function(type, param, from, length){
+  switch(type){
+    case 'SharedUint32Array':
+      return new SharedUint32Array(param, from * 4, length);
+    case 'Uint8Array':
+      return new Uint8Array(param);
+    case 'Uint8ClampedArray':
+      return new Uint8ClampedArray(param);
+    case 'Uint16Array':
+      return new Uint16Array(param);
+    case 'Uint32Array':
+      return new Uint32Array(param);
+    case 'Int8Array':
+      return new Int8Array(param);
+    case 'Int16Array':
+      return new Int16Array(param);
+    case 'Int32Array':
+      return new Int32Array(param);
+    case 'Float32Array':
+      return new Float32Array(param);
+    case 'Float64Array':
+      return new Float64Array(param);
+  }
+};
+
+
 utils.getter = function (obj, name, value) {
   Object.defineProperty(obj, name, {
     enumerable: true,

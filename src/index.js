@@ -22,7 +22,7 @@ function init(options) {
 	}
 
 	options = options || {};
-	var cpus = navigator.hardwareConcurrency || 1;
+	var cpus = navigator.hardwareConcurrency || options.maxWorkers || 1;
 	var maxWorkers = options.maxWorkers || cpus;
 	var workersCount = Math.min(maxWorkers, cpus);
   workers.init(workersCount);

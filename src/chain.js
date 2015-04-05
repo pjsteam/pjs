@@ -100,14 +100,16 @@ function createChain(oldChain, options){
 Chain.prototype.seq = function (done) {
   var self = this;
   return new Promise(function (resolve, reject) {
-    var TypedArrayConstructor = self.source.constructor;
     var packs = self.packager.generatePackages(self.operations, self.chainContext);
 
     workers.sendPacks(packs, function(err, results){
       if (err) { if (done) { done(err); } reject(err); return; }
       var partial_results = results.map(function(result){
-        return new TypedArrayConstructor(result.value).subarray(0, result.newLength);
+        var type = packs[0].elementsType.replace('Shared', '');
+        var temp = utils.createTypedArray(type, result.value);
+        return temp.subarray(0, result.newLength);
       });
+
       var m = merge_typed_arrays(partial_results);
       return finisher[self.operation.name](self, m, done, resolve);
     });

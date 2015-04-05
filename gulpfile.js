@@ -5,7 +5,7 @@ var gulp = require('gulp'),
     rename = require('gulp-rename'),
     jshint = require('gulp-jshint'),
     transform = require('vinyl-transform'),
-    projectName = require('./package.json').name
+    projectName = require('./package.json').name,
     sourceFile = ['./src/index.js'];
 
 var browserified = function(standalone) {
@@ -33,9 +33,11 @@ gulp.task('build-browserify', function() {
     .pipe(browserified())
     .pipe(rename(projectName + '.js'))
     .pipe(gulp.dest('./dist/'))
+    .pipe(gulp.dest('./examples/sapiaPicture'))
     .pipe(uglify())
     .pipe(rename(projectName + '.min.js'))
     .pipe(gulp.dest('./dist'))
+    .pipe(gulp.dest('./examples/sapiaPicture'));
 });
 
 gulp.task('build-standalone', function() {
@@ -43,9 +45,11 @@ gulp.task('build-standalone', function() {
     .pipe(browserified(true))
     .pipe(rename(projectName + '-standalone.js'))
     .pipe(gulp.dest('./dist/'))
+    .pipe(gulp.dest('./examples/sapiaPicture'))
     .pipe(uglify())
     .pipe(rename(projectName + '-standalone.min.js'))
     .pipe(gulp.dest('./dist'))
+    .pipe(gulp.dest('./examples/sapiaPicture'));
 });
 
 /**

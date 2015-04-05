@@ -55,13 +55,15 @@ JobPackager.prototype.generatePackages = function (operations, chainContext) {
   var partitioner = new Partitioner(this.parts);
   var partitionedElements = partitioner.partition(this.elements);
 
+  var self = this;
+
   var strfyCtx = contextSerializer.serializeChainContext(chainContext);
   return partitionedElements.map(function (partitionedElement, index) {
     return {
       index: index,
       start: partitionedElement.from,
       end: partitionedElement.to,
-      buffer: this.elements.buffer,
+      buffer: self.elements.buffer,
       operations: parsedOperations,
       elementsType: elementsType,
       ctx: strfyCtx
