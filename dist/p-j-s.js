@@ -963,7 +963,11 @@ module.exports.sendPacks = function(packs, callback){
     workers[index].addEventListener('error', onErrorHandler);
     workers[index].addEventListener('message', onMessageHandler);
 
-    workers[index].postMessage(pack);
+    if (pack.buffer){
+      workers[index].postMessage(pack, [ pack.buffer ]);
+    } else {
+      workers[index].postMessage(pack);
+    }
   });
 };
 },{"./result_collector":12,"./worker.js":16,"webworkify":1}],19:[function(require,module,exports){
