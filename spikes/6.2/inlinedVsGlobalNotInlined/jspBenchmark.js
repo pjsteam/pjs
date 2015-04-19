@@ -1,4 +1,4 @@
-// http://jsperf.com/
+// http://jsperf.com/global-ctx-no-inlined-vs-inlined
 
 // HTML setup
 <script src="http://rawgit.com/pjsteam/pjs/v0.5.2/dist/p-j-s.min.js"></script>

@@ -22,17 +22,13 @@ var finisher = {
     resolve(result);
   },
   reduce: function (self, result, done, resolve) {
-    var r;
     var context = immutableExtend(self.globalContext, self.__localContext());
     var operation = self.operation;
     var code = operation.identityCode;
-    var seed = operation.seed;
-    if (context) {
-      r = Array.prototype.slice.call(result).reduce(function (p, e) {
-        return code(p, e, context);
-      }, seed);
-    } else {
-      r = Array.prototype.slice.call(result).reduce(code, seed);
+    var r = operation.seed, i = 0;
+    var resultLength = result.length;
+    for ( ; i < resultLength; i++) {
+      r = code(r, result[i], context);
     }
     if (done) {
       done(null, r);
