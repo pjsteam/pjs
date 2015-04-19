@@ -69,10 +69,10 @@ var __finish = function (result) {
 
 // Test case 1 - map with no-inlined
 wrappedXs.map(contextMapper).seq(function (result) {
-  __finish();
+  __finish(result);
 });
 
 // Test case 2 - map with global no-inlined
 wrappedXs.map('contextMapper').seq(function (result) {
-  __finish();
+  __finish(result);
 });

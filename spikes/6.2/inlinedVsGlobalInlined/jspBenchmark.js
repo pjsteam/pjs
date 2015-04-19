@@ -48,10 +48,10 @@ var __finish = function (result) {
 
 // Test case 1 - map with inlining
 wrappedXs.map(inlinedMapper).seq(function (result) {
-  __finish();
+  __finish(result);
 });
 
 // Test case 2 - map with global inlining
   wrappedXs.map('inlinedMapper').seq(function (result) {
-    __finish();
+    __finish(result);
   });
