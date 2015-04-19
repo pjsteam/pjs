@@ -10,33 +10,33 @@ var initialized = false;
 var globalContext = {};
 
 function wrap(typedArray){
-	if (!utils.isTypedArray(typedArray)) {
-		throw new errors.InvalidArgumentsError(errors.messages.INVALID_TYPED_ARRAY);
-	}
-	return new WrappedTypedArray(typedArray, workers.length, globalContext);
+  if (!utils.isTypedArray(typedArray)) {
+    throw new errors.InvalidArgumentsError(errors.messages.INVALID_TYPED_ARRAY);
+  }
+  return new WrappedTypedArray(typedArray, workers.length, globalContext);
 }
 
 function init(options) {
-	if (initialized) {
-		throw new errors.InvalidOperationError(errors.messages.CONSECUTIVE_INITS);
-	}
+  if (initialized) {
+    throw new errors.InvalidOperationError(errors.messages.CONSECUTIVE_INITS);
+  }
 
-	options = options || {};
-	var cpus = navigator.hardwareConcurrency || 1;
-	var maxWorkers = options.maxWorkers || cpus;
-	var workersCount = Math.min(maxWorkers, cpus);
+  options = options || {};
+  var cpus = navigator.hardwareConcurrency || options.maxWorkers || 1;
+  var maxWorkers = options.maxWorkers || cpus;
+  var workersCount = Math.min(maxWorkers, cpus);
   workers.init(workersCount);
 
-	var config = {
-  	get workers () {
-  		return workers.length;
-  	}
+  var config = {
+    get workers () {
+      return workers.length;
+    }
   };
 
   utils.getter(pjs, 'config', config);
   utils.getter(pjs, 'contextUpdatePackager', new ContextUpdatePackager(workers.length));
 
-	initialized = true;
+  initialized = true;
 }
 
 function updateContext(updates, done){
@@ -55,17 +55,17 @@ function updateContext(updates, done){
 }
 
 function terminate() {
-	if (!initialized) {
-		throw new errors.InvalidOperationError(errors.messages.TERMINATE_WITHOUT_INIT);
-	}
+  if (!initialized) {
+    throw new errors.InvalidOperationError(errors.messages.TERMINATE_WITHOUT_INIT);
+  }
 
   workers.terminate();
 
   globalContext = {};
-	delete pjs.config;
-	delete pjs.contextUpdatePackager;
+  delete pjs.config;
+  delete pjs.contextUpdatePackager;
 
-	initialized = false;
+  initialized = false;
 }
 
 pjs = module.exports = wrap;
