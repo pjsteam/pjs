@@ -86,9 +86,9 @@ module.exports = function(event){
     };
   }
 
-  var context = createOperationContexts(pack.ctx);
   var ops = pack.operations;
   var opsLength = ops.length;
+  var context = createOperationContexts(opsLength, pack.ctx);
 
   var partLength = pack.end - pack.start;
 
@@ -123,12 +123,12 @@ module.exports = function(event){
   };
 };
 
-function createOperationContexts (context) {
+function createOperationContexts (operationLength, context) {
   var operationContexts;
   if (context) {
     context = chainContext.deserializeChainContext(context);
     operationContexts = {};
-    for (var i = 0; i <= context.currentIndex; i++) {
+    for (var i = 0; i <= operationLength; i++) {
       if (context[i]){
         operationContexts[i] = contextUtils.deserializeFunctions(context[i]);
       }
