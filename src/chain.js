@@ -37,20 +37,21 @@ var finisher = {
   }
 };
 
-var Chain = function (source, parts, operation, globalContext, chainContext, previousOperations) {
-  this.packager = new JobPackager(parts, source);
-  this.source = source;
-  this.parts = parts;
-  this.operation = operation; //todo: (mati) por ahora lo dejo para finalizar el reduce correctamente
-  this.globalContext = globalContext;
-  this.chainContext = chainContext;
-  previousOperations = previousOperations || [];
-  previousOperations.push(operation);
+var Chain = function (options) {
+  this.packager = new JobPackager(options.parts, options.source);
+  this.source = options.source;
+  this.parts = options.parts;
+  this.operation = options.operation; //todo: (mati) por ahora lo dejo para finalizar el reduce correctamente
+  this.globalContext = options.globalContext;
+  this.chainContext = options.chainContext;
+  var previousOperations = options.previousOperations || [];
+  previousOperations.push(options.operation);
   this.operations = previousOperations;
+  this.depth = options.depth || 0;
 };
 
 Chain.prototype.__localContext = function () {
-  return contextUtils.currentContextFromChainContext(this.chainContext);
+  return contextUtils.contextFromChainContext(this.depth, this.chainContext);
 };
 
 Chain.prototype.map = function (mapper, localContext) {
@@ -88,9 +89,19 @@ Chain.prototype.reduce = function (reducer, seed, identityReducer, identity, loc
 
 function createChain(oldChain, options){
   oldChain.__verifyPreviousOperation();
-  var extendChainContext = contextUtils.extendChainContext(options.localContext, oldChain.chainContext);
+  var nextDepth = oldChain.depth + 1;
+  var extendChainContext = contextUtils.extendChainContext(nextDepth, options.localContext, oldChain.chainContext);
   var operation = operation_packager(options.operation, options.f, options.seed, options.identity, options.identityReducer);
-  return new Chain(oldChain.source, oldChain.parts, operation, oldChain.globalContext, extendChainContext, oldChain.operations);
+  var opt = {
+    source: oldChain.source,
+    parts: oldChain.parts,
+    operation: operation,
+    globalContext: oldChain.globalContext,
+    chainContext: extendChainContext,
+    previousOperations: oldChain.operations,
+    depth: nextDepth
+  };
+  return new Chain(opt);
 }
 
 Chain.prototype.seq = function (done) {
