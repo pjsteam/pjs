@@ -44,12 +44,13 @@ function updateContext(updates, done){
   return new Promise(function (resolve, reject) {
     var packs = self.contextUpdatePackager.generatePackages(updates);
     workers.sendPacks(packs, function(err){
-      if (err) { if (done) { done(err); } reject(err); return; }
+      if (err) { if (done) { done(err); } else { reject(err); } return; }
       mutableExtend(globalContext, updates);
       if (done) {
         done();
+      } else {
+        resolve();
       }
-      resolve();
     });
   });
 }

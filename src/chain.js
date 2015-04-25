@@ -12,14 +12,16 @@ var finisher = {
   map: function (self, result, done, resolve) {
     if (done) {
       done(null, result);
+    } else {
+      resolve(result);
     }
-    resolve(result);
   },
   filter: function (self, result, done, resolve) {
     if (done) {
       done(null, result);
+    } else {
+      resolve(result);
     }
-    resolve(result);
   },
   reduce: function (self, result, done, resolve) {
     var context = immutableExtend(self.globalContext, self.__localContext());
@@ -32,8 +34,9 @@ var finisher = {
     }
     if (done) {
       done(null, r);
+    } else {
+      resolve(r);
     }
-    resolve(r);
   }
 };
 
@@ -111,7 +114,7 @@ Chain.prototype.seq = function (done) {
     var packs = self.packager.generatePackages(self.operations, self.chainContext);
 
     workers.sendPacks(packs, function(err, results){
-      if (err) { if (done) { done(err); } reject(err); return; }
+      if (err) { if (done) { done(err); } else { reject(err); } return; }
       var partial_results = results.map(function(result){
         return new TypedArrayConstructor(result.value).subarray(0, result.newLength);
       });
