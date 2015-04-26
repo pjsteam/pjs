@@ -114,21 +114,16 @@ Chain.prototype.seq = function (done) {
 
     workers.sendPacks(packs, function(err, results){
       if (err) { if (done) { done(err); } else { reject(err); } return; }
-      if (utils.isSharedArray(self.packager.elements)) {
-        if (done) { done(err); } else { reject(err); } return; //TODO: (mati) retornar un array
-      } else {
-        var partial_results = results.map(function(result){
-          var type = packs[0].elementsType.replace('Shared', '');
-          var start = result.start;
-          var end = result.newEnd;
-          var length = end - start;
-          var temp = utils.createTypedArray(type, result.value, start, end);
-          return temp.subarray(0, length);
-        });
+      var partial_results = results.map(function(result){
+        var type = packs[0].elementsType.replace('Shared', '');
+        var start = result.start;
+        var end = result.newEnd;
+        var temp = utils.createTypedArray(type, result.value);
+        return temp.subarray(start, end);
+      });
 
-        var m = merge_typed_arrays(partial_results);
-        return finisher[self.operation.name](self, m, done, resolve);
-      }
+      var m = merge_typed_arrays(partial_results);
+      return finisher[self.operation.name](self, m, done, resolve);
     });
   });
 };
