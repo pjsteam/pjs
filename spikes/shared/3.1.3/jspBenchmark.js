@@ -1,7 +1,7 @@
-// http://jsperf.com/pjs-map-vs-serial/3
+// http://jsperf.com/pjs-shared-vs-normal-vs-seq-100
 
 // HTML preparation
-<script src="https://rawgit.com/pjsteam/pjs/v0.1.1/dist/p-j-s.min.js"></script>
+<script src="http://127.0.0.1:3000/dist/p-j-s.js"></script>
 <script>
   var pjs = require('p-j-s');
   pjs.init();
@@ -13,28 +13,33 @@
     }
     return typed;
   };
+  var sharify = function (array) {
+    var shared = new SharedUint32Array(array.length);
+    shared.set(array);
+    return shared;
+  }
   var xs100 = generateElements(100);
-  var sharedXs100 = new SharedUint32Array(xs100.buffer);
+  var sharedXs100 = sharify(xs100);
   var wrappedXs100 = pjs(xs100);
   var sharedWrappedXs100 = pjs(sharedXs100);
 
   var xs1000 = generateElements(1000);
-  var sharedXs1000 = new SharedUint32Array(xs1000.buffer);
+  var sharedXs1000 = sharify(xs1000);
   var wrappedXs1000 = pjs(xs1000);
   var sharedWrappedXs1000 = pjs(sharedXs1000);
 
   var xs10000 = generateElements(10000);
-  var sharedXs10000 = new SharedUint32Array(xs10000.buffer);
+  var sharedXs10000 = sharify(xs10000);
   var wrappedXs10000 = pjs(xs10000);
   var sharedWrappedXs10000 = pjs(sharedXs10000);
 
   var xs100000 = generateElements(100000);
-  var sharedXs100000 = new SharedUint32Array(xs100000.buffer);
+  var sharedXs100000 = sharify(xs100000);
   var wrappedXs100000 = pjs(xs100000);
   var sharedWrappedXs100000 = pjs(sharedXs100000);
 
   var xs1000000 = generateElements(1000000);
-  var sharedXs1000000 = new SharedUint32Array(xs1000000.buffer);
+  var sharedXs1000000 = sharify(xs1000000);
   var wrappedXs1000000 = pjs(xs1000000);
   var sharedWrappedXs1000000 = pjs(sharedXs1000000);
 
@@ -83,9 +88,16 @@
   };
 
   function runPjs(wrappedXs) {
-    wrappedXs.map(mapper, function (r) {
+    wrappedXs.map(mapper).seq(function (err, r) {
       __finish();
     });
+  };
+</script>
+<script>
+  Benchmark.prototype.setup = function() {
+    __finish = function () {
+      deferred.resolve();
+    };
   };
 </script>
 
@@ -94,32 +106,47 @@ __finish = function () {
   deferred.resolve();
 };
 
-// Test Case - serial map 100
+// Test Case - 100 serial map
 runSerial(xs100);
 
-// Test Case - pjs map 100
+// Test Case - 100 pjs map
 runPjs(wrappedXs100);
 
-// Test Case - serial map 1,000
+// Test Case - 100 pjs shared map
+runPjs(sharedWrappedXs100);
+
+// Test Case - 1,000 serial map
 runSerial(xs1000);
 
-// Test Case - pjs map 1,000
+// Test Case - 1,000 pjs map
 runPjs(wrappedXs1000);
 
-// Test Case - serial map 10,000
+// Test Case - 1,000 pjs shared map
+runPjs(sharedWrappedXs1000);
+
+// Test Case - 10,000 serial map 
 runSerial(xs10000);
 
-// Test Case - pjs map 10,000
+// Test Case - 10,000 pjs map
 runPjs(wrappedXs10000);
 
-// Test Case - serial map 100,000
+// Test Case - 10,000 pjs shared map
+runPjs(sharedWrappedXs10000);
+
+// Test Case - 100,000 serial map
 runSerial(xs100000);
 
-// Test Case - pjs map 100,000
+// Test Case - 100,000 pjs map
 runPjs(wrappedXs100000);
 
-// Test Case - serial map 1,000,000
+// Test Case - 100,000 pjs shared map
+runPjs(sharedWrappedXs100000);
+
+// Test Case - 1,000,000 serial map
 runSerial(xs1000000);
 
-// Test Case - pjs map 1,000,000
+// Test Case - 1,000,000 pjs map
 runPjs(wrappedXs1000000);
+
+// Test Case - 1,000,000 pjs shared map
+runPjs(sharedWrappedXs1000);
