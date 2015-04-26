@@ -18,13 +18,43 @@ utils.isFunction = function (object) { //http://jsperf.com/alternative-isfunctio
   return !!(object && object.constructor && object.call && object.apply);
 };
 
+utils.duplicateTypedArray = function (array) {
+  var type = this.getTypedArrayType(array);
+  var temp = this.createTypedArray(type, array.length);
+  temp.set(array);
+  return this.createTypedArray(type, temp.buffer);
+};
 
 // param can be either length (number) or buffer
 utils.createTypedArray = function(type, param){
   switch(type){
+    case 'SharedUint8Array':
+      /*global SharedUint8Array */
+      return new SharedUint8Array(param);
+    case 'SharedUint8ClampedArray':
+      /*global SharedUint8ClampedArray */
+      return new SharedUint8ClampedArray(param);
+    case 'SharedUint16Array':
+      /*global SharedUint16Array */
+      return new SharedUint16Array(param);
     case 'SharedUint32Array':
       /*global SharedUint32Array */
       return new SharedUint32Array(param);
+    case 'SharedInt8Array':
+      /*global SharedInt8Array */
+      return new SharedInt8Array(param);
+    case 'SharedInt16Array':
+      /*global SharedInt16Array */
+      return new SharedInt16Array(param);
+    case 'SharedInt32Array':
+      /*global SharedInt32Array */
+      return new SharedInt32Array(param);
+    case 'SharedFloat32Array':
+      /*global SharedFloat32Array */
+      return new SharedFloat32Array(param);
+    case 'SharedFloat64Array':
+      /*global SharedFloat64Array */
+      return new SharedFloat64Array(param);
     case 'Uint8Array':
       return new Uint8Array(param);
     case 'Uint8ClampedArray':

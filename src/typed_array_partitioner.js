@@ -37,11 +37,7 @@ Partitioner.prototype.__doPartition = function (array) {
   var sharedArray;
   var arrays = new Array(parts);
   if (isShared) {
-      /*global SharedUint32Array */
-    var temp = new SharedUint32Array(array.length);
-    temp.set(array);
-      /*global SharedUint32Array */
-    sharedArray = new SharedUint32Array(temp.buffer);
+    sharedArray = utils.duplicateTypedArray(array);
   }
   for (var i = 0; i < parts; i++) {
     if (parts - 1 === i) {
