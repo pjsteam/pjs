@@ -23,6 +23,7 @@ utils.isFunction = function (object) { //http://jsperf.com/alternative-isfunctio
 utils.createTypedArray = function(type, param, from, length){
   switch(type){
     case 'SharedUint32Array':
+      /*global SharedUint32Array */
       return new SharedUint32Array(param, from * 4, length);
     case 'Uint8Array':
       return new Uint8Array(param);
@@ -76,6 +77,13 @@ utils.isTypedArray = function (obj) {
     default:
       return false;
   }
+};
+
+utils.isSharedArray = function (obj) {
+  if (!obj) {
+    return false;
+  }
+  return utils.getTypedArrayType(obj) === 'SharedUint32Array';
 };
 
 utils.getTypedArrayConstructorType = function(array) {

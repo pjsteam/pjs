@@ -25,31 +25,31 @@ var functionCache = mapFactory();
 var globalContext = {};
 
 var operations = {
-  map: function (source, target, length, f, ctx) {
-    var i = 0;
-    for ( ; i < length; i += 1){
-      target[i] = f(source[i], ctx);
+  map: function (array, start, end, f, ctx) {
+    var i = start;
+    for ( ; i < end; i += 1){
+      array[i] = f(array[i], ctx);
     }
-    return length;
+    return end;
   },
-  filter: function (source, target, length, f, ctx) {
-    var i = 0, newLength = 0;
-    for ( ; i < length; i += 1){
-      var e = source[i];
+  filter: function (array, start, end, f, ctx) {
+    var i = start, newEnd = start;
+    for ( ; i < end; i += 1){
+      var e = array[i];
       if (f(e, ctx)) {
-        target[newLength++] = e;
+        array[newEnd++] = e;
       }
     }
-    return newLength;
+    return newEnd;
   },
-  reduce: function (source, target, length, f, ctx, seed) {
-    var i = 0;
+  reduce: function (array, start, end, f, ctx, seed) {
+    var i = start;
     var reduced = seed;
-    for ( ; i < length; i += 1){
-      var e = source[i];
+    for ( ; i < end; i += 1){
+      var e = array[i];
       reduced = f(reduced, e, ctx);
     }
-    target[0] = reduced;
+    array[0] = reduced;
     return 1;
   }
 };
@@ -89,14 +89,9 @@ module.exports = function(event){
   var ops = pack.operations;
   var opsLength = ops.length;
   var context = createOperationContexts(opsLength, pack.ctx);
-
-  var partLength = pack.end - pack.start;
-
-  var target = utils.createTypedArray(pack.elementsType.replace('Shared', ''), partLength);
-
-  var source = utils.createTypedArray(pack.elementsType, pack.buffer, pack.start, partLength);
-
-  var newLength = source.length;
+  var array = utils.createTypedArray(pack.elementsType.replace('Shared', ''), pack.buffer);
+  var start = pack.start;
+  var newEnd = pack.end;
 
   for (var i = 0; i < opsLength; i += 1) {
     var localCtx;
@@ -110,16 +105,16 @@ module.exports = function(event){
       localCtx = globalContext;
     }
 
-    newLength = operations[operation.name](source, target, newLength, f, localCtx, seed);
+    newEnd = operations[operation.name](array, start, newEnd, f, localCtx, seed);
   }
-
   return {
     message: {
       index: pack.index,
-      value: target.buffer,
-      newLength: newLength,
+      value: array.buffer,
+      start: start,
+      newEnd: newEnd,
     },
-    transferables: [ target.buffer ]
+    transferables: [ array.buffer ]
   };
 };
 
