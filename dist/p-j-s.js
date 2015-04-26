@@ -992,6 +992,8 @@ var ResultCollector = require('./result_collector');
 var work = require('webworkify');
 
 var workers = [];
+var packQueue = [];
+var sentPack;
 
 Object.defineProperty(module.exports, 'length', {
   get: function(){
@@ -1015,7 +1017,30 @@ module.exports.terminate = function(){
 };
 
 module.exports.sendPacks = function(packs, callback){
-  var collector = new ResultCollector(workers.length, callback);
+  packQueue.push({
+    packs: packs,
+    callback: callback
+  });
+  sendPacksIfNeeded();
+};
+
+function sendPacksIfNeeded() {
+  if (!sentPack) {
+    sentPack = packQueue.shift();
+    if (sentPack) {
+      doSendPacks();
+    }
+  }
+}
+
+function doSendPacks() {
+  var callback = sentPack.callback;
+  var packs = sentPack.packs;
+  var collector = new ResultCollector(workers.length, function (err, result) {
+    sentPack = undefined;
+    callback(err, result);
+    sendPacksIfNeeded();
+  });
 
   packs.forEach(function(pack, index){
     var onMessageHandler = function (event){
@@ -1040,7 +1065,7 @@ module.exports.sendPacks = function(packs, callback){
       workers[index].postMessage(pack);
     }
   });
-};
+}
 },{"./result_collector":12,"./worker.js":16,"webworkify":1}],19:[function(require,module,exports){
 var operation_names = require('./operation_names');
 var Chain = require('./chain');
