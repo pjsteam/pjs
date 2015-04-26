@@ -16,32 +16,44 @@ var Partitioner = module.exports = function (parts) {
 Partitioner.prototype.constructor = Partitioner;
 
 Partitioner.prototype.partition = function (array) {
-  this.validateTypedArray(array);
-  return this.doPartition(array, this);
+  this.__validateTypedArray(array);
+  return this.__doPartition(array, this);
 };
 
-Partitioner.prototype.validateTypedArray = function (array) {
+Partitioner.prototype.__validateTypedArray = function (array) {
   if (!utils.isTypedArray(array)) {
     var message = utils.format('Invalid type {0}. {1}', array, errors.messages.PARTITIONER_ARGUMENT_IS_NOT_TYPED_ARRAY);
     throw new errors.InvalidArgumentsError(message);
   }
 };
 
-Partitioner.prototype.doPartition = function (array) {
+Partitioner.prototype.__doPartition = function (array) {
   var parts = this.parts;
   var elementsCount = array.length;
   var subElementsCount = Math.floor(elementsCount / parts) | 0;
   var from = 0;
   var to = 0;
-
+  var isShared = utils.isSharedArray(array);
+  var sharedArray;
   var arrays = new Array(parts);
+  if (isShared) {
+      /*global SharedUint32Array */
+    var temp = new SharedUint32Array(array.length);
+    temp.set(array);
+      /*global SharedUint32Array */
+    sharedArray = new SharedUint32Array(temp.buffer);
+  }
   for (var i = 0; i < parts; i++) {
     if (parts - 1 === i) {
       to = elementsCount;
     } else {
       to += subElementsCount;
     }
-    arrays[i] = { from:from, to: to };
+    if (isShared) {
+      arrays[i] = { from:from, to: to, sharedArray: sharedArray};
+    } else {
+      arrays[i] = typedArraySlice(array, from, to);
+    }
     from += subElementsCount;
   }
   return arrays;

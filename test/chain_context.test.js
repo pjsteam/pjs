@@ -5,37 +5,42 @@ describe('chain context tests', function() {
   var utils = require('../src/utils');
 
   it ('should create a first chain context with a local context', function () {
-    var firstChain = contextUtils.extendChainContext({name:'test', age: 8});
+    var depth = 0;
+    var firstChain = contextUtils.extendChainContext(depth, {name:'test', age: 8});
     expect(firstChain).to.not.be.undefined;
-    expect(firstChain.currentIndex).to.equal(0);
-    expect(firstChain[0]).to.not.be.undefined;
+    expect(firstChain[depth]).to.not.be.undefined;
   });
 
   it ('should create a second chain context with local contexts', function () {
-    var firstChain = contextUtils.extendChainContext({name:'test', age: 8});
-    var secondChain = contextUtils.extendChainContext({max: 8, min: 16}, firstChain);
+    var firstDepth = 0;
+    var firstChain = contextUtils.extendChainContext(firstDepth, {name:'test', age: 8});
+    var secondDepth = 1;
+    var secondChain = contextUtils.extendChainContext(secondDepth, {max: 8, min: 16}, firstChain);
     expect(secondChain).to.not.be.undefined;
-    expect(firstChain.currentIndex).to.equal(0);
-    expect(secondChain.currentIndex).to.equal(1);
-    expect(secondChain[0]).to.not.be.undefined;
-    expect(secondChain[1]).to.not.be.undefined;
+    expect(secondChain[firstDepth]).to.not.be.undefined;
+    expect(secondChain[secondDepth]).to.not.be.undefined;
   });
 
-  it ('should create a first chain context without a local context', function () {
+  it ('should not create any context with empty first local context', function () {
     var firstChain = contextUtils.extendChainContext();
-    expect(firstChain).to.not.be.undefined;
-    expect(firstChain.currentIndex).to.equal(0);
-    expect(firstChain[0]).to.be.undefined;
+    expect(firstChain).to.be.undefined;
   });
 
-  it ('should create a second chain context without local contexts', function () {
-    var firstChain = contextUtils.extendChainContext();
-    var secondChain = contextUtils.extendChainContext(null, firstChain);
+  it ('should not create any context with empty first and second local contexts', function () {
+    var firstChain = contextUtils.extendChainContext(0);
+    var secondChain = contextUtils.extendChainContext(1, undefined, firstChain);
+    expect(secondChain).to.be.undefined;
+  });
+
+  it ('should create a context from empty first local contexts', function () {
+    var firstDepth = 0;
+    var firstChain = contextUtils.extendChainContext(firstDepth);
+    var secondDepth = 1;
+    var secondChain = contextUtils.extendChainContext(secondDepth, {name:'test', age: 8}, firstChain);
+    expect(firstChain).to.be.undefined;
     expect(secondChain).to.not.be.undefined;
-    expect(firstChain.currentIndex).to.equal(0);
-    expect(secondChain.currentIndex).to.equal(1);
-    expect(secondChain[0]).to.be.undefined;
-    expect(secondChain[1]).to.be.undefined;
+    expect(secondChain[firstDepth]).to.be.undefined;
+    expect(secondChain[secondDepth]).to.not.be.undefined;
   });
 
   describe('retrieve local context', function () {
@@ -50,24 +55,24 @@ describe('chain context tests', function() {
       }
     }
 
-    var firstChain = contextUtils.extendChainContext(firstLocalContext);
-    var secondChain = contextUtils.extendChainContext(secondContext, firstChain);
-    var thirdChain = contextUtils.extendChainContext(thirdContext, secondChain);
+    var firstChain = contextUtils.extendChainContext(0, firstLocalContext);
+    var secondChain = contextUtils.extendChainContext(1, secondContext, firstChain);
+    var thirdChain = contextUtils.extendChainContext(2, thirdContext, secondChain);
 
     it ('should retrieve first context from first chain', function () {
-      var c = contextUtils.currentContextFromChainContext(firstChain);
+      var c = contextUtils.contextFromChainContext(0, firstChain);
       expect(c).to.not.be.undefined;
       expect(c.max).to.equal(8);
       expect(c.min).to.equal(2);
     });
 
     it ('should retrieve second context from second chain', function () {
-      var c = contextUtils.currentContextFromChainContext(secondChain);
+      var c = contextUtils.contextFromChainContext(1, secondChain);
       expect(c).to.be.undefined;
     });
 
     it ('should retrieve third context from third chain', function () {
-      var c = contextUtils.currentContextFromChainContext(thirdChain);
+      var c = contextUtils.contextFromChainContext(2, thirdChain);
       expect(c).to.not.be.undefined;
       expect(c.minimize).to.not.be.undefined;
       expect(c.minimize(5)).to.equal(4);
@@ -81,16 +86,16 @@ describe('chain context tests', function() {
           return Math.max(e, 4);
         }
       }
-      var thirdChainBis = contextUtils.extendChainContext(thirdContextBis, secondChain);
+      var thirdChainBis = contextUtils.extendChainContext(2, thirdContextBis, secondChain);
 
-      var c = contextUtils.currentContextFromChainContext(thirdChain);
+      var c = contextUtils.contextFromChainContext(2, thirdChain);
       expect(c).to.not.be.undefined;
       expect(c.minimize).to.not.be.undefined;
       expect(c.minimize(5)).to.equal(4);
       expect(c.minimize(3)).to.equal(3);
       expect(c.minimize(1)).to.equal(1);
 
-      var cBis = contextUtils.currentContextFromChainContext(thirdChainBis);
+      var cBis = contextUtils.contextFromChainContext(2, thirdChainBis);
       expect(cBis).to.not.be.undefined;
       expect(cBis.maximize).to.not.be.undefined;
       expect(cBis.maximize(5)).to.equal(5);
@@ -118,7 +123,7 @@ describe('chain context tests', function() {
           return a + b + c * d / e + f;
         }
       }
-      chainContext = contextUtils.extendChainContext(localContext);
+      chainContext = contextUtils.extendChainContext(0, localContext);
       chainFirstLocalContext = chainContext[0];
     });
 
@@ -131,7 +136,7 @@ describe('chain context tests', function() {
     });
 
     it ('should obtain functions on local context', function () {
-      var c = contextUtils.currentContextFromChainContext(chainContext);
+      var c = contextUtils.contextFromChainContext(0, chainContext);
       expect(utils.isFunction(c.minimize)).to.be.true;
       expect(utils.isFunction(c.adder)).to.be.true;
       expect(utils.isFunction(c.random)).to.be.true;

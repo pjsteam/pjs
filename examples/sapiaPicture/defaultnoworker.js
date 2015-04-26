@@ -24,6 +24,7 @@ var processSepia = function (binaryData, l) {
     var runButton = document.getElementById("runButton");
 
     run = function () {
+        
         log.innerHTML = "Processing...";
         runButton.style.visibility = "hidden"; 
 
@@ -42,12 +43,14 @@ var processSepia = function (binaryData, l) {
         tempContext.drawImage(source, 0, 0, canvas.width, canvas.height);
 
         var canvasData = tempContext.getImageData(0, 0, canvas.width, canvas.height);
-        var binaryData = canvasData.data;
-        console.time('serial');
         var start = new Date();
+        console.time('serial');
+        var binaryData = canvasData.data;
         processSepia(binaryData, len);
         var diff = new Date() - start;
+        processSepia(binaryData, len);
         console.timeEnd('serial');
+        var diff = new Date() - start;
         tempContext.putImageData(canvasData, 0, 0);
         log.innerHTML = "Process done in " + diff + " ms (no web workers)";
         runButton.style.visibility = "visible"; 

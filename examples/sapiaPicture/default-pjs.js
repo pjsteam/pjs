@@ -2,7 +2,9 @@
 
 var run;
 
-(function() {
+(function () {
+  var source = document.getElementById("source");
+  var runButton = document.getElementById("runButton");
   var pjs = require('p-j-s');
   pjs.init({ maxWorkers: 4 });
   pjs.updateContext({
@@ -22,39 +24,34 @@ var run;
       return (pixel & 0xFF000000) + (new_b << 16) + (new_g << 8) + (new_r & 0xFF);
     }
   }).then(function(){
-    var source = document.getElementById("source");
-    var runButton = document.getElementById("runButton");
     run = function(){
-        log.innerHTML = "Processing...";
+      log.innerHTML = "Processing...";
+      runButton.style.visibility = "hidden";
+      var canvas = document.getElementById("target");
+      canvas.width = source.clientWidth;
+      canvas.height = source.clientHeight;
 
-        runButton.style.visibility = "hidden"; 
-        var canvas = document.getElementById("target");
-        canvas.width = source.clientWidth;
-        canvas.height = source.clientHeight;
+      if (!canvas.getContext) {
+        log.innerHTML = "Canvas not supported. Please install a HTML5 compatible browser.";
+        return;
+      }
 
-        if (!canvas.getContext) {
-          log.innerHTML = "Canvas not supported. Please install a HTML5 compatible browser.";
-          return;
-        }
+      var tempContext = canvas.getContext("2d");
 
-        var tempContext = canvas.getContext("2d");
-
-        tempContext.drawImage(source, 0, 0, canvas.width, canvas.height);
-
-        var canvasData = tempContext.getImageData(0, 0, canvas.width, canvas.height);
-        var temp = new SharedUint8ClampedArray(canvasData.data.length);
-        temp.set(canvasData.data);
-        var copyData = new SharedUint32Array(temp.buffer);
-        var start = new Date();
-        pjs(copyData).map('f').seq(function(err, result) {
-          var diff = new Date() - start;
-          canvasData.data.set(new Uint8ClampedArray(result.buffer));
-          tempContext.putImageData(canvasData, 0, 0);
-          log.innerHTML = "Process done in " + diff + " ms";
-          runButton.style.visibility = "visible";
-        });
+      tempContext.drawImage(source, 0, 0, canvas.width, canvas.height);
+      var canvasData = tempContext.getImageData(0, 0, canvas.width, canvas.height);
+      var temp = new SharedUint8ClampedArray(canvasData.data.length);
+      temp.set(canvasData.data);
+      var copyData = new SharedUint32Array(temp.buffer);
+      var start = new Date();
+      pjs(copyData).map('f').seq(function(err, result) {
+        var diff = new Date() - start;
+        canvasData.data.set(new Uint8ClampedArray(result.buffer));
+        tempContext.putImageData(canvasData, 0, 0);
+        log.innerHTML = "Process done in " + diff + " ms";
+        runButton.style.visibility = "visible";
+      });
     };
-
     source.src = "pic.jpg";
   });
 })();

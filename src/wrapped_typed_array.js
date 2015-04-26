@@ -29,8 +29,15 @@ WrappedTypedArray.prototype.reduce = function(reducer, seed, identityReducer, id
 
 WrappedTypedArray.prototype.__operation = function(name, code, localContext, seed, identity, identityCode) {
   var operation = operation_packager(name, code, seed, identity, identityCode);
-  var chainContext = contextUtils.extendChainContext(localContext);
-  return new Chain(this.source, this.parts, operation, this.globalContext, chainContext);
+  var chainContext = contextUtils.extendChainContext(0, localContext);
+  var options = {
+    source: this.source,
+    parts: this.parts,
+    operation: operation,
+    globalContext: this.globalContext,
+    chainContext: chainContext
+  };
+  return new Chain(options);
 };
 
 module.exports = WrappedTypedArray;

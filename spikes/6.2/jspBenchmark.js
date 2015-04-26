@@ -1,4 +1,4 @@
-// http://jsperf.com/additional-context-comparison/2
+// http://jsperf.com/additional-context-comparison/3
 
 // HTML setup
 <script src="http://127.0.0.1:3000/p-j-s.min.js"></script>
@@ -85,7 +85,7 @@
     var s_r = shifts.r;
     var s_g = shifts.g;
     var s_b = shifts.b;
-    var r = pixel & masks.r >> s_r;
+    var r = (pixel & masks.r) >> s_r;
     var g = (pixel & masks.g) >> s_g;
     var b = (pixel & masks.b) >> s_b;
 
@@ -93,7 +93,7 @@
     var new_g = ctx.colorDistance(ctx.noise(), (r * 0.349) + (g * 0.686) + (b * 0.168), g);
     var new_b = ctx.colorDistance(ctx.noise(), (r * 0.272) + (g * 0.534) + (b * 0.131), b);
 
-    return (pixel & 0xFF000000) + (new_b << s_b) + (new_g << s_g) + (new_r & 0xFF);
+    return (pixel & 0xFF000000) + (new_b << s_b) + (new_g << s_g) + (new_r << s_r);
   };
 
   var inlinedCtx = {
@@ -107,14 +107,14 @@
       g: 8,
       b: 16
     }
-  }
+  };
   function inlinedContextMapper(pixel, ctx) {
     var masks = ctx.masks;
     var shifts = ctx.shifts;
     var s_r = shifts.r;
     var s_g = shifts.g;
     var s_b = shifts.b;
-    var r = pixel & masks.r >> s_r;
+    var r = (pixel & masks.r) >> s_r;
     var g = (pixel & masks.g) >> s_g;
     var b = (pixel & masks.b) >> s_b;
 
@@ -126,38 +126,45 @@
     var new_g = Math.max(Math.min(255, noise_g * ((r * 0.349) + (g * 0.686) + (b * 0.168)) + (1 - noise_g) * g), 0);
     var new_b = Math.max(Math.min(255, noise_b * ((r * 0.272) + (g * 0.534) + (b * 0.131)) + (1 - noise_b) * b), 0);
 
-    return (pixel & 0xFF000000) + (new_b << s_b) + (new_g << s_g) + (new_r & 0xFF);
+    return (pixel & 0xFF000000) + (new_b << s_b) + (new_g << s_g) + (new_r << s_r);
   };
+
+  pjs.updateContext({
+    preLoaded: inlinedContextMapper
+  });
+
+  var preLoadedCtx = inlinedCtx;
 </script>
 
-// Test case 1 - map without inlining
-wrappedXs.map(notInlinedMapper).seq(function (result) {
+// JavaScript Setup
+var __finish = function (result) {
   if (!result) {
     console.log('error');
   }
   deferred.resolve();
+};
+
+// Test case 1 - map without inlining
+wrappedXs.map(notInlinedMapper).seq(function (result) {
+  __finish();
 });
 
 // Test case 2 - map with inlining
 wrappedXs.map(inlinedMapper).seq(function (result) {
-  if (!result) {
-    console.log('error');
-  }
-  deferred.resolve();
+  __finish();
 });
 
 // Test case 3 - map with context's functions
 wrappedXs.map(contextMapper, ctx).seq(function (result) {
-  if (!result) {
-    console.log('error');
-  }
-  deferred.resolve();
+  __finish();
 });
 
 // Test case 4 - map with inlining and context's variables
 wrappedXs.map(inlinedContextMapper, inlinedCtx).seq(function (result) {
-  if (!result) {
-    console.log('error');
-  }
-  deferred.resolve();
+  __finish();
+});
+
+// Test case 5 - map with pre loaded function
+wrappedXs.map('preLoaded', preLoadedCtx).seq(function (result) {
+  __finish();
 });

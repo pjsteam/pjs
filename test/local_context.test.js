@@ -29,32 +29,25 @@ describe('local context tests', function(){
         it('should initialize map chain item without context', function () {
           var sourceArray = new TypedArray(normalSourceArray);
           var map = pjs(sourceArray).map(function (e) { return e + 1; });
-          expect(map.chainContext).to.not.be.undefined;
-          expect(map.chainContext.currentIndex).to.equal(0);
-          expect(map.__localContext()).to.be.undefined;
+          expect(map.chainContext).to.be.undefined;
         });
 
         it('should initialize filter chain item without context', function () {
           var sourceArray = new TypedArray(normalSourceArray);
           var filter = pjs(sourceArray).filter(function (e) { return e % 2 === 0; });
-          expect(filter.chainContext).to.not.be.undefined;
-          expect(filter.chainContext.currentIndex).to.equal(0);
-          expect(filter.__localContext()).to.be.undefined;
+          expect(filter.chainContext).to.be.undefined;
         });
 
         it('should initialize reduce chain item without context', function () {
           var sourceArray = new TypedArray(normalSourceArray);
           var reduce = pjs(sourceArray).reduce(function (p, e) { return p + e; }, 0, 0);
-          expect(reduce.chainContext).to.not.be.undefined;
-          expect(reduce.chainContext.currentIndex).to.equal(0);
-          expect(reduce.__localContext()).to.be.undefined;
+          expect(reduce.chainContext).to.be.undefined;
         });
 
         it('should initialize map chain item with context', function () {
           var sourceArray = new TypedArray(normalSourceArray);
           var map = pjs(sourceArray).map(function (e, ctx) { return e + ctx.opt; }, {opt: 1});
           expect(map.chainContext).to.not.be.undefined;
-          expect(map.chainContext.currentIndex).to.equal(0);
           var localContext = map.__localContext();
           expect(localContext).to.not.be.undefined;
           expect(localContext.opt).to.equal(1);
@@ -64,7 +57,6 @@ describe('local context tests', function(){
           var sourceArray = new TypedArray(normalSourceArray);
           var filter = pjs(sourceArray).filter(function (e, ctx) { return e % ctx.opt === 0; }, {opt: 2});
           expect(filter.chainContext).to.not.be.undefined;
-          expect(filter.chainContext.currentIndex).to.equal(0);
           var localContext = filter.__localContext();
           expect(localContext).to.not.be.undefined;
           expect(localContext.opt).to.equal(2);
@@ -74,7 +66,6 @@ describe('local context tests', function(){
           var sourceArray = new TypedArray(normalSourceArray);
           var reduce = pjs(sourceArray).reduce(function (p, e, ctx) { return p + e + ctx.opt; }, 0, 0, { opt: 5});
           expect(reduce.chainContext).to.not.be.undefined;
-          expect(reduce.chainContext.currentIndex).to.equal(0);
           var localContext = reduce.__localContext();
           expect(localContext).to.not.be.undefined;
           expect(localContext.opt).to.equal(5);

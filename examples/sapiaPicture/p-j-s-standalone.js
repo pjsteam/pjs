@@ -49,7 +49,7 @@ module.exports = function (fn) {
     ;
     
     var URL = window.URL || window.webkitURL || window.mozURL || window.msURL;
-
+    
     return new Worker(URL.createObjectURL(
         new Blob([src], { type: 'text/javascript' })
     ));
@@ -106,49 +106,49 @@ var finisher = {
   map: function (self, result, done, resolve) {
     if (done) {
       done(null, result);
+    } else {
+      resolve(result);
     }
-    resolve(result);
   },
   filter: function (self, result, done, resolve) {
     if (done) {
       done(null, result);
+    } else {
+      resolve(result);
     }
-    resolve(result);
   },
   reduce: function (self, result, done, resolve) {
-    var r;
     var context = immutableExtend(self.globalContext, self.__localContext());
     var operation = self.operation;
     var code = operation.identityCode;
-    var seed = operation.seed;
-    if (context) {
-      r = Array.prototype.slice.call(result).reduce(function (p, e) {
-        return code(p, e, context);
-      }, seed);
-    } else {
-      r = Array.prototype.slice.call(result).reduce(code, seed);
+    var r = operation.seed, i = 0;
+    var resultLength = result.length;
+    for ( ; i < resultLength; i++) {
+      r = code(r, result[i], context);
     }
     if (done) {
       done(null, r);
+    } else {
+      resolve(r);
     }
-    resolve(r);
   }
 };
 
-var Chain = function (source, parts, operation, globalContext, chainContext, previousOperations) {
-  this.packager = new JobPackager(parts, source);
-  this.source = source;
-  this.parts = parts;
-  this.operation = operation; //todo: (mati) por ahora lo dejo para finalizar el reduce correctamente
-  this.globalContext = globalContext;
-  this.chainContext = chainContext;
-  previousOperations = previousOperations || [];
-  previousOperations.push(operation);
+var Chain = function (options) {
+  this.packager = new JobPackager(options.parts, options.source);
+  this.source = options.source;
+  this.parts = options.parts;
+  this.operation = options.operation; //todo: (mati) por ahora lo dejo para finalizar el reduce correctamente
+  this.globalContext = options.globalContext;
+  this.chainContext = options.chainContext;
+  var previousOperations = options.previousOperations || [];
+  previousOperations.push(options.operation);
   this.operations = previousOperations;
+  this.depth = options.depth || 0;
 };
 
 Chain.prototype.__localContext = function () {
-  return contextUtils.currentContextFromChainContext(this.chainContext);
+  return contextUtils.contextFromChainContext(this.depth, this.chainContext);
 };
 
 Chain.prototype.map = function (mapper, localContext) {
@@ -186,9 +186,19 @@ Chain.prototype.reduce = function (reducer, seed, identityReducer, identity, loc
 
 function createChain(oldChain, options){
   oldChain.__verifyPreviousOperation();
-  var extendChainContext = contextUtils.extendChainContext(options.localContext, oldChain.chainContext);
+  var nextDepth = oldChain.depth + 1;
+  var extendChainContext = contextUtils.extendChainContext(nextDepth, options.localContext, oldChain.chainContext);
   var operation = operation_packager(options.operation, options.f, options.seed, options.identity, options.identityReducer);
-  return new Chain(oldChain.source, oldChain.parts, operation, oldChain.globalContext, extendChainContext, oldChain.operations);
+  var opt = {
+    source: oldChain.source,
+    parts: oldChain.parts,
+    operation: operation,
+    globalContext: oldChain.globalContext,
+    chainContext: extendChainContext,
+    previousOperations: oldChain.operations,
+    depth: nextDepth
+  };
+  return new Chain(opt);
 }
 
 Chain.prototype.seq = function (done) {
@@ -197,11 +207,13 @@ Chain.prototype.seq = function (done) {
     var packs = self.packager.generatePackages(self.operations, self.chainContext);
 
     workers.sendPacks(packs, function(err, results){
-      if (err) { if (done) { done(err); } reject(err); return; }
+      if (err) { if (done) { done(err); } else { reject(err); } return; }
       var partial_results = results.map(function(result){
         var type = packs[0].elementsType.replace('Shared', '');
+        var start = result.start;
+        var end = result.newEnd;
         var temp = utils.createTypedArray(type, result.value);
-        return temp.subarray(0, result.newLength);
+        return temp.subarray(start, end);
       });
 
       var m = merge_typed_arrays(partial_results);
@@ -232,28 +244,24 @@ chainContext.deserializeChainContext = function (chainContext) {
   return JSON.parse(chainContext);
 };
 
-chainContext.extendChainContext = function (localContext, chainContext) {
-  var saneLocalContext = contextUtils.serializeFunctions(localContext);
-  if (!chainContext) {
-    var ctx = {
-      currentIndex: 0,
-    };
-    ctx[0] = saneLocalContext;
-    return ctx;
+chainContext.extendChainContext = function (currentIndex, localContext, chainContext) {
+  if (!localContext && !chainContext) {
+    return undefined;
   }
-
-  var nextIndex = chainContext.currentIndex + 1;
-  var nextContext = {
-    currentIndex: nextIndex,
-  };
-  nextContext[nextIndex] = saneLocalContext;
+  if (!localContext) {
+    return extend(chainContext, undefined);
+  }
+  var nextContext = {};
+  nextContext[currentIndex] = contextUtils.serializeFunctions(localContext);
+  if (!chainContext) {
+    return nextContext;
+  }
   return extend(chainContext, nextContext);
 };
 
-chainContext.currentContextFromChainContext = function (chainContext) {
-  var currentContext = chainContext[chainContext.currentIndex];
-  if (currentContext) {
-    return contextUtils.deserializeFunctions(currentContext);
+chainContext.contextFromChainContext = function (currentIndex, chainContext) {
+  if (chainContext && chainContext[currentIndex]) {
+    return contextUtils.deserializeFunctions(chainContext[currentIndex]);
   }
   return undefined;
 };
@@ -403,33 +411,33 @@ var initialized = false;
 var globalContext = {};
 
 function wrap(typedArray){
-	if (!utils.isTypedArray(typedArray)) {
-		throw new errors.InvalidArgumentsError(errors.messages.INVALID_TYPED_ARRAY);
-	}
-	return new WrappedTypedArray(typedArray, workers.length, globalContext);
+  if (!utils.isTypedArray(typedArray)) {
+    throw new errors.InvalidArgumentsError(errors.messages.INVALID_TYPED_ARRAY);
+  }
+  return new WrappedTypedArray(typedArray, workers.length, globalContext);
 }
 
 function init(options) {
-	if (initialized) {
-		throw new errors.InvalidOperationError(errors.messages.CONSECUTIVE_INITS);
-	}
+  if (initialized) {
+    throw new errors.InvalidOperationError(errors.messages.CONSECUTIVE_INITS);
+  }
 
-	options = options || {};
-	var cpus = navigator.hardwareConcurrency || options.maxWorkers || 1;
-	var maxWorkers = options.maxWorkers || cpus;
-	var workersCount = Math.min(maxWorkers, cpus);
+  options = options || {};
+  var cpus = navigator.hardwareConcurrency || options.maxWorkers || 1;
+  var maxWorkers = options.maxWorkers || cpus;
+  var workersCount = Math.min(maxWorkers, cpus);
   workers.init(workersCount);
 
-	var config = {
-  	get workers () {
-  		return workers.length;
-  	}
+  var config = {
+    get workers () {
+      return workers.length;
+    }
   };
 
   utils.getter(pjs, 'config', config);
   utils.getter(pjs, 'contextUpdatePackager', new ContextUpdatePackager(workers.length));
 
-	initialized = true;
+  initialized = true;
 }
 
 function updateContext(updates, done){
@@ -437,28 +445,29 @@ function updateContext(updates, done){
   return new Promise(function (resolve, reject) {
     var packs = self.contextUpdatePackager.generatePackages(updates);
     workers.sendPacks(packs, function(err){
-      if (err) { if (done) { done(err); } reject(err); return; }
+      if (err) { if (done) { done(err); } else { reject(err); } return; }
       mutableExtend(globalContext, updates);
       if (done) {
         done();
+      } else {
+        resolve();
       }
-      resolve();
     });
   });
 }
 
 function terminate() {
-	if (!initialized) {
-		throw new errors.InvalidOperationError(errors.messages.TERMINATE_WITHOUT_INIT);
-	}
+  if (!initialized) {
+    throw new errors.InvalidOperationError(errors.messages.TERMINATE_WITHOUT_INIT);
+  }
 
   workers.terminate();
 
   globalContext = {};
-	delete pjs.config;
-	delete pjs.contextUpdatePackager;
+  delete pjs.config;
+  delete pjs.contextUpdatePackager;
 
-	initialized = false;
+  initialized = false;
 }
 
 pjs = module.exports = wrap;
@@ -523,16 +532,24 @@ JobPackager.prototype.generatePackages = function (operations, chainContext) {
   var elementsType = utils.getTypedArrayType(this.elements);
   var partitioner = new Partitioner(this.parts);
   var partitionedElements = partitioner.partition(this.elements);
-
-  var self = this;
-
+  var isShared = utils.isSharedArray(this.elements);
   var strfyCtx = contextSerializer.serializeChainContext(chainContext);
   return partitionedElements.map(function (partitionedElement, index) {
+    var buffer, start, to;
+    if (isShared) {
+      buffer = partitionedElement.sharedArray.buffer;
+      start = partitionedElement.from;
+      to = partitionedElement.to;
+    } else {
+      buffer = partitionedElement.buffer;
+      start = 0;
+      to = partitionedElement.length;
+    }
     return {
       index: index,
-      start: partitionedElement.from,
-      end: partitionedElement.to,
-      buffer: self.elements.buffer,
+      start: start,
+      end: to,
+      buffer: buffer,
       operations: parsedOperations,
       elementsType: elementsType,
       ctx: strfyCtx
@@ -621,8 +638,7 @@ Collector.prototype.onPart = function (data){
     throw new errors.InvalidArgumentsError(
       utils.format(errors.messages.PART_ALREADY_COLLECTED, data.index));
   }
-
-  this.collected[data.index] = {value: data.value, newLength: data.newLength} ;
+  this.collected[data.index] = {value: data.value, start: data.start, newEnd: data.newEnd} ;
   this.updateCompleted();
 };
 
@@ -679,37 +695,48 @@ var Partitioner = module.exports = function (parts) {
 Partitioner.prototype.constructor = Partitioner;
 
 Partitioner.prototype.partition = function (array) {
-  this.validateTypedArray(array);
-  return this.doPartition(array, this);
+  this.__validateTypedArray(array);
+  return this.__doPartition(array, this);
 };
 
-Partitioner.prototype.validateTypedArray = function (array) {
+Partitioner.prototype.__validateTypedArray = function (array) {
   if (!utils.isTypedArray(array)) {
     var message = utils.format('Invalid type {0}. {1}', array, errors.messages.PARTITIONER_ARGUMENT_IS_NOT_TYPED_ARRAY);
     throw new errors.InvalidArgumentsError(message);
   }
 };
 
-Partitioner.prototype.doPartition = function (array) {
+Partitioner.prototype.__doPartition = function (array) {
   var parts = this.parts;
   var elementsCount = array.length;
   var subElementsCount = Math.floor(elementsCount / parts) | 0;
   var from = 0;
   var to = 0;
-
+  var isShared = utils.isSharedArray(array);
+  var sharedArray;
   var arrays = new Array(parts);
+  if (isShared) {
+      /*global SharedUint32Array */
+    var temp = new SharedUint32Array(array.length);
+    temp.set(array);
+      /*global SharedUint32Array */
+    sharedArray = new SharedUint32Array(temp.buffer);
+  }
   for (var i = 0; i < parts; i++) {
     if (parts - 1 === i) {
       to = elementsCount;
     } else {
       to += subElementsCount;
     }
-    arrays[i] = { from:from, to: to };
+    if (isShared) {
+      arrays[i] = { from:from, to: to, sharedArray: sharedArray};
+    } else {
+      arrays[i] = typedArraySlice(array, from, to);
+    }
     from += subElementsCount;
   }
   return arrays;
 };
-
 },{"./errors.js":8,"./utils.js":16}],16:[function(require,module,exports){
 var utils = module.exports = {};
 
@@ -733,10 +760,11 @@ utils.isFunction = function (object) { //http://jsperf.com/alternative-isfunctio
 
 
 // param can be either length (number) or buffer
-utils.createTypedArray = function(type, param, from, length){
+utils.createTypedArray = function(type, param){
   switch(type){
     case 'SharedUint32Array':
-      return new SharedUint32Array(param, from * 4, length);
+      /*global SharedUint32Array */
+      return new SharedUint32Array(param);
     case 'Uint8Array':
       return new Uint8Array(param);
     case 'Uint8ClampedArray':
@@ -789,6 +817,13 @@ utils.isTypedArray = function (obj) {
     default:
       return false;
   }
+};
+
+utils.isSharedArray = function (obj) {
+  if (!obj) {
+    return false;
+  }
+  return utils.getTypedArrayType(obj) === 'SharedUint32Array';
 };
 
 utils.getTypedArrayConstructorType = function(array) {
@@ -897,31 +932,31 @@ var functionCache = mapFactory();
 var globalContext = {};
 
 var operations = {
-  map: function (source, target, length, f, ctx) {
-    var i = 0;
-    for ( ; i < length; i += 1){
-      target[i] = f(source[i], ctx);
+  map: function (array, start, end, f, ctx) {
+    var i = start;
+    for ( ; i < end; i += 1){
+      array[i] = f(array[i], ctx);
     }
-    return length;
+    return end;
   },
-  filter: function (source, target, length, f, ctx) {
-    var i = 0, newLength = 0;
-    for ( ; i < length; i += 1){
-      var e = source[i];
+  filter: function (array, start, end, f, ctx) {
+    var i = start, newEnd = start;
+    for ( ; i < end; i += 1){
+      var e = array[i];
       if (f(e, ctx)) {
-        target[newLength++] = e;
+        array[newEnd++] = e;
       }
     }
-    return newLength;
+    return newEnd;
   },
-  reduce: function (source, target, length, f, ctx, seed) {
-    var i = 0;
+  reduce: function (array, start, end, f, ctx, seed) {
+    var i = start;
     var reduced = seed;
-    for ( ; i < length; i += 1){
-      var e = source[i];
+    for ( ; i < end; i += 1){
+      var e = array[i];
       reduced = f(reduced, e, ctx);
     }
-    target[0] = reduced;
+    array[0] = reduced;
     return 1;
   }
 };
@@ -958,17 +993,12 @@ module.exports = function(event){
     };
   }
 
-  var context = createOperationContexts(pack.ctx);
   var ops = pack.operations;
   var opsLength = ops.length;
-
-  var partLength = pack.end - pack.start;
-
-  var target = utils.createTypedArray(pack.elementsType.replace('Shared', ''), partLength);
-
-  var source = utils.createTypedArray(pack.elementsType, pack.buffer, pack.start, partLength);
-
-  var newLength = source.length;
+  var context = createOperationContexts(opsLength, pack.ctx);
+  var array = utils.createTypedArray(pack.elementsType.replace('Shared', ''), pack.buffer);
+  var start = pack.start;
+  var newEnd = pack.end;
 
   for (var i = 0; i < opsLength; i += 1) {
     var localCtx;
@@ -982,25 +1012,25 @@ module.exports = function(event){
       localCtx = globalContext;
     }
 
-    newLength = operations[operation.name](source, target, newLength, f, localCtx, seed);
+    newEnd = operations[operation.name](array, start, newEnd, f, localCtx, seed);
   }
-
   return {
     message: {
       index: pack.index,
-      value: target.buffer,
-      newLength: newLength,
+      value: array.buffer,
+      start: start,
+      newEnd: newEnd,
     },
-    transferables: [ target.buffer ]
+    transferables: [ array.buffer ]
   };
 };
 
-function createOperationContexts (context) {
+function createOperationContexts (operationLength, context) {
   var operationContexts;
   if (context) {
     context = chainContext.deserializeChainContext(context);
     operationContexts = {};
-    for (var i = 0; i <= context.currentIndex; i++) {
+    for (var i = 0; i <= operationLength; i++) {
       if (context[i]){
         operationContexts[i] = contextUtils.deserializeFunctions(context[i]);
       }
@@ -1094,8 +1124,15 @@ WrappedTypedArray.prototype.reduce = function(reducer, seed, identityReducer, id
 
 WrappedTypedArray.prototype.__operation = function(name, code, localContext, seed, identity, identityCode) {
   var operation = operation_packager(name, code, seed, identity, identityCode);
-  var chainContext = contextUtils.extendChainContext(localContext);
-  return new Chain(this.source, this.parts, operation, this.globalContext, chainContext);
+  var chainContext = contextUtils.extendChainContext(0, localContext);
+  var options = {
+    source: this.source,
+    parts: this.parts,
+    operation: operation,
+    globalContext: this.globalContext,
+    chainContext: chainContext
+  };
+  return new Chain(options);
 };
 
 module.exports = WrappedTypedArray;
