@@ -46,7 +46,7 @@ var run;
       var start = new Date();
       pjs(copyData).map('f').seq(function(err, result) {
         var diff = new Date() - start;
-        canvasData.data.set(new Uint8ClampedArray(result.buffer));
+        canvasData.data.set(new SharedUint8ClampedArray(result.buffer));
         tempContext.putImageData(canvasData, 0, 0);
         log.innerHTML = "Process done in " + diff + " ms";
         runButton.style.visibility = "visible";
