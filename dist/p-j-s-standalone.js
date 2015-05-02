@@ -991,9 +991,16 @@ var globalContext = {};
 
 var operations = {
   map: function (source, target, start, end, f, ctx) {
+    /*
+    var i = start | 0;
+    for ( ; (i | 0) < (end | 0); i = (i | 0) + (1 | 0)){
+      target[i | 0] = f(source[i | 0], ctx);
+    }
+    return end;
+    */
     var i = start;
     for ( ; i < end; i += 1){
-      target[i] = f(source[i], ctx);
+      target[i] = f(source[i]);
     }
     return end;
   },
@@ -1074,7 +1081,6 @@ module.exports = function(event){
     } else {
       localCtx = globalContext;
     }
-
     newEnd = operations[operation.name](sourceArray, targetArray, start, newEnd, f, localCtx, seed);
     sourceArray = targetArray;
   }

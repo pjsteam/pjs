@@ -1,0 +1,1 @@
+// http://jsperf.com/transferrable-vs-cloning/2
