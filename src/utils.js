@@ -93,7 +93,15 @@ utils.isTypedArray = function (obj) {
   }
   var type = utils.getTypedArrayType(obj);
   switch(type){
+    case 'SharedUint8Array':
+    case 'SharedUint8ClampedArray':
+    case 'SharedUint16Array':
     case 'SharedUint32Array':
+    case 'SharedInt8Array':
+    case 'SharedInt16Array':
+    case 'SharedInt32Array':
+    case 'SharedFloat32Array':
+    case 'SharedFloat64Array':
     case 'Uint8Array':
     case 'Int8Array':
     case 'Uint8ClampedArray':
@@ -113,7 +121,7 @@ utils.isSharedArray = function (obj) {
   if (!obj) {
     return false;
   }
-  return utils.getTypedArrayType(obj) === 'SharedUint32Array';
+  return utils.getTypedArrayType(obj).indexOf('Shared') > -1;
 };
 
 utils.getTypedArrayConstructorType = function(array) {

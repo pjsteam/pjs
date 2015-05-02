@@ -49,8 +49,8 @@ var operations = {
       var e = array[i];
       reduced = f(reduced, e, ctx);
     }
-    array[0] = reduced;
-    return 1;
+    array[start] = reduced;
+    return start + 1;
   }
 };
 
@@ -89,7 +89,7 @@ module.exports = function(event){
   var ops = pack.operations;
   var opsLength = ops.length;
   var context = createOperationContexts(opsLength, pack.ctx);
-  var array = utils.createTypedArray(pack.elementsType.replace('Shared', ''), pack.buffer);
+  var array = utils.createTypedArray(pack.elementsType, pack.buffer);
   var start = pack.start;
   var newEnd = pack.end;
 

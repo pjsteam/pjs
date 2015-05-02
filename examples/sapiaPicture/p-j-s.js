@@ -208,15 +208,19 @@ Chain.prototype.seq = function (done) {
 
     workers.sendPacks(packs, function(err, results){
       if (err) { if (done) { done(err); } else { reject(err); } return; }
-      var partial_results = results.map(function(result){
-        var type = packs[0].elementsType.replace('Shared', '');
-        var start = result.start;
-        var end = result.newEnd;
-        var temp = utils.createTypedArray(type, result.value);
-        return temp.subarray(start, end);
-      });
-
-      var m = merge_typed_arrays(partial_results);
+      var m;
+      var type = packs[0].elementsType;
+      if (self.__shouldMergeSeparatedBuffers(type, self.operations)) {
+        var partial_results = results.map(function(result){
+          var start = result.start;
+          var end = result.newEnd;
+          var temp = utils.createTypedArray(type, result.value);
+          return temp.subarray(start, end);
+        });
+        m = merge_typed_arrays(partial_results);
+      } else {
+        m = utils.createTypedArray(type, results[0].value);
+      }
       return finisher[self.operation.name](self, m, done, resolve);
     });
   });
@@ -226,6 +230,25 @@ Chain.prototype.__verifyPreviousOperation = function () {
   if (this.operation.name === 'reduce') {
     throw new errors.InvalidOperationError(errors.messages.INVALID_CHAINING_OPERATION);
   }
+};
+
+Chain.prototype.__shouldMergeSeparatedBuffers = function (typedArrayType, operations) {
+  if (typedArrayType.indexOf('Shared') > -1) {
+    return this.__arrayReducerOperationWasApplied(operations);
+  }
+  return true;
+};
+
+Chain.prototype.__arrayReducerOperationWasApplied = function (operations) {
+  var i;
+  var length = operations.length;
+  for (i = 0; i < length; i += 1) {
+    var operation = operations[i];
+    if (operation.name !== operation_names.MAP) {
+      return true;
+    }
+  }
+  return false;
 };
 
 module.exports = Chain;
@@ -752,7 +775,15 @@ utils.isTypedArray = function (obj) {
   }
   var type = utils.getTypedArrayType(obj);
   switch(type){
+    case 'SharedUint8Array':
+    case 'SharedUint8ClampedArray':
+    case 'SharedUint16Array':
     case 'SharedUint32Array':
+    case 'SharedInt8Array':
+    case 'SharedInt16Array':
+    case 'SharedInt32Array':
+    case 'SharedFloat32Array':
+    case 'SharedFloat64Array':
     case 'Uint8Array':
     case 'Int8Array':
     case 'Uint8ClampedArray':
@@ -772,7 +803,7 @@ utils.isSharedArray = function (obj) {
   if (!obj) {
     return false;
   }
-  return utils.getTypedArrayType(obj) === 'SharedUint32Array';
+  return utils.getTypedArrayType(obj).indexOf('Shared') > -1;
 };
 
 utils.getTypedArrayConstructorType = function(array) {
@@ -905,8 +936,8 @@ var operations = {
       var e = array[i];
       reduced = f(reduced, e, ctx);
     }
-    array[0] = reduced;
-    return 1;
+    array[start] = reduced;
+    return start + 1;
   }
 };
 
@@ -945,7 +976,7 @@ module.exports = function(event){
   var ops = pack.operations;
   var opsLength = ops.length;
   var context = createOperationContexts(opsLength, pack.ctx);
-  var array = utils.createTypedArray(pack.elementsType.replace('Shared', ''), pack.buffer);
+  var array = utils.createTypedArray(pack.elementsType, pack.buffer);
   var start = pack.start;
   var newEnd = pack.end;
 
