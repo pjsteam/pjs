@@ -59,6 +59,10 @@
     return (pixel & 0xFF000000) + (new_b << 16) + (new_g << 8) + (new_r & 0xFF);
   };
 
+  pjs.updateContext({
+    f: mapper
+  });
+
   function serialMap(pixels, l) {
     var result = new Uint32Array(l);
     for (var i = 0; i < l; i++) {
@@ -88,7 +92,7 @@
   };
 
   function runPjs(wrappedXs) {
-    wrappedXs.map(mapper).seq(function (err, r) {
+    wrappedXs.map('f').seq(function (err, r) {
       __finish();
     });
   };
