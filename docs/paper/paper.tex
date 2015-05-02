@@ -103,20 +103,30 @@ Nevertheless, there are additional time consuming tasks other than the main comp
 \begin{itemize}
   \item Serializing/deserializing the elements to transfer.
   \item Transferring the elements back and forth between the UI thread and the workers.
+  \item Serializing/deserializing the function to transfer.
   \item Transferring to each worker the functions for the transformation.
 \end{itemize}
 
-If we consider \(T_{ft}\) as the function transfer time, \(T_{et}\) as the elements transfer time, and \(T_{s}\) as the serialization/deserialization time it is clear that:
+If we drill down into the different parts:
+\begin{itemize}
+  \item \(T_{ft}\) as the function transfer time
+  \item \(T_{et}\) as the elements transfer time
+  \item \(T_{fs}\) as the function serialization/deserialization time
+  \item \(T_{es}\) as the elements serialization/deserialization time
+\end{itemize}
 
+It is clear that:
 \begin{equation}
-  T_{sync} = T_{ft} + T_{et} + T_{s} \;  .
+  T_{sync} = T_{ft} + T_{et} + T_{fs} + T_{es} \;  .
+  \label{eq-tsync}
 \end{equation}
 
 \begin{equation}
   T_{par} \approx \frac{T_{ser}}{K} + T_{sync} \;  .
+  \label{eq-tpar}
 \end{equation}
 
-Based on the previous equations it can be deduced that the more \(T_{sync}\) can be reduced, the closer to the ideal scenario the computation will be.
+Based on Eq.~\ref{eq-tsync} and Eq.~\ref{eq-tpar} it can be deduced that the more \(T_{sync}\) can be reduced, the closer to the ideal scenario the computation will be.
 
 In our case we are trying to transfer objects between a browser's JavaScript UI thread and Web Workers so we are constrained by the means of that environment. The Worker interface is the following \cite{w3c-ww}:
 \medskip
@@ -141,9 +151,9 @@ As the aforementioned interface states one can either send just a message or sen
 \textit{``Some objects support being copied and closed in one operation. This is called transferring the object, and is used in particular to transfer ownership of unsharable or expensive resources across worker boundaries."}
 
 \subsection{Elements}
-Considering the definition of a \verb+Transferable+ the latter seems like a good alternative to minimize both \(T_{et}\) and \(T_{s}\). Even more so when one considers that otherwise objects are copied using structured cloning(explained in section \textbf{2.7.6} of that same standard).
+Considering the definition of a \verb+Transferable+, it seems like a good alternative to minimize both \(T_{et}\) and \(T_{es}\). Even more so when one considers that otherwise objects are copied using structured cloning(explained in section \textbf{2.7.6} of that same standard).
 
-To verify our hypothesis, we put together two benchmarks\footnote{All benchmarks in this document use the environment described in Tab.~\ref{tab:env}.} that aim to verify the difference between invoking \verb+postMessage+ with and without structured cloning for a \verb+SharedTypedArray+. Both transfer a \verb+SharedTypedArray+ back and forth between the UI thread and a worker; the only difference between the two is that one has 100000 (a hundred thousand) elements in the \verb+SharedTypedArray+ and the other one 1000000 (a million). The results are in Tab.~\ref{tab:transf-vs-clone}. As it can be seen from the  results, increasing the amount of elements by 10x does not change the amount of operations that can be performed when using \verb+Transferable+ objects, it scales. On the other hand, the amount of operations that can be performed with structured cloning greatly decreases.
+To verify our hypothesis, we put together two benchmarks\footnote{All benchmarks in this document use the environment described in Tab.~\ref{tab:env}.} that aim to verify the difference between invoking \verb+postMessage+ with and without structured cloning for a \verb+SharedTypedArray+. Both transfer a \verb+SharedTypedArray+ back and forth between the UI thread and a worker; the only difference between the two is that one has 100000 (a hundred thousand) elements in the \verb+SharedTypedArray+ and the other one 1000000 (a million). As it can be seen from the  results in Tab.~\ref{tab:transf-vs-clone}, increasing the amount of elements by 10x does not change the amount of operations that can be performed when using \verb+Transferable+ objects, it scales. On the other hand, the amount of operations that can be performed with structured cloning greatly decreases.
 
 For that reason our library only works with \verb+SharedTypedArray+s and \verb+TypedArrays+.
 
@@ -175,6 +185,79 @@ For that reason our library only works with \verb+SharedTypedArray+s and \verb+T
   \end{tabular}
   \caption{Difference between transferring and cloning shared buffers.}
   \label{tab:transf-vs-clone}
+\end{table}
+
+\subsection{Functions}
+The library must the distribution of the code between the different workers when an operation is executed. This is a challenging problem with a lot of possible alternatives \cite{cloud-haskell} \cite{distributed-scheme}.
+
+A naive approach would be to try to transfer a function as part of the \verb+message+ parameter of \verb+postMessage+ but that is not an option (it throws an error).
+
+Considering the fact that \verb+Function+ objects cannot be directly transferred a different serialization approach is to be considered (Sec.~\ref{sec:context-sharing} proposes a solution to sharing additional data and functions between the UI thread and workers) a possible alternative is to:
+\begin{enumerate}
+  \item Serialize the \verb+Function+ to a \verb+String+.
+  \item Transfer the \verb+String+ to the worker.
+  \item Create a new \verb+Function+ on the worker from that \verb+String+.
+\end{enumerate}
+
+\subsubsection{Serialization and deserialization}
+One possible way of passing serialized \verb+Function+ to workers would be to encode them as binary and transfer them as an \verb+ArrayBuffer+. To encode the strings there are two possible approaches:
+\begin{itemize}
+  \item Using the Encoding API\cite{encoding-api}
+  \item Implementing non native encoding/decoding functions
+\end{itemize}
+
+The benchmarks provided the following results:
+\begin{table}
+  \centering
+  \begin{tabular}{|c|c|}
+    \hline
+    Native encoding API [ops/sec] & Non-native function [ops/sec] \\
+    \hline
+    \textbf{5247} & 4685 \\
+    \hline
+  \end{tabular}
+  \caption{Difference encoding/decoding strings natively and in JavaScript.}
+  \label{tab:encode-decode}
+\end{table}
+
+\subsubsection{Transference}
+\verb+Function+'s code not only needs to be serialized but also transferred. For that reason it was also worth comparing the time it takes to encode/decode a \verb+String+ and tranfer the resulting \verb+ArrayBuffer+ to the worker against just passing the \verb+String+ to the worker.
+
+Additionally, in most scenarios code would have to be sent along with a \verb+TypedArray+ so it would also be interesting to see if the transfer time was affected by this fact.
+
+We created a benchmark using two functions whose string representation has different lengths to see if the function's length affected the serialization and transfer time (results in Tab.~\ref{tab:send-function}). We measured three approaches to transfer the string:
+\begin{enumerate}
+  \item Encoding the \verb+String+ into an \verb+TypedArrayBuffer+, sending it as a \verb+Tranferable+ and decoding it on the Web Worker.
+  \item Sending the \verb+String+ directly.
+  \item Using a \verb+Blob+ to store the stream and retrieving that in the Worker.
+\end{enumerate}
+
+\begin{table}
+  \centering
+  \begin{tabular}{|c|c|c|c|}
+    \hline
+    Function length & Blob [ops/sec] & Copy [ops/sec] & Tranferable [ops/sec] \\
+    \hline
+    Short & 1251 & \textbf{7046} & 6219 \\
+    Long & 705 & 1176 & \textbf{1198} \\
+    \hline
+  \end{tabular}
+  \caption{Sending function strings from UI thread to Web Workers.}
+  \label{tab:send-function}
+\end{table}
+
+We also created a benchmark that tranfers a \verb+SharedTypedArray+ and a \verb+String+ that are properties of the same \verb+message+ object back and forth between the UI thread an a Web Worker to understand if transferring additional objects affected the transfer time when comparing it with just tranferring a \verb+String+ (results in Tab.~\ref{tab:send-function-and-array}.
+\begin{table}
+  \centering
+  \begin{tabular}{|c|c|c|c|}
+    \hline
+    Copying code [ops/sec] & Tranferring code [ops/sec] \\
+    \hline
+    4200 & \textbf{4340} \\
+    \hline
+  \end{tabular}
+  \caption{Sending code and a TypedArray to a Web Worker.}
+  \label{tab:send-function-and-array}
 \end{table}
 
 \section{Paper Preparation}
@@ -436,6 +519,14 @@ full titles, but with their acronyms!
 \bibitem{w3c-ww} Web Workers, W3C, \url{http://www.w3.org/TR/workers/}
 
 \bibitem{html-whatwg} HTML Standard, WHATWG, \url{https://html.spec.whatwg.org}
+
+\bibitem{cloud-haskell} Epstein, J., Black, A. P., Peyton-Jones, S.: Towards Haskell in the Cloud (2011)
+
+\bibitem{distributed-scheme} Schwendner, A.: Distributed Functional Programming in Scheme (2010)
+
+\bibitem{encoding-api} Encoding Standard, WHATWG, \url{https://encoding.spec.whatwg.org}
+
+% end of our comments, start of sample comments
 
 \bibitem{jour} Smith, T.F., Waterman, M.S.: Identification of Common Molecular
 Subsequences. J. Mol. Biol. 147, 195--197 (1981)
