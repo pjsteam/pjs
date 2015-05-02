@@ -4,7 +4,7 @@
 <script src="http://127.0.0.1:3000/dist/p-j-s.js"></script>
 <script>
   var pjs = require('p-j-s');
-  pjs.init();
+  pjs.init({ maxWorkers: 4 });
 
   var generateElements = function (total) {
     var typed = new Uint32Array(total);

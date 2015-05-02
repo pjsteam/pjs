@@ -46,7 +46,7 @@ Partitioner.prototype.__doPartition = function (array) {
       to += subElementsCount;
     }
     if (isShared) {
-      arrays[i] = { from:from, to: to, sharedArray: sharedArray};
+      arrays[i] = { from:from, to: to, sharedArray: sharedArray, sourceArray: array};
     } else {
       arrays[i] = typedArraySlice(array, from, to);
     }

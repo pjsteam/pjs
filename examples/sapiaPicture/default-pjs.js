@@ -6,7 +6,7 @@ var run;
   var source = document.getElementById("source");
   var runButton = document.getElementById("runButton");
   var pjs = require('p-j-s');
-  pjs.init({ maxWorkers: 4 });
+  pjs.init({ maxWorkers: 2 });
   pjs.updateContext({
     f:function(pixel){
       // return pixel;

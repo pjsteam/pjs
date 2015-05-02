@@ -25,31 +25,31 @@ var functionCache = mapFactory();
 var globalContext = {};
 
 var operations = {
-  map: function (array, start, end, f, ctx) {
+  map: function (source, target, start, end, f, ctx) {
     var i = start;
     for ( ; i < end; i += 1){
-      array[i] = f(array[i], ctx);
+      target[i] = f(source[i], ctx);
     }
     return end;
   },
-  filter: function (array, start, end, f, ctx) {
+  filter: function (source, target, start, end, f, ctx) {
     var i = start, newEnd = start;
     for ( ; i < end; i += 1){
-      var e = array[i];
+      var e = source[i];
       if (f(e, ctx)) {
-        array[newEnd++] = e;
+        target[newEnd++] = e;
       }
     }
     return newEnd;
   },
-  reduce: function (array, start, end, f, ctx, seed) {
+  reduce: function (source, target, start, end, f, ctx, seed) {
     var i = start;
     var reduced = seed;
     for ( ; i < end; i += 1){
-      var e = array[i];
+      var e = source[i];
       reduced = f(reduced, e, ctx);
     }
-    array[start] = reduced;
+    target[start] = reduced;
     return start + 1;
   }
 };
@@ -89,7 +89,12 @@ module.exports = function(event){
   var ops = pack.operations;
   var opsLength = ops.length;
   var context = createOperationContexts(opsLength, pack.ctx);
-  var array = utils.createTypedArray(pack.elementsType, pack.buffer);
+  var sourceArray, targetArray = utils.createTypedArray(pack.elementsType, pack.buffer);
+  if (pack.sourceBuffer) {
+    sourceArray = utils.createTypedArray(pack.elementsType, pack.sourceBuffer);
+  } else {
+    sourceArray = targetArray;
+  }
   var start = pack.start;
   var newEnd = pack.end;
 
@@ -105,16 +110,17 @@ module.exports = function(event){
       localCtx = globalContext;
     }
 
-    newEnd = operations[operation.name](array, start, newEnd, f, localCtx, seed);
+    newEnd = operations[operation.name](sourceArray, targetArray, start, newEnd, f, localCtx, seed);
+    sourceArray = targetArray;
   }
   return {
     message: {
       index: pack.index,
-      value: array.buffer,
+      value: targetArray.buffer,
       start: start,
       newEnd: newEnd,
     },
-    transferables: [ array.buffer ]
+    transferables: [ targetArray.buffer ]
   };
 };
 

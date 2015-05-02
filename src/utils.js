@@ -18,11 +18,10 @@ utils.isFunction = function (object) { //http://jsperf.com/alternative-isfunctio
   return !!(object && object.constructor && object.call && object.apply);
 };
 
+//TODO: (mati) change method's name. It does nt dcuplicate anymore
 utils.duplicateTypedArray = function (array) {
   var type = this.getTypedArrayType(array);
-  var temp = this.createTypedArray(type, array.length);
-  temp.set(array);
-  return this.createTypedArray(type, temp.buffer);
+  return this.createTypedArray(type, array.length);
 };
 
 // param can be either length (number) or buffer

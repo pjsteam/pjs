@@ -558,8 +558,9 @@ JobPackager.prototype.generatePackages = function (operations, chainContext) {
   var isShared = utils.isSharedArray(this.elements);
   var strfyCtx = contextSerializer.serializeChainContext(chainContext);
   return partitionedElements.map(function (partitionedElement, index) {
-    var buffer, start, to;
+    var sourceBuffer, buffer, start, to;
     if (isShared) {
+      sourceBuffer = partitionedElement.sourceArray.buffer;
       buffer = partitionedElement.sharedArray.buffer;
       start = partitionedElement.from;
       to = partitionedElement.to;
@@ -572,6 +573,7 @@ JobPackager.prototype.generatePackages = function (operations, chainContext) {
       index: index,
       start: start,
       end: to,
+      sourceBuffer: sourceBuffer,
       buffer: buffer,
       operations: parsedOperations,
       elementsType: elementsType,
@@ -748,7 +750,7 @@ Partitioner.prototype.__doPartition = function (array) {
       to += subElementsCount;
     }
     if (isShared) {
-      arrays[i] = { from:from, to: to, sharedArray: sharedArray};
+      arrays[i] = { from:from, to: to, sharedArray: sharedArray, sourceArray: array};
     } else {
       arrays[i] = typedArraySlice(array, from, to);
     }
@@ -777,11 +779,10 @@ utils.isFunction = function (object) { //http://jsperf.com/alternative-isfunctio
   return !!(object && object.constructor && object.call && object.apply);
 };
 
+//TODO: (mati) change method's name. It does nt dcuplicate anymore
 utils.duplicateTypedArray = function (array) {
   var type = this.getTypedArrayType(array);
-  var temp = this.createTypedArray(type, array.length);
-  temp.set(array);
-  return this.createTypedArray(type, temp.buffer);
+  return this.createTypedArray(type, array.length);
 };
 
 // param can be either length (number) or buffer
@@ -989,31 +990,31 @@ var functionCache = mapFactory();
 var globalContext = {};
 
 var operations = {
-  map: function (array, start, end, f, ctx) {
+  map: function (source, target, start, end, f, ctx) {
     var i = start;
     for ( ; i < end; i += 1){
-      array[i] = f(array[i], ctx);
+      target[i] = f(source[i], ctx);
     }
     return end;
   },
-  filter: function (array, start, end, f, ctx) {
+  filter: function (source, target, start, end, f, ctx) {
     var i = start, newEnd = start;
     for ( ; i < end; i += 1){
-      var e = array[i];
+      var e = source[i];
       if (f(e, ctx)) {
-        array[newEnd++] = e;
+        target[newEnd++] = e;
       }
     }
     return newEnd;
   },
-  reduce: function (array, start, end, f, ctx, seed) {
+  reduce: function (source, target, start, end, f, ctx, seed) {
     var i = start;
     var reduced = seed;
     for ( ; i < end; i += 1){
-      var e = array[i];
+      var e = source[i];
       reduced = f(reduced, e, ctx);
     }
-    array[start] = reduced;
+    target[start] = reduced;
     return start + 1;
   }
 };
@@ -1053,7 +1054,12 @@ module.exports = function(event){
   var ops = pack.operations;
   var opsLength = ops.length;
   var context = createOperationContexts(opsLength, pack.ctx);
-  var array = utils.createTypedArray(pack.elementsType, pack.buffer);
+  var sourceArray, targetArray = utils.createTypedArray(pack.elementsType, pack.buffer);
+  if (pack.sourceBuffer) {
+    sourceArray = utils.createTypedArray(pack.elementsType, pack.sourceBuffer);
+  } else {
+    sourceArray = targetArray;
+  }
   var start = pack.start;
   var newEnd = pack.end;
 
@@ -1069,16 +1075,17 @@ module.exports = function(event){
       localCtx = globalContext;
     }
 
-    newEnd = operations[operation.name](array, start, newEnd, f, localCtx, seed);
+    newEnd = operations[operation.name](sourceArray, targetArray, start, newEnd, f, localCtx, seed);
+    sourceArray = targetArray;
   }
   return {
     message: {
       index: pack.index,
-      value: array.buffer,
+      value: targetArray.buffer,
       start: start,
       newEnd: newEnd,
     },
-    transferables: [ array.buffer ]
+    transferables: [ targetArray.buffer ]
   };
 };
 
@@ -1168,7 +1175,11 @@ function doSendPacks() {
     workers[index].addEventListener('message', onMessageHandler);
 
     if (pack.buffer){
-      workers[index].postMessage(pack, [ pack.buffer ]);
+      if (pack.sourceBuffer) {
+        workers[index].postMessage(pack, [ pack.sourceBuffer, pack.buffer ]);
+      } else {
+        workers[index].postMessage(pack, [ pack.buffer ]);
+      }
     } else {
       workers[index].postMessage(pack);
     }
