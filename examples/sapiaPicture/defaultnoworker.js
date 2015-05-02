@@ -46,7 +46,6 @@ var processSepia = function (binaryData, l) {
         var start = new Date();
         console.time('serial');
         var binaryData = canvasData.data;
-        processSepia(binaryData, len);
         var diff = new Date() - start;
         processSepia(binaryData, len);
         console.timeEnd('serial');
