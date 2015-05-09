@@ -101,7 +101,7 @@ function createChain(oldChain, options){
     operation: operation,
     globalContext: oldChain.globalContext,
     chainContext: extendChainContext,
-    previousOperations: oldChain.operations,
+    previousOperations: oldChain.operations.slice(),
     depth: nextDepth
   };
   return new Chain(opt);
@@ -111,7 +111,6 @@ Chain.prototype.seq = function (done) {
   var self = this;
   return new Promise(function (resolve, reject) {
     var packs = self.packager.generatePackages(self.operations, self.chainContext);
-
     workers.sendPacks(packs, function(err, results){
       if (err) { if (done) { done(err); } else { reject(err); } return; }
       var m;
