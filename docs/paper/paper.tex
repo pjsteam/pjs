@@ -35,7 +35,7 @@
 \title{Using algorithmic skeletons in EcmaScript to parallelize computation in browsers through Web Workers}
 
 % a short form should be given in case it is too long for the running head
-\titlerunning{Algorithmic skeletons to parallelizing computation in browsers}
+\titlerunning{Algorithmic skeletons to parallelize computation in browsers}
 
 % the name(s) of the author(s) follow(s) next
 %
@@ -111,7 +111,7 @@ var newValues = [1,2,3,4].map(function(e){
 \noindent
 {\small (Example creating a new array with the values of the original one multiplied by two)}\\
 
-Our library (p-j-s) only works with \verb+SharedTypedArray+s (and \verb+TypedArray+s) due to performance reasons discussed in Section~\ref{sec:overview}. It aims to provide a similar interface while not changing the native object's prototypes and dealing with the asynchronous nature of the operation. Given a \verb+SharedTypedArray+, the following code would do the same as the previous example but parallelizing the work:
+Our library (p-j-s) only works with \verb+SharedTypedArray+s (and \verb+TypedArray+s) due to performance reasons discussed in Section~\ref{sec:implementation}. It aims to provide a similar interface while not changing the native object's prototypes and dealing with the asynchronous nature of the operation. Given a \verb+SharedTypedArray+, the following code would do the same as the previous example but parallelizing the work:
 \medskip
 
 \noindent
@@ -234,7 +234,7 @@ As the aforementioned interface states one can either send just a message or sen
 \subsection{Elements}
 Considering the definition of a \verb+Transferable+, it seems like a good alternative to minimize both \(T_{et}\) and \(T_{es}\). Even more so when one considers that otherwise objects are copied using structured cloning(explained in section \textbf{2.7.6} of that same standard).
 
-To verify our hypothesis, we put together two benchmarks\footnote{All benchmarks in this document use the environment described in Tab.~\ref{tab:env}.} that aim to verify the difference between invoking \verb+postMessage+ with and without structured cloning for a \verb+SharedTypedArray+. Both transfer a \verb+SharedTypedArray+ back and forth between the UI thread and a worker; the only difference between the two is that one has 100000 (a hundred thousand) elements in the \verb+SharedTypedArray+ and the other one 1000000 (a million). As it can be seen from the  results in Tab.~\ref{tab:transf-vs-clone}, increasing the amount of elements by 10x does not change the amount of operations that can be performed when using \verb+Transferable+ objects, it scales. On the other hand, the amount of operations that can be performed with structured cloning greatly decreases.
+To verify our hypothesis, we put together two benchmarks\footnote{All benchmarks in this document use the environment described in Tab.~\ref{tab:env}.} that aim to verify the difference between invoking \verb+postMessage+ with and without structured cloning for a \verb+SharedTypedArray+. Both transfer a \verb+SharedTypedArray+ back and forth between the UI thread and a worker; the only difference between the two is that one has 100,000 (a hundred thousand) elements in the \verb+SharedTypedArray+ and the other one 1,000,000 (a million). As it can be seen from the  results in Tab.~\ref{tab:transf-vs-clone}, increasing the amount of elements by 10x does not change the amount of operations that can be performed when using \verb+Transferable+ objects, it scales. On the other hand, the amount of operations that can be performed with structured cloning greatly decreases.
 
 For that reason our library only works with \verb+SharedTypedArray+s and \verb+TypedArrays+.
 
@@ -407,14 +407,14 @@ pjs.updateContext({
 \begin{figure}
 \centering
 \includegraphics[width=1\textwidth]{context}
-\caption{Relative performance of parallel transformation compared to sequential one.}
+\caption{Example of global and local context being merged for chain steps.}
 \label{fig:context}
 \end{figure}
 
 \section{Experiment}\label{sec:experiment}
 It is important to compare the performance of our parallel implementation against a serial one, as some processing is required before the computation begins and after it ends to distribute the data and work and gather the results respectively, as explained in Section~\ref{sec:implementation}.
 
-In this regard, the more complex the computation to be performed on each array element the better the parallel implementation will perform. That is because in the parallel case, the cost of this processing is dwarfed by the cost of the actual computation.
+In this regard, the more complex the computation to be performed on each array element the better the parallel implementation will perform. The reason for this is that, in the parallel case, the cost of this processing is dwarfed by the cost of the actual computation.
 
 \subsection{Algorithm selection}
 For the experiment we decided to use an algorithm that applies a sepia tone effect to pictures. This meets the criteria of both being useful and having some calls to \verb+Math.random+ which make it more complex from a computational standpoint. The benchmark is publicly available \cite{benchmark}.
@@ -428,10 +428,10 @@ The results for the benchmark are the displayed in Tab.~\ref{tab:benchmark} and 
     Elements & Serial [ops/sec] & Parallel [ops/sec] \\
     \hline
     100 & \textbf{154442} & 377.2\\
-    1000 & \textbf{17460.2} &  368.4 \\
-    10000 & \textbf{1768.6} & 311.2 \\
-    100000 & \textbf{179.2} & 172.2 \\
-    1000000 & 16.96 & \textbf{33.2} \\
+    1,000 & \textbf{17460.2} &  368.4 \\
+    10,000 & \textbf{1768.6} & 311.2 \\
+    100,000 & \textbf{179.2} & 172.2 \\
+    1,000,000 & 16.96 & \textbf{33.2} \\
     \hline
   \end{tabular}
   \caption{Comparing p-j-s (parallel) and plain JS (serial) performance for an image transformation.}
@@ -455,7 +455,7 @@ There are still some parts of the library that would benefit from optimizations.
 
 We intend to perform some tests to evaluate the possibility of serializing functions via \verb+SharedArrayBuffer+s. We have not done this up to now due to time constraints, but we believe that performance improvements could be achieved by serializing function string once, creating an \verb+SharedTypedArray+ for the bytes and then sharing the backing buffer with all workers.\\
 
-During our research we found that browser memory usage greatly increases when using shared memory after transforming an image multiple times. Memory is relased after a particular time period (which seems to indicate there is not a leak), but while memory usage is high performance degrades. We plan to spend some time on this issue.\\
+During our research we found that browser memory usage greatly increases when using shared memory after transforming an image multiple times. Memory is relased after a particular time period (which seems to indicate there is not a leak), but while memory usage is high, performance degrades. We plan to spend some time on this issue.\\
 
 There is a strawman proposal to support typed objects \cite{typed-objects} in a future version of EcmaScript, which in turn would allow \verb+TypedArray+s of said typed objects. Once a browser has an experimental version available we intend to make sure that typed arrays of typed objects work with the library.\\
 
@@ -494,6 +494,8 @@ Once the \verb+SharedArrayBuffer+ type is available in other browsers (there is 
 \bibitem{es6-ta} TypedArray objects, ECMA, \url{https://people.mozilla.org/~jorendorff/es6-draft.html#sec-typedarray-objects}
 
 \bibitem{pjs-api} p-j-s API, \url{https://github.com/pjsteam/pjs/blob/dev/README.md}
+
+\bibitem{promise} Promise, MDN, \url{https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise}
 
 \bibitem{html-whatwg} HTML Standard, WHATWG, \url{https://html.spec.whatwg.org}
 
