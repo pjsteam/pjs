@@ -17,6 +17,7 @@ module.exports = function(config) {
       'karma-chai',
       'karma-sinon-chai',
       'karma-chrome-launcher',
+      'karma-firefox-launcher',
       'karma-jquery',
       'karma-chai-jquery',
       'karma-mocha-reporter',
@@ -69,7 +70,7 @@ module.exports = function(config) {
 
     // start these browsers
     // available browser launchers: https://npmjs.org/browse/keyword/karma-launcher
-    browsers: ['Chrome'],
+    browsers: ['Chrome', 'FirefoxNightly'],
 
     customLaunchers: {
       Chrome_travis_ci: {
@@ -85,6 +86,8 @@ module.exports = function(config) {
 
   if(process.env.TRAVIS){
     configuration.browsers = ['Chrome_travis_ci'];
+  } else if (process.env.BROWSER) {
+    configuration.browsers = [process.env.BROWSER];
   }
 
    config.set(configuration);

@@ -1,9 +1,9 @@
 'use strict';
 
-var SharedUint32Array = SharedUint32Array || undefined;
+var firefoxHelper = require('./firefox_helper');
 
-if (SharedUint32Array) {
-  describe('map tests', function(){
+firefoxHelper(function () {
+  describe('shared map tests', function(){
 
     var pjs;
     var utils = require('../src/utils.js');
@@ -20,7 +20,8 @@ if (SharedUint32Array) {
     });
 
     var normalSourceArray = [1,2,3,4,5,6,7,8,9,10,11,12,13,14];
-    var sourceArray = new SharedUint32Array(normalSourceArray);
+    var sourceArray = new SharedUint32Array(normalSourceArray.length);
+    sourceArray.set(normalSourceArray);
 
     it('Should map shared array', function (done) {
       var mapper = function (e) {
@@ -61,4 +62,4 @@ if (SharedUint32Array) {
       });
     });
   });
-}
+});
