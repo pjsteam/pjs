@@ -1,4 +1,4 @@
-describe.only('context tests', function(){
+describe('context tests', function(){
   var context = require('../src/context');
 
   describe('serialize', function(){
