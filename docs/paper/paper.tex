@@ -86,13 +86,56 @@ In this context, one of the plans of the commitee that develops the language is 
 
 The goal of this paper is to provide an alternative for parallel code execution in EcmaScript, through a library that exposes high order functions to model algorithmic skeletons such as map, filter and reduce. This library will take advantage of Web Workers \cite{w3c-ww} (the mechanism proposed by browsers for parallelism at the time of writing) to allow the simultaneous execution of code in multiple processors.
 
-\section{Background}
+This paper is organized as follows: Section~\ref{sec-background} provides some context on the current state of thread-base parallelization in JavaScript. Section~\ref{sec-overview} provides an overview of how the library works. Section~\ref{sec-ser-transf} explains the challenges the library faces, the alternative solutions and the decisions taken. Section~\ref{sec-bench} compares the performance of using the library against a sequential approach for an image transformation. Finally, Section~\ref{sec-future} presents future research directions.
+
+\section{Background}\label{sec-background}
 All modern versions of major browsers (Internet Explorer, Mozilla Firefox, Google Chrome, Safari and Opera) allow the execution of JavaScript code in a single threaded event loop runtime \cite{event-loop}. User actions add elements to the event loop queue and these are processesed sequentially. All process input/output is asynchronous to prevent the UI thread from blocking, thus keeping it responsive.
 While such a runtime is a good fit for most web applications, JavaScript and the browser are now also being used for some CPU intensive tasks, such as games, which commonly require physics calculations, image manipulation (in 2D) and graphics generation (in 3D). Despite the large improvement in JavaScript performance obtained through optimizing compilers such as Google Chrome's V8 \cite{v8} and Mozilla Firefox's SpiderMonkey \cite{spider-monkey}, it is important to be able to take advantage of multiple cores in modern devices to achieve even greater performance.\\
 In 2010, Web Workers were made part of the web standard. Web Workers allow the creation of ``thread like'' constructs in a browser environment, but they don't allow on shared memory and instead communicate via message passing. The message passing overhead is very big for common objects and Web Workers ``have a high start-up performance cost'' \cite{w3c-ww}, so they were commonly considered for long running tasks and operating on generally the same set of data during a single execution, making them unfit for a thread pool  model \cite{thread-pool}.\\
 However, a spec is being developed for version 7 of the EcmaScript standard that changes this, by introducing the notion of shared memory through \verb+SharedArrayBuffer+s \cite{sab}. In essence, the proposal allows the same memory to be shared across multiple Web Workers, and also aims to provide the necessary atomic/lock constructs to deal with shared memory. In the particular case of embarrassingly parallel computations (such as map, filter and reduce operations on an array), it is simple to take advantage of the shared memory speed benefits without incurring in any overhead due to locks.
 
-\section{Serialization and Transference}
+\section{Library Overview}\label{sec-overview}
+JavaScript developers are familiar with the concept of map, filter and reduce skeletons as language constructs. In JavaScript, \verb+Array+s have \verb+map+, \verb+filter+, and \verb+reduce+ functions and version 6 of the EcmaScript adds those same methods to \verb+TypedArray+s \cite{es6-ta}. For example, to multiply all the elements of an \verb+Array+ by two:
+\medskip
+
+\noindent
+{\it plain JS map sample}
+\begin{verbatim}
+var newValues = [1,2,3,4].map(function(e){
+  return e * 2;
+});
+
+// newValues is a new array [2,4,6,8]
+\end{verbatim}
+%
+\noindent
+{\small (Example creating a new array with the values of the original one multiplied by two)}\\
+
+Our library (p-j-s) only works with \verb+SharedTypedArray+s (and \verb+TypedArray+s) due to performance reasons discussed in Section~\ref{sec-ser-transf}. It aims to provide a similar interface while not changing the native object's prototypes and dealing with the asynchronous nature of the operation. Given a \verb+SharedTypedArray+, the following code would do the same as the previous example but parallelizing the work:
+\medskip
+
+\noindent
+{\it p-j-s map sample}
+\begin{verbatim}
+var pjs = require('p-j-s');
+pjs.init({ maxWorkers: 4 });
+var xs = new SharedUint8Array(4);
+xs.set([1,2,3,4]);
+pjs(xs).map(function(e){
+  return e * 2;
+}).seq().then(function(newValues){
+  // newValues is a new array [2,4,6,8]
+});
+\end{verbatim}
+%
+\noindent
+{\small (Example creating a new array with the values of the original one multiplied by two using p-j-s)}\\
+
+The call to \verb+pjs.init+ initializes the library and the amount of workers to be used for processing (a worker pool is created with them). In browsers that have an API to detect the amount of available cores in a machine, the \verb+maxWorkers+ value is limited by the amount of cores.
+
+The API provided by p-j-s \cite{pjs-api} is very similar to the synchronous one that is provided by the language. The asynchronous nature of the operation is reflected by the fact that the call to \verb+seq+ returns a \verb+Promise+ (alternatively a callback could be passed as a parameter to it). It is possible to chain multiple operations before calling \verb+seq+ to avoid passing data back and forth between the Web Workers and the UI thread.
+
+\section{Serialization and Transference}\label{sec-ser-transf}
 Let's consider an array of \verb+N+ elements on which a particular transformation is to be performed through the \verb+map+ function. If the transformation is executed using a single thread (no parallelism) and the average time to process each element is \verb+t+ then the total time (\(T_{ser}\)) for the operation can be approximated as:
 
 \begin{equation}
@@ -255,7 +298,7 @@ We created a benchmark using two functions whose string representation has diffe
 We also created a benchmark that tranfers a \verb+SharedTypedArray+ and a \verb+String+ that are properties of the same \verb+message+ object back and forth between the UI thread an a Web Worker to understand if transferring additional objects affected the transfer time when comparing it with just tranferring a \verb+String+ (results in Tab.~\ref{tab:send-function-and-array}.
 \begin{table}
   \centering
-  \begin{tabular}{|c|c|c|c|}
+  \begin{tabular}{|c|c|}
     \hline
     Copying code [ops/sec] & Tranferring code [ops/sec] \\
     \hline
@@ -266,243 +309,57 @@ We also created a benchmark that tranfers a \verb+SharedTypedArray+ and a \verb+
   \label{tab:send-function-and-array}
 \end{table}
 
-\section{Paper Preparation}
+\section{Experiment}
+It is important to compare the performance of our parallel implementation against a serial one, as some processing is required before the computation begins and after it ends to distribute the data and work and gather the results respectively, as explained in Section~\ref{sec-ser-transf}.
 
-Springer provides you with a complete integrated \LaTeX{} document class
-(\texttt{llncs.cls}) for multi-author books such as those in the LNCS
-series. Papers not complying with the LNCS style will be reformatted.
-This can lead to an increase in the overall number of pages. We would
-therefore urge you not to squash your paper.
+In this regard, the more complex the computation to be performed on each array element the better the parallel implementation will perform. That is because in the parallel case, the cost of this processing is dwarfed by the cost of the actual computation.
 
-Please always cancel any superfluous definitions that are
-not actually used in your text. If you do not, these may conflict with
-the definitions of the macro package, causing changes in the structure
-of the text and leading to numerous mistakes in the proofs.
+\subsection{Algorithm selection}
+For the experiment we decided to use an algorithm that applies a sepia tone effect to pictures. This meets the criteria of both being useful and having some calls to \verb+Math.random+ which make it more complex from a computational standpoint. The benchmark is publicly available \cite{benchmark}.
 
-If you wonder what \LaTeX{} is and where it can be obtained, see the
-``\textit{LaTeX project site}'' (\url{http://www.latex-project.org})
-and especially the webpage ``\textit{How to get it}''
-(\url{http://www.latex-project.org/ftp.html}) respectively.
+\subsection{Results}
+The results for the benchmark are the displayed in Tab.~\ref{tab:benchmark}.
+\begin{table}
+  \centering
+  \begin{tabular}{|r|c|c|}
+    \hline
+    Elements & Serial [ops/sec] & Parallel [ops/sec] \\
+    \hline
+    100 & \textbf{154442} & 377.2\\
+    1000 & \textbf{17460.2} &  368.4 \\
+    10000 & \textbf{1768.6} & 311.2 \\
+    100000 & \textbf{179.2} & 172.2 \\
+    1000000 & 16.96 & \textbf{33.2} \\
+    \hline
+  \end{tabular}
+  \caption{Comparing p-j-s (parallel) and plain JS (serial) performance for an image transformation.}
+  \label{tab:benchmark}
+\end{table}
 
-When you use \LaTeX\ together with our document class file,
-\texttt{llncs.cls},
-your text is typeset automatically in Computer Modern Roman (CM) fonts.
-Please do
-\emph{not} change the preset fonts. If you have to use fonts other
-than the preset fonts, kindly submit these with your files.
+Figure~\ref{fig:relative} shows the relative performance of the parallel approach compared to the sequential one.
 
-Please use the commands \verb+\label+ and \verb+\ref+ for
-cross-references and the commands \verb+\bibitem+ and \verb+\cite+ for
-references to the bibliography, to enable us to create hyperlinks at
-these places.
-
-For preparing your figures electronically and integrating them into
-your source file we recommend using the standard \LaTeX{} \verb+graphics+ or
-\verb+graphicx+ package. These provide the \verb+\includegraphics+ command.
-In general, please refrain from using the \verb+\special+ command.
-
-Remember to submit any further style files and
-fonts you have used together with your source files.
-
-\subsubsection{Headings.}
-
-Headings should be capitalized
-(i.e., nouns, verbs, and all other words
-except articles, prepositions, and conjunctions should be set with an
-initial capital) and should,
-with the exception of the title, be aligned to the left.
-Words joined by a hyphen are subject to a special rule. If the first
-word can stand alone, the second word should be capitalized.
-
-Here are some examples of headings: ``Criteria to Disprove
-Context-Freeness of Collage Language", ``On Correcting the Intrusion of
-Tracing Non-deterministic Programs by Software", ``A User-Friendly and
-Extendable Data Distribution System", ``Multi-flip Networks:
-Parallelizing GenSAT", ``Self-determinations of Man".
-
-\subsubsection{Lemmas, Propositions, and Theorems.}
-
-The numbers accorded to lemmas, propositions, and theorems, etc. should
-appear in consecutive order, starting with Lemma 1, and not, for
-example, with Lemma 11.
-
-\subsection{Figures}
-
-For \LaTeX\ users, we recommend using the \emph{graphics} or \emph{graphicx}
-package and the \verb+\includegraphics+ command.
-
-Please check that the lines in line drawings are not
-interrupted and are of a constant width. Grids and details within the
-figures must be clearly legible and may not be written one on top of
-the other. Line drawings should have a resolution of at least 800 dpi
-(preferably 1200 dpi). The lettering in figures should have a height of
-2~mm (10-point type). Figures should be numbered and should have a
-caption which should always be positioned \emph{under} the figures, in
-contrast to the caption belonging to a table, which should always appear
-\emph{above} the table; this is simply achieved as matter of sequence in
-your source.
-
-Please center the figures or your tabular material by using the \verb+\centering+
-declaration. Short captions are centered by default between the margins
-and typeset in 9-point type (Fig.~\ref{fig:example} shows an example).
-The distance between text and figure is preset to be about 8~mm, the
-distance between figure and caption about 6~mm.
-
-To ensure that the reproduction of your illustrations is of a reasonable
-quality, we advise against the use of shading. The contrast should be as
-pronounced as possible.
-
-If screenshots are necessary, please make sure that you are happy with
-the print quality before you send the files.
 \begin{figure}
 \centering
-\includegraphics[height=6.2cm]{eijkel2}
-\caption{One kernel at $x_s$ (\emph{dotted kernel}) or two kernels at
-$x_i$ and $x_j$ (\textit{left and right}) lead to the same summed estimate
-at $x_s$. This shows a figure consisting of different types of
-lines. Elements of the figure described in the caption should be set in
-italics, in parentheses, as shown in this sample caption.}
-\label{fig:example}
+\includegraphics[height=6.2cm]{comparison}
+\caption{Relative performance of parallel transformation compared to sequential one.}
+\label{fig:relative}
 \end{figure}
 
-Please define figures (and tables) as floating objects. Please avoid
-using optional location parameters like ``\verb+[h]+" for ``here".
+\subsection{Conclusion}
+A couple of interesting findings result from the experiments. An expected one is that the amount of operations per second that can be performed with a serial implementation is almost inversely proportional to the amount of items to transform with a ratio of 1. On the other hand, this is not the case for the parallel approach.
 
-\paragraph{Remark 1.}
+An acceptable speedup of approximately \emph{2x} can be achieved with a relatively large amount of items (\(10E6\)) and performing a computationally expensive computation (generating pseudo-random numbers). Larger speedups might be possible by applying optimizations to the library and there might also be some potential improvements for operations with \verb+SharedArrayBuffer+s as they are likely not optimized, being that they are only an experimental feature in Firefox Nightly.
 
-In the printed volumes, illustrations are generally black and white
-(halftones), and only in exceptional cases, and if the author is
-prepared to cover the extra cost for color reproduction, are colored
-pictures accepted. Colored pictures are welcome in the electronic
-version free of charge. If you send colored figures that are to be
-printed in black and white, please make sure that they really are
-legible in black and white. Some colors as well as the contrast of
-converted colors show up very poorly when printed in black and white.
+\section{Future Work}
+There are still some parts of the library that would benefit from optimizations. Of particular interest to us is to perform further profiling the code executing in each WebWorker. As of today, using browser profiling tools for Web Workers is not as simple as doing so for the UI thread.\\
 
-\subsection{Formulas}
+We intend to perform some tests to evaluate the possibility of serializing functions via \verb+SharedArrayBuffer+s. We have not done this up to now due to time constraints, but we believe that a performance improvements could be achieved by serializing function strings once, creating an array for the bytes and then sharing the backing buffer with all workers.\\
 
-Displayed equations or formulas are centered and set on a separate
-line (with an extra line or halfline space above and below). Displayed
-expressions should be numbered for reference. The numbers should be
-consecutive within each section or within the contribution,
-with numbers enclosed in parentheses and set on the right margin --
-which is the default if you use the \emph{equation} environment, e.g.,
-\begin{equation}
-  \psi (u) = \int_{o}^{T} \left[\frac{1}{2}
-  \left(\Lambda_{o}^{-1} u,u\right) + N^{\ast} (-u)\right] dt \;  .
-\end{equation}
+During our research we found that browser memory usage greatly increases when using shared memory after transforming an image multiple times. Memory is relased after a particular time period (which seems to indicate there is not a leak), but while memory usage is high performance degrades. We are plan to spend some time on this issue.\\
 
-Equations should be punctuated in the same way as ordinary
-text but with a small space before the end punctuation mark.
+There is a proposal to support typed objects in a future version of EcmaScript, which in turn would allow \verb+TypedArray+s of said typed objects. Once a browser has an experimental version available we intend to make sure that typed arrays of typed objects work with the library.
 
-\subsection{Footnotes}
-
-The superscript numeral used to refer to a footnote appears in the text
-either directly after the word to be discussed or -- in relation to a
-phrase or a sentence -- following the punctuation sign (comma,
-semicolon, or period). Footnotes should appear at the bottom of
-the
-normal text area, with a line of about 2~cm set
-immediately above them.\footnote{The footnote numeral is set flush left
-and the text follows with the usual word spacing.}
-
-\subsection{Program Code}
-
-Program listings or program commands in the text are normally set in
-typewriter font, e.g., CMTT10 or Courier.
-
-\medskip
-
-\noindent
-{\it Example of a Computer Program}
-\begin{verbatim}
-program Inflation (Output)
-  {Assuming annual inflation rates of 7%, 8%, and 10%,...
-   years};
-   const
-     MaxYears = 10;
-   var
-     Year: 0..MaxYears;
-     Factor1, Factor2, Factor3: Real;
-   begin
-     Year := 0;
-     Factor1 := 1.0; Factor2 := 1.0; Factor3 := 1.0;
-     WriteLn('Year  7% 8% 10%'); WriteLn;
-     repeat
-       Year := Year + 1;
-       Factor1 := Factor1 * 1.07;
-       Factor2 := Factor2 * 1.08;
-       Factor3 := Factor3 * 1.10;
-       WriteLn(Year:5,Factor1:7:3,Factor2:7:3,Factor3:7:3)
-     until Year = MaxYears
-end.
-\end{verbatim}
-%
-\noindent
-{\small (Example from Jensen K., Wirth N. (1991) Pascal user manual and
-report. Springer, New York)}
-
-\subsection{Citations}
-
-For citations in the text please use
-square brackets and consecutive numbers: \cite{jour}, \cite{lncschap},
-\cite{proceeding1} -- provided automatically
-by \LaTeX 's \verb|\cite| \dots\verb|\bibitem| mechanism.
-
-\subsection{Page Numbering and Running Heads}
-
-There is no need to include page numbers. If your paper title is too
-long to serve as a running head, it will be shortened. Your suggestion
-as to how to shorten it would be most welcome.
-
-\section{LNCS Online}
-
-The online version of the volume will be available in LNCS Online.
-Members of institutes subscribing to the Lecture Notes in Computer
-Science series have access to all the pdfs of all the online
-publications. Non-subscribers can only read as far as the abstracts. If
-they try to go beyond this point, they are automatically asked, whether
-they would like to order the pdf, and are given instructions as to how
-to do so.
-
-Please note that, if your email address is given in your paper,
-it will also be included in the meta data of the online version.
-
-\section{BibTeX Entries}
-
-The correct BibTeX entries for the Lecture Notes in Computer Science
-volumes can be found at the following Website shortly after the
-publication of the book:
-\url{http://www.informatik.uni-trier.de/~ley/db/journals/lncs.html}
-
-\subsubsection*{Acknowledgments.} The heading should be treated as a
-subsubsection heading and should not be assigned a number.
-
-\section{The References Section}\label{references}
-
-In order to permit cross referencing within LNCS-Online, and eventually
-between different publishers and their online databases, LNCS will,
-from now on, be standardizing the format of the references. This new
-feature will increase the visibility of publications and facilitate
-academic research considerably. Please base your references on the
-examples below. References that don't adhere to this style will be
-reformatted by Springer. You should therefore check your references
-thoroughly when you receive the final pdf of your paper.
-The reference section must be complete. You may not omit references.
-Instructions as to where to find a fuller version of the references are
-not permissible.
-
-We only accept references written using the latin alphabet. If the title
-of the book you are referring to is in Russian or Chinese, then please write
-(in Russian) or (in Chinese) at the end of the transcript or translation
-of the title.
-
-The following section shows a sample reference list with entries for
-journal articles \cite{jour}, an LNCS chapter \cite{lncschap}, a book
-\cite{book}, proceedings without editors \cite{proceeding1} and
-\cite{proceeding2}, as well as a URL \cite{url}.
-Please note that proceedings published in LNCS are not cited with their
-full titles, but with their acronyms!
+Once the \verb+SharedArrayBuffer+ type is available in other browsers (there is already a proposal for Google Chrome) we plan to perform benchmarks and tests to compare with Firefox Nightly.
 
 \begin{thebibliography}{4}
 
@@ -534,6 +391,10 @@ full titles, but with their acronyms!
 
 \bibitem{sab} JavaScript Shared Memory, Atomics, and Locks, \url{https://docs.google.com/document/d/1NDGA_gZJ7M7w1Bh8S0AoDyEqwDdRh4uSoTPSNn77PFk/edit}
 
+\bibitem{es6-ta} TypedArray objects, ECMA, \url{https://people.mozilla.org/~jorendorff/es6-draft.html#sec-typedarray-objects}
+
+\bibitem{pjs-api} p-j-s API, \url{https://github.com/pjsteam/pjs/blob/dev/README.md}
+
 \bibitem{html-whatwg} HTML Standard, WHATWG, \url{https://html.spec.whatwg.org}
 
 \bibitem{cloud-haskell} Epstein, J., Black, A. P., Peyton-Jones, S.: Towards Haskell in the Cloud (2011)
@@ -542,56 +403,8 @@ full titles, but with their acronyms!
 
 \bibitem{encoding-api} Encoding Standard, WHATWG, \url{https://encoding.spec.whatwg.org}
 
-% end of our comments, start of sample comments
-
-\bibitem{jour} Smith, T.F., Waterman, M.S.: Identification of Common Molecular
-Subsequences. J. Mol. Biol. 147, 195--197 (1981)
-
-\bibitem{lncschap} May, P., Ehrlich, H.C., Steinke, T.: ZIB Structure Prediction Pipeline:
-Composing a Complex Biological Workflow through Web Services. In: Nagel,
-W.E., Walter, W.V., Lehner, W. (eds.) Euro-Par 2006. LNCS, vol. 4128,
-pp. 1148--1158. Springer, Heidelberg (2006)
-
-\bibitem{book} Foster, I., Kesselman, C.: The Grid: Blueprint for a New Computing
-Infrastructure. Morgan Kaufmann, San Francisco (1999)
-
-\bibitem{proceeding1} Czajkowski, K., Fitzgerald, S., Foster, I., Kesselman, C.: Grid
-Information Services for Distributed Resource Sharing. In: 10th IEEE
-International Symposium on High Performance Distributed Computing, pp.
-181--184. IEEE Press, New York (2001)
-
-\bibitem{proceeding2} Foster, I., Kesselman, C., Nick, J., Tuecke, S.: The Physiology of the
-Grid: an Open Grid Services Architecture for Distributed Systems
-Integration. Technical report, Global Grid Forum (2002)
-
-\bibitem{url} National Center for Biotechnology Information, \url{http://www.ncbi.nlm.nih.gov}
+\bibitem{benchmark} Sepia tone transformation benchmark comparison between p-j-s and plain JS, \url{http://jsperf.com/pjs-shared-vs-normal-vs-seq-100/4}
 
 \end{thebibliography}
 
-
-\section*{Appendix: Springer-Author Discount}
-
-LNCS authors are entitled to a 33.3\% discount off all Springer
-publications. Before placing an order, the author should send an email, 
-giving full details of his or her Springer publication,
-to \url{orders-HD-individuals@springer.com} to obtain a so-called token. This token is a
-number, which must be entered when placing an order via the Internet, in
-order to obtain the discount.
-
-\section{Checklist of Items to be Sent to Volume Editors}
-Here is a checklist of everything the volume editor requires from you:
-
-
-\begin{itemize}
-\settowidth{\leftmargin}{{\Large$\square$}}\advance\leftmargin\labelsep
-\itemsep8pt\relax
-\renewcommand\labelitemi{{\lower1.5pt\hbox{\Large$\square$}}}
-
-\item The final \LaTeX{} source files
-\item A final PDF file
-\item A copyright form, signed by one author on behalf of all of the
-authors of the paper.
-\item A readme giving the name and email address of the
-corresponding author.
-\end{itemize}
 \end{document}
