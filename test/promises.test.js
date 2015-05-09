@@ -134,6 +134,6 @@ describe('promises tests', function () {
           done();
         });
       });
-    });
+    }, true);
   });
 });

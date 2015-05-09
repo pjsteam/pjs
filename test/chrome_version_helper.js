@@ -1,6 +1,6 @@
 'use strict';
 
-module.exports = function (minVersion, callback) {
+module.exports = function (minVersion, callback, shouldIgnoreNotMatchingCallback) {
   var match = window.navigator.appVersion.match(/Chrome\/(\d+)\./);
   if (match) {
     var chromeVersion = parseInt(match[1], 10);
@@ -8,6 +8,8 @@ module.exports = function (minVersion, callback) {
       callback();
     }
   } else {
-    callback();
+    if (!shouldIgnoreNotMatchingCallback) {
+      callback();
+    }
   }
 };
