@@ -86,15 +86,15 @@ In this context, one of the plans of the commitee that develops the language is 
 
 The goal of this paper is to provide an alternative for parallel code execution in EcmaScript, through a library that exposes high order functions to model algorithmic skeletons such as map, filter and reduce. This library will take advantage of Web Workers \cite{w3c-ww} (the mechanism proposed by browsers for parallelism at the time of writing) to allow the simultaneous execution of code in multiple processors.
 
-This paper is organized as follows: Section~\ref{sec-background} provides some context on the current state of thread-base parallelization in JavaScript. Section~\ref{sec-overview} provides an overview of how the library works. Section~\ref{sec-ser-transf} explains the challenges the library faces, the alternative solutions and the decisions taken. Section~\ref{sec-bench} compares the performance of using the library against a sequential approach for an image transformation. Finally, Section~\ref{sec-future} presents future research directions.
+This paper is organized as follows: Section~\ref{sec:background} provides some context on the current state of thread-base parallelization in JavaScript. Section~\ref{sec:overview} provides an overview of how the library works. Section~\ref{sec:implementation} explains the challenges the library faces, the alternative solutions and the decisions taken. Section~\ref{sec:experiment} compares the performance of using the library against a sequential approach for an image transformation. Finally, Section~\ref{sec:future} presents future research directions.
 
-\section{Background}\label{sec-background}
+\section{Background}\label{sec:background}
 All modern versions of major browsers (Internet Explorer, Mozilla Firefox, Google Chrome, Safari and Opera) allow the execution of JavaScript code in a single threaded event loop runtime \cite{event-loop}. User actions add elements to the event loop queue and these are processesed sequentially. All process input/output is asynchronous to prevent the UI thread from blocking, thus keeping it responsive.
 While such a runtime is a good fit for most web applications, JavaScript and the browser are now also being used for some CPU intensive tasks, such as games, which commonly require physics calculations, image manipulation (in 2D) and graphics generation (in 3D). Despite the large improvement in JavaScript performance obtained through optimizing compilers such as Google Chrome's V8 \cite{v8} and Mozilla Firefox's SpiderMonkey \cite{spider-monkey}, it is important to be able to take advantage of multiple cores in modern devices to achieve even greater performance.\\
 In 2010, Web Workers were made part of the web standard. Web Workers allow the creation of ``thread like'' constructs in a browser environment, but they don't allow on shared memory and instead communicate via message passing. The message passing overhead is very big for common objects and Web Workers ``have a high start-up performance cost'' \cite{w3c-ww}, so they were commonly considered for long running tasks and operating on generally the same set of data during a single execution, making them unfit for a thread pool  model \cite{thread-pool}.\\
 However, a spec is being developed for version 7 of the EcmaScript standard that changes this, by introducing the notion of shared memory through \verb+SharedArrayBuffer+s \cite{sab}. In essence, the proposal allows the same memory to be shared across multiple Web Workers, and also aims to provide the necessary atomic/lock constructs to deal with shared memory. In the particular case of embarrassingly parallel computations (such as map, filter and reduce operations on an array), it is simple to take advantage of the shared memory speed benefits without incurring in any overhead due to locks.
 
-\section{Library Overview}\label{sec-overview}
+\section{Library Overview}\label{sec:overview}
 JavaScript developers are familiar with the concept of map, filter and reduce skeletons as language constructs. In JavaScript, \verb+Array+s have \verb+map+, \verb+filter+, and \verb+reduce+ functions and version 6 of the EcmaScript adds those same methods to \verb+TypedArray+s \cite{es6-ta}. For example, to multiply all the elements of an \verb+Array+ by two:
 \medskip
 
@@ -111,7 +111,7 @@ var newValues = [1,2,3,4].map(function(e){
 \noindent
 {\small (Example creating a new array with the values of the original one multiplied by two)}\\
 
-Our library (p-j-s) only works with \verb+SharedTypedArray+s (and \verb+TypedArray+s) due to performance reasons discussed in Section~\ref{sec-ser-transf}. It aims to provide a similar interface while not changing the native object's prototypes and dealing with the asynchronous nature of the operation. Given a \verb+SharedTypedArray+, the following code would do the same as the previous example but parallelizing the work:
+Our library (p-j-s) only works with \verb+SharedTypedArray+s (and \verb+TypedArray+s) due to performance reasons discussed in Section~\ref{sec:overview}. It aims to provide a similar interface while not changing the native object's prototypes and dealing with the asynchronous nature of the operation. Given a \verb+SharedTypedArray+, the following code would do the same as the previous example but parallelizing the work:
 \medskip
 
 \noindent
@@ -124,7 +124,7 @@ xs.set([1,2,3,4]);
 pjs(xs).map(function(e){
   return e * 2;
 }).seq().then(function(newValues){
-  // newValues is a new array [2,4,6,8]
+  // newValues is a new SharedUint8Array [2,4,6,8]
 });
 \end{verbatim}
 %
@@ -133,9 +133,41 @@ pjs(xs).map(function(e){
 
 The call to \verb+pjs.init+ initializes the library and the amount of workers to be used for processing (a worker pool is created with them). In browsers that have an API to detect the amount of available cores in a machine, the \verb+maxWorkers+ value is limited by the amount of cores.
 
-The API provided by p-j-s \cite{pjs-api} is very similar to the synchronous one that is provided by the language. The asynchronous nature of the operation is reflected by the fact that the call to \verb+seq+ returns a \verb+Promise+ (alternatively a callback could be passed as a parameter to it). It is possible to chain multiple operations before calling \verb+seq+ to avoid passing data back and forth between the Web Workers and the UI thread.
+The API provided by p-j-s \cite{pjs-api} is very similar to the synchronous one that is provided by the language. The asynchronous nature of the operation is reflected by the fact that the call to \verb+seq+ returns a \verb+Promise+ (alternatively a callback could be passed as a parameter to it).
 
-\section{Serialization and Transference}\label{sec-ser-transf}
+It is possible to chain multiple operations before calling \verb+seq+ to avoid passing data back and forth between the Web Workers and the UI thread. Before \verb+seq+ is invoked, an operation is a chain of one or more steps. From the same main chain, multiple chains could be created:
+\medskip
+
+\noindent
+{\it p-j-s chaining sample}
+\begin{verbatim}
+var xs = new SharedUint8Array(4);
+xs.set([1,2,3,4]);
+
+var chain = pjs(xs).map(function(e){
+  return e * 3;
+});
+
+var evenChain = chain.filter(function(e){
+  return e % 2 === 0;
+});
+
+var sumChain = chain.reduce(function(c, v){
+  return c + v;
+}, 0, 0);
+
+evenChain.seq().then(function(evens){
+  // evens is [6, 12]
+  sumChain.seq().then(function(sum){
+    // sum is [3,6,9,12]
+  });
+});
+\end{verbatim}
+%
+\noindent
+{\small (Example creating multiple chains from the same base chain)}\\
+
+\section{Implementation}\label{sec:implementation}
 Let's consider an array of \verb+N+ elements on which a particular transformation is to be performed through the \verb+map+ function. If the transformation is executed using a single thread (no parallelism) and the average time to process each element is \verb+t+ then the total time (\(T_{ser}\)) for the operation can be approximated as:
 
 \begin{equation}
@@ -167,15 +199,15 @@ If we drill down into the different parts:
 It is clear that:
 \begin{equation}
   T_{sync} = T_{ft} + T_{et} + T_{fs} + T_{es} \;  .
-  \label{eq-tsync}
+  \label{eq:tsync}
 \end{equation}
 
 \begin{equation}
   T_{par} \approx \frac{T_{ser}}{K} + T_{sync} \;  .
-  \label{eq-tpar}
+  \label{eq:tpar}
 \end{equation}
 
-Based on Eq.~\ref{eq-tsync} and Eq.~\ref{eq-tpar} it can be deduced that the more \(T_{sync}\) can be reduced, the closer to the ideal scenario the computation will be.
+Based on Eq.~\ref{eq:tsync} and Eq.~\ref{eq:tpar} it can be deduced that the more \(T_{sync}\) can be reduced, the closer to the ideal scenario the computation will be.
 
 In our case we are trying to transfer objects between a browser's JavaScript UI thread and Web Workers so we are constrained by the means of that environment. The Worker interface is the following \cite{w3c-ww}:
 \medskip
@@ -236,12 +268,12 @@ For that reason our library only works with \verb+SharedTypedArray+s and \verb+T
   \label{tab:transf-vs-clone}
 \end{table}
 
-\subsection{Functions}
+\subsection{Functions}\label{sub-sec:functions}
 The library must handle the distribution of the code between the different workers when an operation is executed. This is a challenging problem with a lot of possible alternatives \cite{cloud-haskell} \cite{distributed-scheme}.
 
 A naive approach would be to try to transfer a function as part of the \verb+message+ parameter of \verb+postMessage+ but that is not an option (it throws an error).
 
-Considering the fact that \verb+Function+ objects cannot be directly transferred a different serialization approach is to be considered (Sec.~\ref{sec:context-sharing} proposes a solution to sharing additional data and functions between the UI thread and workers) a possible alternative is to:
+Considering the fact that \verb+Function+ objects cannot be directly transferred a different serialization approach is to be considered (Sec.~\ref{sub-sec:context} proposes a solution to sharing additional data and functions between the UI thread and workers) a possible alternative is to:
 \begin{enumerate}
   \item Serialize the \verb+Function+ to a \verb+String+.
   \item Transfer the \verb+String+ to the worker.
@@ -309,8 +341,78 @@ We also created a benchmark that tranfers a \verb+SharedTypedArray+ and a \verb+
   \label{tab:send-function-and-array}
 \end{table}
 
-\section{Experiment}
-It is important to compare the performance of our parallel implementation against a serial one, as some processing is required before the computation begins and after it ends to distribute the data and work and gather the results respectively, as explained in Section~\ref{sec-ser-transf}.
+\subsection{Contexts}\label{sub-sec:context}
+Functions in JavaScript can capture variables as long as they are within the variable's lexical scope. Functions that make use  of this feature are closures. As explained in subsection~\ref{sub-sec:functions}, \verb+Function+ objects cannot be passed as messages to workers. This means that there is no out of the box mechanism to make variables that are available in the environment when the parallel computation is started accessible when executing the callback functions in each Web Worker.
+
+To solve this problem, p-j-s introduces the \emph{context} concept. There are two kinds of contexts:
+\begin{description}
+\item[Global context] Shared across all chains.
+\item[Local context] Specific to a particular step in a chain.
+\end{description}
+
+The following code snippet shows how developers can work with each type of context:
+\medskip
+
+\noindent
+{\it p-j-s context sample}
+\begin{verbatim}
+var xs = new SharedUint8Array(4);
+xs.set([1,2,3,4]);
+
+pjs.updateContext({
+  max: 3
+}).then(function(){
+  pjs(xs).filter(function(e, ctx){
+    return e <= ctx.max && e >= ctx.min;
+  }, {
+    min: 2
+  }).seq().then(function(range){
+    // range is [2,3]
+  });
+});
+
+\end{verbatim}
+%
+\noindent
+{\small (Example using local and global context for chains)}\\
+
+When executing each step in a chain, the local context is merged with the global context (neither is modified) into a separate object which is the \verb+ctx+ parameter that the function receives. If the same key is present in both the global and local context, the one in the local context is the one that will be available. Given the following code snippet, the available \verb+ctx+ for each function is displayed in Fig.~\ref{fig:context}.
+\medskip
+
+\noindent
+{\it p-j-s context merge sample}
+\begin{verbatim}
+var xs = new SharedUint8Array(4);
+xs.set([1,2,3,4]);
+
+pjs.updateContext({
+  A: 0,
+  B: 25,
+  C: 44
+}).then(function(){
+  var chain = pjs(xs)
+    .map(function(e, ctx){
+      // code here
+    }, { A: 5, B: 13 })
+    .filter(function(e, ctx){
+      // code here
+    }, { A: 2, E: 9 })
+});
+
+\end{verbatim}
+%
+\noindent
+{\small (Example for resulting ctx)}\\
+
+\begin{figure}
+\centering
+\includegraphics[width=1\textwidth]{context}
+\caption{Relative performance of parallel transformation compared to sequential one.}
+\label{fig:context}
+\end{figure}
+
+\section{Experiment}\label{sec:experiment}
+It is important to compare the performance of our parallel implementation against a serial one, as some processing is required before the computation begins and after it ends to distribute the data and work and gather the results respectively, as explained in Section~\ref{sec:implementation}.
 
 In this regard, the more complex the computation to be performed on each array element the better the parallel implementation will perform. That is because in the parallel case, the cost of this processing is dwarfed by the cost of the actual computation.
 
@@ -318,7 +420,7 @@ In this regard, the more complex the computation to be performed on each array e
 For the experiment we decided to use an algorithm that applies a sepia tone effect to pictures. This meets the criteria of both being useful and having some calls to \verb+Math.random+ which make it more complex from a computational standpoint. The benchmark is publicly available \cite{benchmark}.
 
 \subsection{Results}
-The results for the benchmark are the displayed in Tab.~\ref{tab:benchmark}.
+The results for the benchmark are the displayed in Tab.~\ref{tab:benchmark} and Figure~\ref{fig:relative} shows the relative performance of the parallel approach compared to the sequential one.
 \begin{table}
   \centering
   \begin{tabular}{|r|c|c|}
@@ -336,11 +438,9 @@ The results for the benchmark are the displayed in Tab.~\ref{tab:benchmark}.
   \label{tab:benchmark}
 \end{table}
 
-Figure~\ref{fig:relative} shows the relative performance of the parallel approach compared to the sequential one.
-
 \begin{figure}
 \centering
-\includegraphics[height=6.2cm]{comparison}
+\includegraphics[height=8.2cm]{comparison}
 \caption{Relative performance of parallel transformation compared to sequential one.}
 \label{fig:relative}
 \end{figure}
@@ -348,18 +448,18 @@ Figure~\ref{fig:relative} shows the relative performance of the parallel approac
 \subsection{Conclusion}
 A couple of interesting findings result from the experiments. An expected one is that the amount of operations per second that can be performed with a serial implementation is almost inversely proportional to the amount of items to transform with a ratio of 1. On the other hand, this is not the case for the parallel approach.
 
-An acceptable speedup of approximately \emph{2x} can be achieved with a relatively large amount of items (\(10E6\)) and performing a computationally expensive computation (generating pseudo-random numbers). Larger speedups might be possible by applying optimizations to the library and there might also be some potential improvements for operations with \verb+SharedArrayBuffer+s as they are likely not optimized, being that they are only an experimental feature in Firefox Nightly.
+An acceptable speedup of approximately \textbf{2x} can be achieved with a relatively large amount of items (\(10E6\)) and performing a computationally expensive computation (generating pseudo-random numbers). Larger speedups might be possible by applying optimizations to the library and there might also be some potential improvements for operations with \verb+SharedArrayBuffer+s as they are likely not optimized, being that they are only an experimental feature in Firefox Nightly.
 
-\section{Future Work}
-There are still some parts of the library that would benefit from optimizations. Of particular interest to us is to perform further profiling the code executing in each WebWorker. As of today, using browser profiling tools for Web Workers is not as simple as doing so for the UI thread.\\
+\section{Future Work}\label{sec:future}
+There are still some parts of the library that would benefit from optimizations. Of particular interest to us is to perform further profiling of the code executing in each Web Worker. As of today, using browser profiling tools for Web Workers is not as simple as doing so for the UI thread.\\
 
-We intend to perform some tests to evaluate the possibility of serializing functions via \verb+SharedArrayBuffer+s. We have not done this up to now due to time constraints, but we believe that a performance improvements could be achieved by serializing function strings once, creating an array for the bytes and then sharing the backing buffer with all workers.\\
+We intend to perform some tests to evaluate the possibility of serializing functions via \verb+SharedArrayBuffer+s. We have not done this up to now due to time constraints, but we believe that performance improvements could be achieved by serializing function string once, creating an \verb+SharedTypedArray+ for the bytes and then sharing the backing buffer with all workers.\\
 
-During our research we found that browser memory usage greatly increases when using shared memory after transforming an image multiple times. Memory is relased after a particular time period (which seems to indicate there is not a leak), but while memory usage is high performance degrades. We are plan to spend some time on this issue.\\
+During our research we found that browser memory usage greatly increases when using shared memory after transforming an image multiple times. Memory is relased after a particular time period (which seems to indicate there is not a leak), but while memory usage is high performance degrades. We plan to spend some time on this issue.\\
 
-There is a proposal to support typed objects in a future version of EcmaScript, which in turn would allow \verb+TypedArray+s of said typed objects. Once a browser has an experimental version available we intend to make sure that typed arrays of typed objects work with the library.
+There is a strawman proposal to support typed objects \cite{typed-objects} in a future version of EcmaScript, which in turn would allow \verb+TypedArray+s of said typed objects. Once a browser has an experimental version available we intend to make sure that typed arrays of typed objects work with the library.\\
 
-Once the \verb+SharedArrayBuffer+ type is available in other browsers (there is already a proposal for Google Chrome) we plan to perform benchmarks and tests to compare with Firefox Nightly.
+Once the \verb+SharedArrayBuffer+ type is available in other browsers (there is already a proposal for Google Chrome \cite{sab-chrome}) we plan to perform benchmarks and tests to compare with Firefox Nightly.
 
 \begin{thebibliography}{4}
 
@@ -404,6 +504,10 @@ Once the \verb+SharedArrayBuffer+ type is available in other browsers (there is 
 \bibitem{encoding-api} Encoding Standard, WHATWG, \url{https://encoding.spec.whatwg.org}
 
 \bibitem{benchmark} Sepia tone transformation benchmark comparison between p-j-s and plain JS, \url{http://jsperf.com/pjs-shared-vs-normal-vs-seq-100/4}
+
+\bibitem{typed-objects} Typed Objects, ECMA, \url{http://wiki.ecmascript.org/doku.php?id=harmony:typed_objects}
+
+\bibitem{sab-chrome} Shared Array Buffers, Chromium Dashboard, \url{https://www.chromestatus.com/feature/4570991992766464}
 
 \end{thebibliography}
 
