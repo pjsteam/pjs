@@ -1,6 +1,4 @@
-'use strict';
-
-describe('context tests', function(){
+describe.only('context tests', function(){
   var context = require('../src/context');
 
   describe('serialize', function(){

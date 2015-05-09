@@ -7,5 +7,7 @@ module.exports = function (minVersion, callback) {
     if(chromeVersion && chromeVersion > minVersion){
       callback();
     }
+  } else {
+    callback();
   }
 };
