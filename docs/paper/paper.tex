@@ -420,7 +420,7 @@ In this regard, the more complex the computation to be performed on each array e
 For the experiment we decided to use an algorithm that applies a sepia tone effect to pictures. This meets the criteria of both being useful and having some calls to \verb+Math.random+ which make it more complex from a computational standpoint. The benchmark is publicly available \cite{benchmark}.
 
 \subsection{Results}
-The results for the benchmark are the displayed in Tab.~\ref{tab:benchmark} and Figure~\ref{fig:relative} shows the relative performance of the parallel approach compared to the sequential one.
+The results for the benchmark are the displayed in Tab.~\ref{tab:benchmark}. Based on those results, we created a chart (Figure~\ref{fig:relative}) that shows the relative performance of the parallel approach compared to the sequential one.
 \begin{table}
   \centering
   \begin{tabular}{|r|c|c|}
@@ -460,6 +460,9 @@ During our research we found that browser memory usage greatly increases when us
 There is a strawman proposal to support typed objects \cite{typed-objects} in a future version of EcmaScript, which in turn would allow \verb+TypedArray+s of said typed objects. Once a browser has an experimental version available we intend to make sure that typed arrays of typed objects work with the library.\\
 
 Once the \verb+SharedArrayBuffer+ type is available in other browsers (there is already a proposal for Google Chrome \cite{sab-chrome}) we plan to perform benchmarks and tests to compare with Firefox Nightly.
+
+\subsubsection*{Acknowledgments.}
+Thanks to Rosa Wachenhauzer, our tutor, for reviewing this paper and also for all her support and guidance throughout this entire project.
 
 \begin{thebibliography}{4}
 
