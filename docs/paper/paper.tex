@@ -50,7 +50,7 @@
 
 % the affiliations are given next; don't give your e-mail address
 % unless you accept that it will be published
-\institute{Buenos Aires University, School of Engineering,\\
+\institute{School of Engineering. University of Buenos Aires.\\
 Paseo Colon 850, Buenos Aires, Argentina\\
 \mailsa\\
 \url{http://www.fi.uba.ar/}}
@@ -85,6 +85,12 @@ On a different note, one of the tendencies that is beggining to take off is the 
 In this context, one of the plans of the commitee that develops the language is to provide an API to simplify the processing of data in parallel for version 7 (ES7) of the language, with the goal of keeping up with native applications. Initiatives such as ParallelJS \cite{par-js} and River trail \cite{rivertrail} or the possibility of taking advantage of SIMD instructions \cite{js-simd} (single instruction multiple data) are some of the options to implement this.
 
 The goal of this paper is to provide an alternative for parallel code execution in EcmaScript, through a library that exposes high order functions to model algorithmic skeletons such as map, filter and reduce. This library will take advantage of Web Workers \cite{w3c-ww} (the mechanism proposed by browsers for parallelism at the time of writing) to allow the simultaneous execution of code in multiple processors.
+
+\section{Background}
+All modern versions of major browsers (Internet Explorer, Mozilla Firefox, Google Chrome, Safari and Opera) allow the execution of JavaScript code in a single threaded event loop runtime \cite{event-loop}. User actions add elements to the event loop queue and these are processesed sequentially. All process input/output is asynchronous to prevent the UI thread from blocking, thus keeping it responsive.
+While such a runtime is a good fit for most web applications, JavaScript and the browser are now also being used for some CPU intensive tasks, such as games, which commonly require physics calculations, image manipulation (in 2D) and graphics generation (in 3D). Despite the large improvement in JavaScript performance obtained through optimizing compilers such as Google Chrome's V8 \cite{v8} and Mozilla Firefox's SpiderMonkey \cite{spider-monkey}, it is important to be able to take advantage of multiple cores in modern devices to achieve even greater performance.\\
+In 2010, Web Workers were made part of the web standard. Web Workers allow the creation of ``thread like'' constructs in a browser environment, but they don't allow on shared memory and instead communicate via message passing. The message passing overhead is very big for common objects and Web Workers ``have a high start-up performance cost'' \cite{w3c-ww}, so they were commonly considered for long running tasks and operating on generally the same set of data during a single execution, making them unfit for a thread pool  model \cite{thread-pool}.\\
+However, a spec is being developed for version 7 of the EcmaScript standard that changes this, by introducing the notion of shared memory through \verb+SharedArrayBuffer+s \cite{sab}. In essence, the proposal allows the same memory to be shared across multiple Web Workers, and also aims to provide the necessary atomic/lock constructs to deal with shared memory. In the particular case of embarrassingly parallel computations (such as map, filter and reduce operations on an array), it is simple to take advantage of the shared memory speed benefits without incurring in any overhead due to locks.
 
 \section{Serialization and Transference}
 Let's consider an array of \verb+N+ elements on which a particular transformation is to be performed through the \verb+map+ function. If the transformation is executed using a single thread (no parallelism) and the average time to process each element is \verb+t+ then the total time (\(T_{ser}\)) for the operation can be approximated as:
@@ -166,7 +172,7 @@ For that reason our library only works with \verb+SharedTypedArray+s and \verb+T
     Clock Frequency & 1.8 GHz \\
     System Memory & 4 GB \\
     Operating System & OS X Yosemite 10.10.3 \\
-    Browser version & Firefox Nightly 40.0a1 (2015-04-26) \\
+    Browser version & Firefox Nightly 40.0a1 \\
     \hline
   \end{tabular}
   \caption{Benchmarks environment.}
@@ -188,7 +194,7 @@ For that reason our library only works with \verb+SharedTypedArray+s and \verb+T
 \end{table}
 
 \subsection{Functions}
-The library must the distribution of the code between the different workers when an operation is executed. This is a challenging problem with a lot of possible alternatives \cite{cloud-haskell} \cite{distributed-scheme}.
+The library must handle the distribution of the code between the different workers when an operation is executed. This is a challenging problem with a lot of possible alternatives \cite{cloud-haskell} \cite{distributed-scheme}.
 
 A naive approach would be to try to transfer a function as part of the \verb+message+ parameter of \verb+postMessage+ but that is not an option (it throws an error).
 
@@ -517,6 +523,16 @@ full titles, but with their acronyms!
 \bibitem{js-simd} McCutchan, J., Feng, H., Matsakis, N. D., Anderson, Z., Jensen, P.: A SIMD Programming Model for Dart, JavaScript, and other dynamically typed scripting languages (2014)
 
 \bibitem{w3c-ww} Web Workers, W3C, \url{http://www.w3.org/TR/workers/}
+
+\bibitem{event-loop} Concurrency model and Event Loop, Mozilla Developer Network, \url{https://developer.mozilla.org/en-US/docs/Web/JavaScript/EventLoop}
+
+\bibitem{v8} v8, Google, \url{https://developers.google.com/v8/intro}
+
+\bibitem{spider-monkey} SpiderMonkey, Mozilla, \url{https://developer.mozilla.org/en-US/docs/Mozilla/Projects/SpiderMonkey}
+
+\bibitem{thread-pool} Schmidt, D. C., Vinoski, S.,: Comparing Alternative Programming Techniques for Multi-threaded CORBA Servers: Thread Pool (1996)
+
+\bibitem{sab} JavaScript Shared Memory, Atomics, and Locks, \url{https://docs.google.com/document/d/1NDGA_gZJ7M7w1Bh8S0AoDyEqwDdRh4uSoTPSNn77PFk/edit}
 
 \bibitem{html-whatwg} HTML Standard, WHATWG, \url{https://html.spec.whatwg.org}
 
