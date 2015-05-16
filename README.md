@@ -40,6 +40,7 @@ The `reduce` operation invokes the `reducer` function on each element of the wra
 
 The reduction is first performed in the Web Workers using `identity` as the intial value for `current`. The results from the Web Workers are collected and a new reduction is performed on them using `seed` and `identityReducer` function.
 
+## Documentation
 You can find out more by checking out the [complete API](https://github.com/pjsteam/pjs/wiki/Complete-API) and the How Tos in our [wiki](https://github.com/pjsteam/pjs/wiki).
 
 ## Acknowledgements
