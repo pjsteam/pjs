@@ -10,7 +10,7 @@
     var wCode = function(event){
       var code = event.data;
       eval('var __f = ' + code);
-      postMessage(__f());
+      postMessage(__f.length);
     };
 
     var blob = new Blob(["onmessage = " + wCode.toString()]);
@@ -28,7 +28,7 @@
       aux.set(codeArray);
       var code = decoder.decode(aux);
       eval('var __f = ' + code);
-      postMessage(__f());
+      postMessage(__f.length);
     };
 
     var blob = new Blob(["var decoder = new TextDecoder(); onmessage = " + wCode.toString()]);

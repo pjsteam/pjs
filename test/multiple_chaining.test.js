@@ -19,7 +19,7 @@ describe('chaining tests', function(){
     }
   });
 
-  it.only('dami test', function (done) {
+  it('should properly calculate the result without sibling chains\' interferience', function (done) {
     var xs = new Uint8Array(4);
     xs.set([1,2,3,4]);
 
