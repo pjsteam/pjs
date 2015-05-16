@@ -216,7 +216,7 @@ As the aforementioned interface states one can either send just a message or sen
 \subsection{Elements}
 Considering the definition of a \verb+Transferable+, it seems like a good alternative to minimize both \(T_{et}\) and \(T_{es}\). Even more so when one considers that otherwise objects are copied using structured cloning(explained in section \textbf{2.7.6} of that same standard).
 
-To verify our hypothesis, we put together two benchmarks\footnote{All benchmarks in this document use the environment described in Tab.~\ref{tab:env}.} that aim to verify the difference between invoking \verb+postMessage+ with and without structured cloning for a \verb+SharedTypedArray+. Both transfer a \verb+SharedTypedArray+ back and forth between the UI thread and a worker; the only difference between the two is that one has 100,000 (a hundred thousand) elements in the \verb+SharedTypedArray+ and the other one 1,000,000 (a million). As it can be seen from the  results in Tab.~\ref{tab:transf-vs-clone}, increasing the amount of elements by 10x does not change the amount of operations that can be performed when using \verb+Transferable+ objects, it scales. On the other hand, the amount of operations that can be performed with structured cloning greatly decreases.
+To verify our hypothesis, we put together two benchmarks\footnote{All benchmarks in this document use the environment described in Tab.~\ref{tab:env}.} that aim to verify the difference between invoking \verb+postMessage+ with and without structured cloning for a \verb+SharedTypedArray+. Both transfer a \verb+SharedTypedArray+ back and forth between the UI thread and a worker; the only difference between the two is that one\footnote{http://jsperf.com/transferrable-vs-cloning/2} has 100,000 (a hundred thousand) elements in the \verb+SharedTypedArray+ and the other one\footnote{http://jsperf.com/longer-transferrable-vs-cloning/2} 1,000,000 (a million). As it can be seen from the  results in Tab.~\ref{tab:transf-vs-clone}, increasing the amount of elements by 10x does not change the amount of operations that can be performed when using \verb+Transferable+ objects, it scales. On the other hand, the amount of operations that can be performed with structured cloning greatly decreases.
 
 For that reason our library only works with \verb+SharedTypedArray+s and \verb+TypedArrays+.
 
@@ -242,8 +242,8 @@ For that reason our library only works with \verb+SharedTypedArray+s and \verb+T
     \hline
     Elements & Cloning [ops/sec] & Transferring [ops/sec] \\
     \hline
-    \(1E5\) & 972 & \textbf{1705} \\
-    \(1E6\) & 114 & \textbf{754} \\
+    \(1E5\) & 734 & \textbf{1596} \\
+    \(1E6\) & 91 & \textbf{1134} \\
     \hline
   \end{tabular}
   \caption{Difference between transferring and cloning shared buffers.}
@@ -273,14 +273,14 @@ One possible way of passing serialized \verb+Function+ to workers would be to en
   \item Implementing non native encoding/decoding functions
 \end{itemize}
 
-The benchmarks provided the following results:
+The results for the benchmark\footnote{http://jsperf.com/pjs-serialization-comparison/2} are in Tab.~\ref{tab:encode-decode}:
 \begin{table}
   \centering
   \begin{tabular}{|c|c|}
     \hline
     Native encoding API [ops/sec] & Non-native function [ops/sec] \\
     \hline
-    \textbf{5247} & 4685 \\
+    \textbf{5017} & 4398 \\
     \hline
   \end{tabular}
   \caption{Difference encoding/decoding strings natively and in JavaScript.}
@@ -292,7 +292,7 @@ The benchmarks provided the following results:
 
 Additionally, in most scenarios code would have to be sent along with a \verb+TypedArray+ so it would also be interesting to see if the transfer time was affected by this fact.
 
-We created a benchmark using two functions whose string representation has different lengths to see if the function's length affected the serialization and transfer time (results in Tab.~\ref{tab:send-function}). We measured three approaches to transfer the string:
+We created benchmarks\footnote{http://jsperf.com/pjs-serialization-long/3 and http://jsperf.com/pjs-serialization/3} using two functions whose string representation has different lengths to see if the function's length affected the serialization and transfer time (results in Tab.~\ref{tab:send-function}). We measured three approaches to transfer the string:
 \begin{enumerate}
   \item Encoding the \verb+String+ into an \verb+TypedArrayBuffer+, sending it as a \verb+Tranferable+ and decoding it on the Web Worker.
   \item Sending the \verb+String+ directly.
@@ -305,22 +305,22 @@ We created a benchmark using two functions whose string representation has diffe
     \hline
     Function length & Blob [ops/sec] & Copy [ops/sec] & Tranferable [ops/sec] \\
     \hline
-    Short & 1251 & \textbf{7046} & 6219 \\
-    Long & 705 & 1176 & \textbf{1198} \\
+    Short & 1070 & \textbf{6629} & 5927 \\
+    Long & 1075 & \textbf{3273} & 2967 \\
     \hline
   \end{tabular}
   \caption{Sending function strings from UI thread to Web Workers.}
   \label{tab:send-function}
 \end{table}
 
-We also created a benchmark that tranfers a \verb+SharedTypedArray+ and a \verb+String+ that are properties of the same \verb+message+ object back and forth between the UI thread an a Web Worker to understand if transferring additional objects affected the transfer time when comparing it with just tranferring a \verb+String+ (results in Tab.~\ref{tab:send-function-and-array}.
+We also created a benchmark\footnote{http://jsperf.com/pjs-encoding/2} that tranfers a \verb+SharedTypedArray+ and a \verb+String+ that are properties of the same \verb+message+ object back and forth between the UI thread an a Web Worker to understand if transferring additional objects affected the transfer time when comparing it with just tranferring a \verb+String+ (results in Tab.~\ref{tab:send-function-and-array}.
 \begin{table}
   \centering
   \begin{tabular}{|c|c|}
     \hline
     Copying code [ops/sec] & Tranferring code [ops/sec] \\
     \hline
-    4200 & \textbf{4340} \\
+    \textbf{4509} & 4270 \\
     \hline
   \end{tabular}
   \caption{Sending code and a TypedArray to a Web Worker.}
