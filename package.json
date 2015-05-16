@@ -17,7 +17,7 @@
     "karma-chai": "^0.1.0",
     "karma-chai-jquery": "^1.0.0",
     "karma-chrome-launcher": "^0.1.5",
-    "karma-firefox-launcher": "~0.1",
+    "karma-firefox-launcher": "~0.1.6",
     "karma-jasmine": "^0.1.5",
     "karma-jquery": "^0.1.0",
     "karma-mocha": "^0.1.8",

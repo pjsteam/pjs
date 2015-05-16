@@ -195,7 +195,7 @@ function createChain(oldChain, options){
     operation: operation,
     globalContext: oldChain.globalContext,
     chainContext: extendChainContext,
-    previousOperations: oldChain.operations,
+    previousOperations: oldChain.operations.slice(),
     depth: nextDepth
   };
   return new Chain(opt);
@@ -205,7 +205,6 @@ Chain.prototype.seq = function (done) {
   var self = this;
   return new Promise(function (resolve, reject) {
     var packs = self.packager.generatePackages(self.operations, self.chainContext);
-
     workers.sendPacks(packs, function(err, results){
       if (err) { if (done) { done(err); } else { reject(err); } return; }
       var m;
@@ -991,16 +990,9 @@ var globalContext = {};
 
 var operations = {
   map: function (source, target, start, end, f, ctx) {
-    /*
-    var i = start | 0;
-    for ( ; (i | 0) < (end | 0); i = (i | 0) + (1 | 0)){
-      target[i | 0] = f(source[i | 0], ctx);
-    }
-    return end;
-    */
     var i = start;
     for ( ; i < end; i += 1){
-      target[i] = f(source[i]);
+      target[i] = f(source[i], ctx);
     }
     return end;
   },
