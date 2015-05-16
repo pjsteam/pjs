@@ -229,7 +229,7 @@ For that reason our library only works with \verb+SharedTypedArray+s and \verb+T
     Clock Frequency & 1.8 GHz \\
     System Memory & 4 GB \\
     Operating System & OS X Yosemite 10.10.3 \\
-    Browser version & Firefox Nightly 40.0a1 \\
+    Browser version & Firefox Nightly 41.0a1 \\
     \hline
   \end{tabular}
   \caption{Benchmarks environment.}
@@ -415,11 +415,11 @@ The results for the benchmark are the displayed in Tab.~\ref{tab:benchmark}. Bas
     \hline
     Elements & Serial [ops/sec] & Parallel [ops/sec] \\
     \hline
-    100 & \textbf{154442} & 377.2\\
-    1,000 & \textbf{17460.2} &  368.4 \\
-    10,000 & \textbf{1768.6} & 311.2 \\
-    100,000 & \textbf{179.2} & 172.2 \\
-    1,000,000 & 16.96 & \textbf{33.2} \\
+    100 & \textbf{142223} & 328 \\
+    1,000 & \textbf{16503.8} &  359 \\
+    10,000 & \textbf{1683.8} & 321.8 \\
+    100,000 & \textbf{169.6} & 184.4 \\
+    1,000,000 & 16.8 & \textbf{34.1} \\
     \hline
   \end{tabular}
   \caption{Comparing p-j-s (parallel) and plain JS (serial) performance for an image transformation.}
@@ -428,7 +428,7 @@ The results for the benchmark are the displayed in Tab.~\ref{tab:benchmark}. Bas
 
 \begin{figure}
 \centering
-\includegraphics[height=8.2cm]{comparison}
+\includegraphics[height=7.7cm]{comparison}
 \caption{Relative performance of parallel transformation compared to sequential one.}
 \label{fig:relative}
 \end{figure}
