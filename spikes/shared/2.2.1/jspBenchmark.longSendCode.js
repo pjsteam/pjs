@@ -77,13 +77,15 @@
     return sum;
   }).toString();
 
+  //shared array should be inside on trasnfer function's body but we had a problem with that: benchmark can not create inifinite shared buffer.
+  var shared = new SharedUint8Array(encoder.encode(fStringified).length);
+
   var transfer = function () {
     finishedCount = workersCount;
     var b = encoder.encode(fStringified);
-    var s = new SharedUint8Array(b.length);
-    s.set(b);
+    shared.set(b);
     for (var k = 0; k < workersCount; k += 1) {
-      transferrableWorkers[k].postMessage(s, [s.buffer]);  
+      transferrableWorkers[k].postMessage(shared, [shared.buffer]);  
     }
   }
 
