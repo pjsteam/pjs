@@ -410,7 +410,7 @@ pjs.updateContext({
 \label{fig:context}
 \end{figure}
 
-One alternative to hide the \emph{context} concept from application developers could be to introduce a \textit{build} step that detects the variables captured by p-j-s callbacks and transforms the code. By doing this, theyg wouldn't need to do anything out of the ordinary with regards to closures and their environment when working with p-j-s. However, this approach would require transforming the original code, and would be complex and time consuming to implement.
+One alternative to hide the \emph{context} concept from application developers could be to introduce a \textit{build} step that detects the variables captured by p-j-s callbacks and transforms the code. By doing this, they wouldn't need to do anything out of the ordinary with regards to closures and their environment when working with p-j-s. However, this approach would require transforming the original code, and would be complex and time consuming to implement.
 
 \section{Experiment}\label{sec:experiment}
 It is important to compare the performance of our parallel implementation against a serial one, as some processing is required before the computation begins and after it ends to distribute the data and work and gather the results respectively, as explained in Section~\ref{sec:implementation}.
