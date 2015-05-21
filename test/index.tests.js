@@ -159,10 +159,9 @@ describe('wrap tests', function(){
     }).to.throw(errors.InvalidArgumentsError);
   });
 
-  [Uint8Array, Int8Array, Uint8ClampedArray,
-    Uint16Array, Int16Array,
-    Uint32Array, Int32Array,
-    Float32Array, Float64Array].forEach(function (TypedArray) {
+  var supportedArrays = require('./supported_array_types_helper')();
+  
+  supportedArrays.forEach(function (TypedArray) {
       describe(utils.format('tests for {0}', utils.getTypedArrayConstructorType(TypedArray)), function(){
         var sourceArray = new TypedArray([1,2,3,4,5]);
 

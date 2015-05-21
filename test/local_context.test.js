@@ -6,6 +6,7 @@ describe('local context tests', function(){
   var chromeHelper = require('./chrome_version_helper');
   var utils = require('../src/utils.js');
   var normalSourceArray = [1,2,3,5,13,16,32,63,64,129,255,500,1001,1023,1024];
+  var supportedArrays = require('./supported_array_types_helper')();
 
   before(function () {
     pjs = require('../src/index.js');
@@ -20,10 +21,7 @@ describe('local context tests', function(){
 
   describe('create context tests', function(){
 
-    [Uint8Array, Int8Array, Uint8ClampedArray,
-    Uint16Array, Int16Array,
-    Uint32Array, Int32Array,
-    Float32Array, Float64Array].forEach(function (TypedArray) {
+    supportedArrays.forEach(function (TypedArray) {
       describe(utils.format('tests for {0}', utils.getTypedArrayConstructorType(TypedArray)), function(){
 
         it('should initialize map chain item without context', function () {
@@ -132,10 +130,7 @@ describe('local context tests', function(){
   });
 
   describe('use context tests', function(){
-    [Uint8Array, Int8Array, Uint8ClampedArray,
-    Uint16Array, Int16Array,
-    Uint32Array, Int32Array,
-    Float32Array, Float64Array].forEach(function (TypedArray) {
+    supportedArrays.forEach(function (TypedArray) {
       describe(utils.format('tests for {0}', utils.getTypedArrayConstructorType(TypedArray)), function(){
 
         it('should return mapped elements in callback using context', function(done){
