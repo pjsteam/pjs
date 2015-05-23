@@ -18,7 +18,7 @@ describe('queueing workers jobs', function(){
   });
 
   supportedArrays.forEach(function (TypedArray) {
-      describe(utils.format('tests for {0}', utils.getTypedArrayConstructorType(TypedArray)), function(){
+      describe(utils.format('tests for {0}', utils.getTypedArrayConstructorType(TypedArray)), function(done){
         var sourceArrayA = new TypedArray([1,2,3,4,5,6,7,8,9,10,11,12,13,14]);
         var sourceArrayB = new TypedArray([20,21,22,23,24,25,26,27,28,29,30,31]);
 
@@ -28,23 +28,31 @@ describe('queueing workers jobs', function(){
           var chainA = pjs(sourceArrayA).map(mapperA);
           var chainB = pjs(sourceArrayB).map(mapperB);
 
-          var promiseA = chainA.seq();
-          var promiseB = chainB.seq();
+          var chainAFinished = false;
 
-          return Promise.race([promiseA, promiseB]).then(function (result) {
-            expect(result).to.have.length(sourceArrayA.length);
-            expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(sourceArrayA));
-            for (var i = sourceArrayA.length - 1; i >= 0; i--) {
-              expect(result[i]).to.equal(mapperA(sourceArrayA[i]));
-            }
-            return promiseB.then(function (result) {
-              expect(result).to.have.length(sourceArrayB.length);
-              expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(sourceArrayB));
-              for (var i = sourceArrayB.length - 1; i >= 0; i--) {
-                expect(result[i]).to.equal(mapperB(sourceArrayB[i]));
-              }
-            });
+          chainA.seq(function(err, result) {
+            chainAFinished = true;
+            if (err) { return done(err); }
+            finisher(err, result, sourceArrayA, mapperA);
           });
+          chainB.seq(function(err, result) {
+            if (err) { return done(err); }
+            if (!chainAFinished) { return done('Chain A should end first.'); }
+            finisher(err, result, sourceArrayB, mapperB);
+          });
+
+          var finishCount = 0;
+          var finisher = function (err, result, sourceArray, mapper) {
+            finishCount++;
+            expect(result).to.have.length(sourceArray.length);
+            expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(sourceArray));
+            for (var i = sourceArray.length - 1; i >= 0; i--) {
+              expect(result[i]).to.equal(mapper(sourceArray[i]));
+            }
+            if (finishCount === 2) {
+              done();
+            }
+          };
         });
 
         it('should not stop calculation with on invalid seq', function () {
@@ -53,20 +61,36 @@ describe('queueing workers jobs', function(){
           var chainA = pjs(sourceArrayA).map(mapperA);
           var chainB = pjs(sourceArrayB).map(mapperB);
 
-          var promiseA = chainA.seq();
-          var promiseB = chainB.seq();
-
-          return Promise.race([promiseA, promiseB]).catch(function (err) {
-            expect(err.name).to.equal('WorkerError');
-            expect(err.message).to.match(/(Uncaught TypeError: undefined is not a function)|(TypeError: ctx.aux is not a function)/);
-            return promiseB.then(function (result) {
-              expect(result).to.have.length(sourceArrayB.length);
-              expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(sourceArrayB));
-              for (var i = sourceArrayB.length - 1; i >= 0; i--) {
-                expect(result[i]).to.equal(mapperB(sourceArrayB[i]));
-              }
-            });
+          chainA.seq(function(err, result) {
+            if (err) {
+              finisher(err, result, sourceArrayA, mapperA);
+            } else {
+              return done(err);
+            }
+            
           });
+          chainB.seq(function(err, result) {
+            if (err) { return done(err); }
+            finisher(err, result, sourceArrayB, mapperB);
+          });
+          
+          var finisher = function (err, result, sourceArray, mapper) {
+            finishCount++;
+            if (result) {
+              expect(result).to.have.length(sourceArray.length);
+              expect(utils.getTypedArrayType(result)).to.equal(utils.getTypedArrayType(sourceArray));
+              for (var i = sourceArray.length - 1; i >= 0; i--) {
+                expect(result[i]).to.equal(mapper(sourceArray[i]));
+              }
+            }
+            if (err) {
+              expect(err.name).to.equal('WorkerError');
+              expect(err.message).to.match(/(Uncaught TypeError: undefined is not a function)|(TypeError: ctx.aux is not a function)/);
+            }
+            if (finishCount === 2) {
+              done();
+            }
+          };
         });
       });
     });
