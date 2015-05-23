@@ -1,5 +1,5 @@
 \section{About Microbenchmmarks}
-A common practice to measure the performance of a fragment of code, or to compare it to the performance of some other code fragment is to create a micro benchmark. Throughout this document, there are multiple references to benchmarks of this kind since their results helped us make decisions about how to best implement some specific library features.
+A common practice to measure the performance of a fragment of code, or to compare it to the performance of some other code fragment is to create a micro benchmark. Throughout this document, there are multiple references to benchmarks of this kind, since their results helped us make decisions about how to best implement some specific library features.
 
 A micro benchmark usually involves wrapping the code under evaluation inside a loop, to:
 
@@ -8,10 +8,10 @@ A micro benchmark usually involves wrapping the code under evaluation inside a l
 \item[Second] Allow JIT optimizations to kick in.
 \end{description}
 
-The first point is applicable to all programming languages but the second one is only important in engines/VMs that perform such optimizations. Since this document discussed the performance of JavaScript and in particular v8, the second point does affect our benchmarks.
+The first point is applicable to all programming languages but the second one is only important in engines/VMs that perform such optimizations. This document discusses the performance of JavaScript and in particular v8, so the second point does affect our benchmarks.
 
 \subsection{A small example\protect\footnote{The example is based on \cite{mraleph-bc}.}}
-Let's assume that we want to profile to the following function:
+Let's assume that we want to profile the following function:
 \begin{lstlisting}[caption=Function to benchmark]
 function between(a, b, c){
   return a <= b <= c;
@@ -37,7 +37,7 @@ console.timeEnd('between');
 //end benchmark
 \end{lstlisting}
 
-The problem with the above is that it does not consider optimizations. Let's assume that the executing engine is smart enough to:
+The problem with the above benchmark is that it does not consider optimizations. Let's assume that the executing engine is smart enough to:
 \begin{enumerate}
   \item Inline functions
   \item Detect loop invariants
@@ -59,7 +59,7 @@ console.timeEnd('between');
 //end benchmark
 \end{lstlisting}
 
-If it applies \#2 it realizes it does not need to perform the comparison in every iteration so it could extract it outside the loop, resulting in
+When it applies \#2, it realizes it does not need to perform the comparison in every iteration so it could extract it outside the loop, resulting in
 \begin{lstlisting}[caption=Naive benchmark after evaluating loop invariants]
 // begin setup
 var a = Math.round(Math.random()*100);
@@ -75,7 +75,7 @@ console.timeEnd('between');
 //end benchmark
 \end{lstlisting}
 
-Alternatively it could notice that the variable \code{j} is not being used so it could just throw the line away. In any case, we would just be measuring how long it takes for JavaScript to execute the loop, which is not what we originally intended to do. To verify that is not the case the tool IRHydra\cite{ir-hydra} can be used , which \textit{can display intermediate representations used by V8}. As shown in the following figure, v8 inline the function (the blue chevron marks that) but the loop invariant was not detected and optimized:
+Alternatively it could notice that the variable \code{j} is not being used so it could just throw the line away. In any case, we would just be measuring how long it takes for JavaScript to execute the loop, which is not what we originally intended to do. To verify that is not the case the tool IRHydra\cite{ir-hydra} can be used , which \textit{can display intermediate representations used by V8}. As shown in the following figure, v8 inlined the function (the blue chevron marks that) but the loop invariant was not detected and optimized:
 \begin{figure}[h!]
   \centering
   \includegraphics[width=1\textwidth]{naive_benchmark_ir_hydra}
