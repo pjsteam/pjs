@@ -1,5 +1,5 @@
 \section{The importance of function inlining}
-One of the things found while comparing the performance of the parallel and non-parallel implementations of \code{map} is that our parallel implementation performed a lot worse than what the one expected when considering the size of the \ttarray{} and the \code{mapper} function.
+One of the things found while comparing the performance of the parallel and non-parallel implementations of \code{map} is that our parallel implementation performed a lot worse than expected when considering the size of the \ttarray{} and the \code{mapper} function.
 
 \subsection{The scenario}
 An image tranformation to apply a sepia tone effect to pictures was used for the comparison. The core linear implementation was:
@@ -64,7 +64,7 @@ pjs(new Uint32Array(canvasData.data.buffer)).map(function(pixel){
 Taking the experience from previous experiments into account we considered that the performance of the two implementations with a source \code{Uint32Array} of about \(8E7\) (eight million) elements should be similar, even favoring the parallel one. The initial measurements showed that the linear implementation fared approximately four times better than the parallel one.
 
 \subsection{The hypothesis}
-As the two code samples were similar our hypothesis was that for some reason some v8 optimizations were not taking place. It was a definite possibility considering that the parallel implementation depends on the \tfunction constructor to create \tfunction objects in the Web Workers. Specifically we believed that the internal functions \code{noise}, \code{clamp} and \code{colorDistance} were not being inlined. Inlining could be the cause of both benefits\cite{inline-pro} and drawbacks\cite{inline-cons} but the belief was that performance was being affected because of lack of it
+As the two code samples were similar our hypothesis was that for some reason some v8 optimizations were not taking place. It was a definite possibility considering that the parallel implementation depends on the \tfunction{} constructor to create \tfunction{} objects in the Web Workers. Specifically we believed that the internal functions \code{noise}, \code{clamp} and \code{colorDistance} were not being inlined. Inlining could be the cause of both benefits\cite{inline-pro} and drawbacks\cite{inline-cons} but the belief was that performance was being affected because of lack of it
 
 Using IR Hydra it was easy to verify the hypothesis, as Figures \ref{fig:serial-clamp} through \ref{fig:parallel-noise} show.
 

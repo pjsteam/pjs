@@ -1,6 +1,7 @@
 \section{Code sharing}
+The library must handle the distribution of the code between the different workers when an operation is executed. This is a challenging problem with many possible alternatives: Cloud Haskell \cite{cloud-haskell} for example, requires a customized version of the Glasgow Haskell Compiler (GHC) to serialize closures and their captured variables as a code pointer and an environment, operating under the assumption that the same code is executed in all nodes. A proposal for using Scheme for distributed programming \cite{distributed-scheme} uses a custom serializable data structure to represent procedures, and macros in order to capture a closure's captured variables and serialize their values. It also assumes that all nodes are executing the same program since serialized functions store pointers to parts of source code files.
 
-One of the aspects that must be handled by the library is the distribution of the code between the different workers when a skeleton is created.
+In our case, modifying the runtime is not a viable alternative since we want our library to be usable by anyone creating applications for major browser versions.
 
 A naive approach would be trying to send the function to be executed directly to the worker. The following code fragment attempts to do so:
 \lstinputlisting[caption=Trying to send a function to a worker, escapechar=]{../../spikes/2.2.1/test-functionSerialization/funcSerialization.js}
@@ -8,10 +9,10 @@ A naive approach would be trying to send the function to be executed directly to
 When executed in the Google Chrome console the error shown in Figure~\ref{fig:func-serialization} is thrown.
 \img{Error when trying to send a \code{Function} object to a Web Worker}{../../spikes/2.2.1/test-functionSerialization/funcSerialization.png}{fig:func-serialization}
 
-That is an expected error as explained in section 9.5.3 of the HTML standard \cite{html-whatwg}, the value being sent must support the structured clone algorithm and a \code{Function} does not meet that requirement as explained in section 2.7.5 of that same standard. It could be assumed that this is because of the challenges of serializing function closures\cite{cloud-haskell}\cite{distributed-scheme}.
+That error is expected. As explained in section 9.5.3 of the HTML standard \cite{html-whatwg}, the value being sent must support the structured clone algorithm and a \code{Function} does not meet that requirement as explained in section 2.7.5 of that same standard. It could be assumed that this is because of the challenges of serializing functions.
 
 \subsection{Serializing functions}
-Considering the fact that \tfunction{} objects cannot be directly transferred a different serialization approach is to be considered. Since function closures will not be transferrable a possible alternative is to:
+Considering the fact that \tfunction{} objects cannot be directly transferred, a different serialization approach is to be considered. Since function closures will not be transferrable a possible alternative is to:
 \begin{enumerate}
   \item Serialize the function to a \tstring{}.
   \item Transfer the \tstring{} to the worker.
@@ -21,10 +22,10 @@ Considering the fact that \tfunction{} objects cannot be directly transferred a 
 \note{An approach to provide contextual data to worker functions is explored in \todo{link to section}.}
 
 \subsubsection{\tstring{} serialization benchmarks}
-One possible way of passing serialized \tfunction{} to workers would be to encode them as binary and transfer them as an \tabuffer{}. To encode the strings there are two possible approaches:
+One possible way of passing serialized \tfunction{}s to workers would be to encode them as binary and transfer them as an \tabuffer{}. To encode the strings there are two possible approaches:
 \begin{itemize}
-  \item Using the Encoding API\cite{encoding-api}
-  \item Implementing non native encoding/decoding functions
+  \item Use the Encoding API\cite{encoding-api}
+  \item Implement non native encoding/decoding functions
 \end{itemize}
 
 We created a benchmark to understand the difference between each approach:
@@ -46,7 +47,7 @@ We created a benchmark using two functions whose string representation has diffe
 \begin{enumerate}
   \item Encoding the \tstring{} into an \tabuffer{}, sending it as a \code{Tranferable} and decoding it on the Web Worker.
   \item Sending the string directly
-  \item Using a \code{Blob} to store the stream and retrieving that in the Worker.
+  \item Using a \code{Blob} to store the stream and retrieving it in the Worker.
 \end{enumerate}
 
 The benchmark with the short function was the following one:
