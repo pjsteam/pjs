@@ -44,11 +44,9 @@ var processSepia = function (binaryData, l) {
 
         var canvasData = tempContext.getImageData(0, 0, canvas.width, canvas.height);
         var start = new Date();
-        console.time('serial');
         var binaryData = canvasData.data;
         var diff = new Date() - start;
         processSepia(binaryData, len);
-        console.timeEnd('serial');
         var diff = new Date() - start;
         tempContext.putImageData(canvasData, 0, 0);
         log.innerHTML = "Process done in " + diff + " ms (no web workers)";

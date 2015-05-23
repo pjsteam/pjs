@@ -1,6 +1,6 @@
 'use strict';
 
-describe('promises tests', function () {
+describe.only('promises tests', function () {
   var pjs;
   var errors = require('../src/errors');
   var chromeHelper = require('./chrome_version_helper');
@@ -100,21 +100,39 @@ describe('promises tests', function () {
         var sourceArray = new TypedArray(normalSourceArray);
         var mapper = function (e, ctx) { return ctx.aux(e); };
         var promise = pjs(sourceArray).map(mapper).seq();
-        return promise.should.be.rejected;
+        
+        return promise.then(function () {
+          throw new Error('Should have failed');
+        }).catch(function (err) {
+          expect(err.name).to.equal('WorkerError');
+          expect(err.message).to.match(/(Uncaught TypeError: undefined is not a function)|(TypeError: ctx.aux is not a function)/);
+        });
       });
 
       it('should fail promise with invalid predicate function', function () {
         var sourceArray = new TypedArray(normalSourceArray);
         var predicate = function (e, ctx) { return ctx.aux(e) & 0x2 === 0x2; };
         var promise = pjs(sourceArray).filter(predicate).seq();
-        return promise.should.be.rejected;
+        
+        return promise.then(function () {
+          throw new Error('Should have failed');
+        }).catch(function (err) {
+          expect(err.name).to.equal('WorkerError');
+          expect(err.message).to.match(/(Uncaught TypeError: undefined is not a function)|(TypeError: ctx.aux is not a function)/);
+        });
       });
 
       it('should fail promise with invalid reducer function', function () {
         var sourceArray = new TypedArray(normalSourceArray);
         var reducer = function (p, e, ctx) { return p * ctx.aux(e); };
         var promise = pjs(sourceArray).reduce(reducer, 1, 1).seq();
-        return promise.should.be.rejected;
+
+        return promise.then(function () {
+          throw new Error('Should have failed');
+        }).catch(function (err) {
+          expect(err.name).to.equal('WorkerError');
+          expect(err.message).to.match(/(Uncaught TypeError: undefined is not a function)|(TypeError: ctx.aux is not a function)/);
+        });
       });
     }, true);
   });

@@ -33,11 +33,9 @@ gulp.task('build-browserify', function() {
     .pipe(browserified())
     .pipe(rename(projectName + '.js'))
     .pipe(gulp.dest('./dist/'))
-    .pipe(gulp.dest('./examples/sapiaPicture'))
     .pipe(uglify())
     .pipe(rename(projectName + '.min.js'))
     .pipe(gulp.dest('./dist'))
-    .pipe(gulp.dest('./examples/sapiaPicture'));
 });
 
 gulp.task('build-standalone', function() {
@@ -45,11 +43,9 @@ gulp.task('build-standalone', function() {
     .pipe(browserified(true))
     .pipe(rename(projectName + '-standalone.js'))
     .pipe(gulp.dest('./dist/'))
-    .pipe(gulp.dest('./examples/sapiaPicture'))
     .pipe(uglify())
     .pipe(rename(projectName + '-standalone.min.js'))
     .pipe(gulp.dest('./dist'))
-    .pipe(gulp.dest('./examples/sapiaPicture'));
 });
 
 /**

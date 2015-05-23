@@ -120,7 +120,7 @@ utils.isSharedArray = function (obj) {
   if (!obj) {
     return false;
   }
-  return utils.getTypedArrayType(obj).indexOf('Shared') > -1;
+  return utils.getTypedArrayType(obj).indexOf('Shared') === 0;
 };
 
 utils.getTypedArrayConstructorType = function(array) {
