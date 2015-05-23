@@ -1,4 +1,5 @@
 // http://jsperf.com/pjs-map-vs-serial/8
+// http://jsperf.com/pjs-map-vs-serial/9   < Shared
 
 // HTML preparation
 <script src="http://rawgit.com/pjsteam/pjs/v1.0.0-beta/dist/p-j-s.min.js"></script>
