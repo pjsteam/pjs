@@ -1,4 +1,4 @@
-// http://jsperf.com/additional-clonningdata-comparison/2
+// http://jsperf.com/additional-clonningdata-comparison/3
 
 // HTML setup
 <script>

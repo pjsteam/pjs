@@ -1,4 +1,4 @@
-// http://jsperf.com/pjs-serialization-long/2
+// http://jsperf.com/pjs-serialization-long/3
 
 // HTML setup
 <script>
