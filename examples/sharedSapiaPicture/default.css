@@ -1,0 +1,43 @@
+﻿html, body {
+    height: 100%;
+    width: 100%;
+    margin: 0;
+    padding: 0;
+}
+body {
+    min-height: 100%;
+}
+
+#root {
+    height: 100%;
+    width: 100%;
+}
+
+#sourceDiv {
+    position: absolute;
+    left: 10px;
+    top: 50px;
+}
+
+#targetDiv {
+    position: absolute;
+    right: 10px;
+    top: 50px;
+}
+
+#source {
+}
+
+#target {
+}
+
+
+#log {
+    position: absolute;
+    width: 100%;
+    text-shadow: 2px 2px 1px black;
+    font-size: 28px;
+    color: white;
+    text-align: center;
+    margin-top: 300px;
+}
