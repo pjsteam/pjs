@@ -4,7 +4,7 @@ Each time \code{seq} is invoked on a chain, all callback functions related to \c
 
 Each Web Worker has a cache to avoid using different instances of the same function (as explained in Section~\ref{sec:func-caching}). Nevertheless, if the same function is going to be used multiple times in a program as the callback for steps, it might make sense to send them to the Web Workers once and then simply make use of them.
 
-This can be achived by taking advantage of the global context object (detailed in Section~\ref{sec:context}).
+This can be achieved by taking advantage of the global context object (detailed in Section~\ref{sec:context}).
 
 The first thing that needs to be done is to call \code{pjs.updateContext} by providing a \tfunction{} as a property of the context parameter. An example is shown in the following code snippet:
 \begin{lstlisting}[caption=Sending function in global context]
@@ -28,4 +28,12 @@ var promise = pjs.updateContext({
 \subsection{Benchmark}
 We created a benchmark to analyze the improvement obtained by just sending a \tstring{} instead of a \tfunction{} instance.
 
-\note{The improvement will vary if the difference in character length between the key and the function's code does.}
+The following listing shows the code for the benchmark:
+\bmcode{http://jsperf.com/global-ctx-inlined-func/3}{../../spikes/6.2/inlinedVsGlobalInlined/jspBenchmark.js}
+
+The results for the benchmark are displayed in Figure~\ref{fig:func-key-vs-instance}.
+\img{Comparing sending function key in global context against function instance}{../../spikes/6.2/inlinedVsGlobalInlined/result}{fig:func-key-vs-instance}
+
+\note{The improvement shown in Figure~\ref{fig:func-key-vs-instance} will vary if the difference in character length between the key and the function's code does.}
+
+\pagebreak
