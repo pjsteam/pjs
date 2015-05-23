@@ -40,13 +40,13 @@ var run;
 
       tempContext.drawImage(source, 0, 0, canvas.width, canvas.height);
       var canvasData = tempContext.getImageData(0, 0, canvas.width, canvas.height);
-      var temp = new SharedUint8ClampedArray(canvasData.data.length);
+      var temp = new Uint8ClampedArray(canvasData.data.length);
       temp.set(canvasData.data);
-      var copyData = new SharedUint32Array(temp.buffer);
+      var copyData = new Uint32Array(temp.buffer);
       var start = new Date();
       pjs(copyData).map('f').seq(function(err, result) {
         var diff = new Date() - start;
-        canvasData.data.set(new SharedUint8ClampedArray(result.buffer));
+        canvasData.data.set(new Uint8ClampedArray(result.buffer));
         tempContext.putImageData(canvasData, 0, 0);
         log.innerHTML = "Process done in " + diff + " ms";
         runButton.style.visibility = "visible";

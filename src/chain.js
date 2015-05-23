@@ -139,12 +139,12 @@ Chain.prototype.__verifyPreviousOperation = function () {
 
 Chain.prototype.__shouldMergeSeparatedBuffers = function (typedArrayType, operations) {
   if (typedArrayType.indexOf('Shared') === 0) {
-    return this.__arrayReducerOperationWasApplied(operations);
+    return this.__arrayChangingSizeOperationWasApplied(operations);
   }
   return true;
 };
 
-Chain.prototype.__arrayReducerOperationWasApplied = function (operations) {
+Chain.prototype.__arrayChangingSizeOperationWasApplied = function (operations) {
   var i;
   var length = operations.length;
   for (i = 0; i < length; i += 1) {
