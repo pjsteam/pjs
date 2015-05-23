@@ -891,24 +891,6 @@ var immutableExtend = require('xtend/immutable');
 var contextUtils = require('./context');
 var chainContext = require('./chain_context');
 
-function getMapFactory(){
-  if (typeof Map === 'function'){
-    return function(){
-      /* jshint ignore:start */
-      return new Map();
-      /* jshint ignore:end */
-    };
-  } else {
-    return function(){
-      return Object.create(null);
-    };
-  }
-}
-
-var mapFactory = getMapFactory();
-
-var functionCache = mapFactory();
-
 var globalContext = {};
 
 var operations = {
@@ -948,14 +930,7 @@ function getFunction(operation){
 
   var args = operation.args;
   var code = operation.code;
-  var cacheKey = args.join(',') + code;
-  var f = functionCache[cacheKey];
-  if (!f){
-    f = utils.createFunction(args, code);
-    functionCache[cacheKey] = f;
-  }
-
-  return f;
+  return utils.createFunction(args, code);
 }
 
 module.exports = function(event){
@@ -1154,7 +1129,7 @@ WrappedTypedArray.prototype.__operation = function(name, code, localContext, see
 };
 
 module.exports = WrappedTypedArray;
-},{"./chain":4,"./chain_context":5,"./operation_names":10,"./operation_packager":11,"./utils":15}],"p-j-s":[function(require,module,exports){
+},{"./chain":4,"./chain_context":5,"./operation_names":10,"./operation_packager":11,"./utils":15}],"p-j-s-no-cache":[function(require,module,exports){
 var errors = require('./errors');
 var utils = require('./utils');
 var workers = require('./workers');
