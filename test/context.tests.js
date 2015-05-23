@@ -1,5 +1,3 @@
-'use strict';
-
 describe('context tests', function(){
   var context = require('../src/context');
 

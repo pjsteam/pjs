@@ -4,6 +4,7 @@ describe('reduce tests', function(){
 
   var pjs;
   var utils = require('../src/utils.js');
+  var supportedArrays = require('./supported_array_types_helper')();
 
   before(function () {
     pjs = require('../src/index.js');
@@ -16,10 +17,7 @@ describe('reduce tests', function(){
     }
   });
 
-  [Uint8Array, Int8Array, Uint8ClampedArray,
-    Uint16Array, Int16Array,
-    Uint32Array, Int32Array,
-    Float32Array, Float64Array].forEach(function (TypedArray) {
+  supportedArrays.forEach(function (TypedArray) {
       describe(utils.format('tests for {0}', utils.getTypedArrayConstructorType(TypedArray)), function(){
 
         var reducer = function (p, e) { return p + e; };

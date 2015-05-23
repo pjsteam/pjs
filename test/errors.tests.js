@@ -23,7 +23,7 @@ chromeHelper(39, function () {
         throw new Error('Failed');
       }).seq(function(err){
         expect(err.name).to.equal('WorkerError');
-        expect(err.message).to.equal('Uncaught Error: Failed');
+        expect(err.message).to.match(/(Uncaught Error: Failed)|(Error: Failed)/);
         done();
       });
     });
@@ -33,7 +33,7 @@ chromeHelper(39, function () {
         return element.inexistent();
       }).seq(function(err){
         expect(err.name).to.equal('WorkerError');
-        expect(err.message).to.equal('Uncaught TypeError: undefined is not a function');
+        expect(err.message).to.match(/(Uncaught TypeError: undefined is not a function)|(TypeError: element.inexistent is not a function)/);
         done();
       });
     });
@@ -43,7 +43,7 @@ chromeHelper(39, function () {
         return element.inexistent();
       }).seq(function(err){
         expect(err.name).to.equal('WorkerError');
-        expect(err.message).to.equal('Uncaught TypeError: undefined is not a function');
+        expect(err.message).to.match(/(Uncaught TypeError: undefined is not a function)|(TypeError: element.inexistent is not a function)/);
 
         pjs(new Uint32Array([1,2,3,4])).map(function(e){
           return e * 2;

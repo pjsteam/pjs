@@ -11,28 +11,24 @@ chainContext.deserializeChainContext = function (chainContext) {
   return JSON.parse(chainContext);
 };
 
-chainContext.extendChainContext = function (localContext, chainContext) {
-  var saneLocalContext = contextUtils.serializeFunctions(localContext);
-  if (!chainContext) {
-    var ctx = {
-      currentIndex: 0,
-    };
-    ctx[0] = saneLocalContext;
-    return ctx;
+chainContext.extendChainContext = function (currentIndex, localContext, chainContext) {
+  if (!localContext && !chainContext) {
+    return undefined;
   }
-
-  var nextIndex = chainContext.currentIndex + 1;
-  var nextContext = {
-    currentIndex: nextIndex,
-  };
-  nextContext[nextIndex] = saneLocalContext;
+  if (!localContext) {
+    return extend(chainContext, undefined);
+  }
+  var nextContext = {};
+  nextContext[currentIndex] = contextUtils.serializeFunctions(localContext);
+  if (!chainContext) {
+    return nextContext;
+  }
   return extend(chainContext, nextContext);
 };
 
-chainContext.currentContextFromChainContext = function (chainContext) {
-  var currentContext = chainContext[chainContext.currentIndex];
-  if (currentContext) {
-    return contextUtils.deserializeFunctions(currentContext);
+chainContext.contextFromChainContext = function (currentIndex, chainContext) {
+  if (chainContext && chainContext[currentIndex]) {
+    return contextUtils.deserializeFunctions(chainContext[currentIndex]);
   }
   return undefined;
 };

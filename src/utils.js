@@ -18,6 +18,64 @@ utils.isFunction = function (object) { //http://jsperf.com/alternative-isfunctio
   return !!(object && object.constructor && object.call && object.apply);
 };
 
+//TODO: (mati) change method's name. It does nt dcuplicate anymore
+utils.duplicateTypedArray = function (array) {
+  var type = this.getTypedArrayType(array);
+  return this.createTypedArray(type, array.length);
+};
+
+// param can be either length (number) or buffer
+utils.createTypedArray = function(type, param){
+  switch(type){
+    case 'SharedUint8Array':
+      /*global SharedUint8Array */
+      return new SharedUint8Array(param);
+    case 'SharedUint8ClampedArray':
+      /*global SharedUint8ClampedArray */
+      return new SharedUint8ClampedArray(param);
+    case 'SharedUint16Array':
+      /*global SharedUint16Array */
+      return new SharedUint16Array(param);
+    case 'SharedUint32Array':
+      /*global SharedUint32Array */
+      return new SharedUint32Array(param);
+    case 'SharedInt8Array':
+      /*global SharedInt8Array */
+      return new SharedInt8Array(param);
+    case 'SharedInt16Array':
+      /*global SharedInt16Array */
+      return new SharedInt16Array(param);
+    case 'SharedInt32Array':
+      /*global SharedInt32Array */
+      return new SharedInt32Array(param);
+    case 'SharedFloat32Array':
+      /*global SharedFloat32Array */
+      return new SharedFloat32Array(param);
+    case 'SharedFloat64Array':
+      /*global SharedFloat64Array */
+      return new SharedFloat64Array(param);
+    case 'Uint8Array':
+      return new Uint8Array(param);
+    case 'Uint8ClampedArray':
+      return new Uint8ClampedArray(param);
+    case 'Uint16Array':
+      return new Uint16Array(param);
+    case 'Uint32Array':
+      return new Uint32Array(param);
+    case 'Int8Array':
+      return new Int8Array(param);
+    case 'Int16Array':
+      return new Int16Array(param);
+    case 'Int32Array':
+      return new Int32Array(param);
+    case 'Float32Array':
+      return new Float32Array(param);
+    case 'Float64Array':
+      return new Float64Array(param);
+  }
+};
+
+
 utils.getter = function (obj, name, value) {
   Object.defineProperty(obj, name, {
     enumerable: true,
@@ -34,6 +92,15 @@ utils.isTypedArray = function (obj) {
   }
   var type = utils.getTypedArrayType(obj);
   switch(type){
+    case 'SharedUint8Array':
+    case 'SharedUint8ClampedArray':
+    case 'SharedUint16Array':
+    case 'SharedUint32Array':
+    case 'SharedInt8Array':
+    case 'SharedInt16Array':
+    case 'SharedInt32Array':
+    case 'SharedFloat32Array':
+    case 'SharedFloat64Array':
     case 'Uint8Array':
     case 'Int8Array':
     case 'Uint8ClampedArray':
@@ -47,6 +114,13 @@ utils.isTypedArray = function (obj) {
     default:
       return false;
   }
+};
+
+utils.isSharedArray = function (obj) {
+  if (!obj) {
+    return false;
+  }
+  return utils.getTypedArrayType(obj).indexOf('Shared') === 0;
 };
 
 utils.getTypedArrayConstructorType = function(array) {

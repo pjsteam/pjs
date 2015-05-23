@@ -5,7 +5,7 @@ var gulp = require('gulp'),
     rename = require('gulp-rename'),
     jshint = require('gulp-jshint'),
     transform = require('vinyl-transform'),
-    projectName = require('./package.json').name
+    projectName = require('./package.json').name,
     sourceFile = ['./src/index.js'];
 
 var browserified = function(standalone) {

@@ -6,6 +6,7 @@ describe('local context tests', function(){
   var chromeHelper = require('./chrome_version_helper');
   var utils = require('../src/utils.js');
   var normalSourceArray = [1,2,3,5,13,16,32,63,64,129,255,500,1001,1023,1024];
+  var supportedArrays = require('./supported_array_types_helper')();
 
   before(function () {
     pjs = require('../src/index.js');
@@ -20,41 +21,31 @@ describe('local context tests', function(){
 
   describe('create context tests', function(){
 
-    [Uint8Array, Int8Array, Uint8ClampedArray,
-    Uint16Array, Int16Array,
-    Uint32Array, Int32Array,
-    Float32Array, Float64Array].forEach(function (TypedArray) {
+    supportedArrays.forEach(function (TypedArray) {
       describe(utils.format('tests for {0}', utils.getTypedArrayConstructorType(TypedArray)), function(){
 
         it('should initialize map chain item without context', function () {
           var sourceArray = new TypedArray(normalSourceArray);
           var map = pjs(sourceArray).map(function (e) { return e + 1; });
-          expect(map.chainContext).to.not.be.undefined;
-          expect(map.chainContext.currentIndex).to.equal(0);
-          expect(map.__localContext()).to.be.undefined;
+          expect(map.chainContext).to.be.undefined;
         });
 
         it('should initialize filter chain item without context', function () {
           var sourceArray = new TypedArray(normalSourceArray);
           var filter = pjs(sourceArray).filter(function (e) { return e % 2 === 0; });
-          expect(filter.chainContext).to.not.be.undefined;
-          expect(filter.chainContext.currentIndex).to.equal(0);
-          expect(filter.__localContext()).to.be.undefined;
+          expect(filter.chainContext).to.be.undefined;
         });
 
         it('should initialize reduce chain item without context', function () {
           var sourceArray = new TypedArray(normalSourceArray);
           var reduce = pjs(sourceArray).reduce(function (p, e) { return p + e; }, 0, 0);
-          expect(reduce.chainContext).to.not.be.undefined;
-          expect(reduce.chainContext.currentIndex).to.equal(0);
-          expect(reduce.__localContext()).to.be.undefined;
+          expect(reduce.chainContext).to.be.undefined;
         });
 
         it('should initialize map chain item with context', function () {
           var sourceArray = new TypedArray(normalSourceArray);
           var map = pjs(sourceArray).map(function (e, ctx) { return e + ctx.opt; }, {opt: 1});
           expect(map.chainContext).to.not.be.undefined;
-          expect(map.chainContext.currentIndex).to.equal(0);
           var localContext = map.__localContext();
           expect(localContext).to.not.be.undefined;
           expect(localContext.opt).to.equal(1);
@@ -64,7 +55,6 @@ describe('local context tests', function(){
           var sourceArray = new TypedArray(normalSourceArray);
           var filter = pjs(sourceArray).filter(function (e, ctx) { return e % ctx.opt === 0; }, {opt: 2});
           expect(filter.chainContext).to.not.be.undefined;
-          expect(filter.chainContext.currentIndex).to.equal(0);
           var localContext = filter.__localContext();
           expect(localContext).to.not.be.undefined;
           expect(localContext.opt).to.equal(2);
@@ -74,7 +64,6 @@ describe('local context tests', function(){
           var sourceArray = new TypedArray(normalSourceArray);
           var reduce = pjs(sourceArray).reduce(function (p, e, ctx) { return p + e + ctx.opt; }, 0, 0, { opt: 5});
           expect(reduce.chainContext).to.not.be.undefined;
-          expect(reduce.chainContext.currentIndex).to.equal(0);
           var localContext = reduce.__localContext();
           expect(localContext).to.not.be.undefined;
           expect(localContext.opt).to.equal(5);
@@ -141,10 +130,7 @@ describe('local context tests', function(){
   });
 
   describe('use context tests', function(){
-    [Uint8Array, Int8Array, Uint8ClampedArray,
-    Uint16Array, Int16Array,
-    Uint32Array, Int32Array,
-    Float32Array, Float64Array].forEach(function (TypedArray) {
+    supportedArrays.forEach(function (TypedArray) {
       describe(utils.format('tests for {0}', utils.getTypedArrayConstructorType(TypedArray)), function(){
 
         it('should return mapped elements in callback using context', function(done){
@@ -358,7 +344,7 @@ describe('local context tests', function(){
               };
               pjs(sourceArray).map(mapper1, ctx1).map(mapper2, ctx2).seq(function (err, result){
                 expect(err.name).to.equal('WorkerError');
-                expect(err.message).to.equal('Uncaught TypeError: undefined is not a function');
+                expect(err.message).to.match(/(Uncaught TypeError: undefined is not a function)|(TypeError: ctx.aux is not a function)/);
                 done();
               });
             });
@@ -376,7 +362,7 @@ describe('local context tests', function(){
               };
               pjs(sourceArray).map(mapper1, ctx1).map(mapper2, ctx2).seq(function (err, result){
                 expect(err.name).to.equal('WorkerError');
-                expect(err.message).to.equal('Uncaught TypeError: Cannot read property \'r\' of undefined');
+                expect(err.message).to.match(/(Uncaught TypeError: Cannot read property \'r\' of undefined)|(TypeError: ctx.mask is undefined)/);
                 done();
               });
             });

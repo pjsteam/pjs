@@ -43,10 +43,8 @@ describe('array partition', function(){
 
   it ('should create patitions of the same TypedArray type when calling Partitioner.prototype.partition', function () {
     var partitioner = new Partitioner(4);
-    [Uint8Array, Int8Array, Uint8ClampedArray,
-    Uint16Array, Int16Array,
-    Uint32Array, Int32Array,
-    Float32Array, Float64Array].forEach(function (TypedArray) {
+    var supportedArrays = require('./supported_array_types_helper')();
+    supportedArrays.forEach(function (TypedArray) {
       var arrays = partitioner.partition(new TypedArray([1, 2, 3, 4]));
       arrays.forEach(function (p) {
         expect(p instanceof TypedArray).to.equal(true);
