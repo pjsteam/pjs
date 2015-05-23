@@ -77,7 +77,7 @@ In 2010, Web Workers were made part of the web standard. Web Workers allow the c
 However, a spec is being developed for version 7 of the EcmaScript standard that changes this, by introducing shared memory through \verb+SharedArrayBuffer+s \cite{sab}. In essence, the proposal allows the same memory to be shared across multiple Web Workers, and also aims to provide the necessary atomic/lock constructs to deal with shared memory. In the particular case of embarrassingly parallel computations (such as map, filter and reduce operations on an array), it is simple to take advantage of the speed benefits of shared memory without incurring in any overhead due to synchronization.
 
 \section{Library Overview}\label{sec:overview}
-JavaScript developers are familiar with the concept of map, filter and reduce skeletons as language constructs. In JavaScript, \verb+Array+s have \verb+map+, \verb+filter+, and \verb+reduce+ functions and version 6 of the EcmaScript adds those same methods to \verb+TypedArray+s \cite{es6-ta}. For example, to multiply all the elements of an \verb+Array+ by two:
+JavaScript developers are familiar with the concept of map, filter and reduce skeletons as language constructs. In JavaScript, \verb+Array+s have \verb+map+, \verb+filter+, and \verb+reduce+ functions and version 6 of the EcmaScript standard adds those same methods to \verb+TypedArray+s \cite{es6-ta}. For example, to multiply all the elements of an \verb+Array+ by two:
 \medskip
 
 \noindent
@@ -115,7 +115,7 @@ pjs(xs).map(function(e){
 
 The call to \verb+pjs.init+ initializes the library and the amount of workers to be used for processing (a worker pool is created with them). In browsers that have an API to detect the amount of available cores in a machine, the \verb+maxWorkers+ value is limited by the amount of cores.
 
-The API provided by p-j-s \cite{pjs-api} is very similar to the synchronous one that is provided by the language. The asynchronous nature of the operation is reflected by the fact that the call to \verb+seq+ returns a \verb+Promise+ (alternatively a callback could be passed as a parameter to it).
+The API provided by p-j-s \cite{pjs-api} is very similar to the synchronous one that is provided by the language. The asynchronous nature of the operation is reflected by the fact that the call to \verb+seq+ returns a \verb+Promise+ \cite{promise} (alternatively a callback could be passed as a parameter to it).
 
 It is possible to chain multiple operations before calling \verb+seq+ to avoid passing data back and forth between the Web Workers and the UI thread. Before \verb+seq+ is invoked, an operation is a chain of one or more steps. From the same main chain, multiple chains could be created:
 \medskip
