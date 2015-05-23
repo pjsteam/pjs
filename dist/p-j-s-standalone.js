@@ -138,7 +138,7 @@ var Chain = function (options) {
   this.packager = new JobPackager(options.parts, options.source);
   this.source = options.source;
   this.parts = options.parts;
-  this.operation = options.operation; //todo: (mati) por ahora lo dejo para finalizar el reduce correctamente
+  this.operation = options.operation;
   this.globalContext = options.globalContext;
   this.chainContext = options.chainContext;
   var previousOperations = options.previousOperations || [];
@@ -207,7 +207,7 @@ Chain.prototype.seq = function (done) {
     var packs = self.packager.generatePackages(self.operations, self.chainContext);
     workers.sendPacks(packs, function(err, results){
       if (err) { if (done) { done(err); } else { reject(err); } return; }
-      var m;
+      var finalResult;
       var type = packs[0].elementsType;
       if (self.__shouldMergeSeparatedBuffers(type, self.operations)) {
         var partial_results = results.map(function(result){
@@ -216,11 +216,11 @@ Chain.prototype.seq = function (done) {
           var temp = utils.createTypedArray(type, result.value);
           return temp.subarray(start, end);
         });
-        m = merge_typed_arrays(partial_results);
+        finalResult = merge_typed_arrays(partial_results);
       } else {
-        m = utils.createTypedArray(type, results[0].value);
+        finalResult = utils.createTypedArray(type, results[0].value);
       }
-      return finisher[self.operation.name](self, m, done, resolve);
+      return finisher[self.operation.name](self, finalResult, done, resolve);
     });
   });
 };
@@ -232,13 +232,13 @@ Chain.prototype.__verifyPreviousOperation = function () {
 };
 
 Chain.prototype.__shouldMergeSeparatedBuffers = function (typedArrayType, operations) {
-  if (typedArrayType.indexOf('Shared') > -1) {
-    return this.__arrayReducerOperationWasApplied(operations);
+  if (typedArrayType.indexOf('Shared') === 0) {
+    return this.__arrayChangingSizeOperationWasApplied(operations);
   }
   return true;
 };
 
-Chain.prototype.__arrayReducerOperationWasApplied = function (operations) {
+Chain.prototype.__arrayChangingSizeOperationWasApplied = function (operations) {
   var i;
   var length = operations.length;
   for (i = 0; i < length; i += 1) {
@@ -880,7 +880,7 @@ utils.isSharedArray = function (obj) {
   if (!obj) {
     return false;
   }
-  return utils.getTypedArrayType(obj).indexOf('Shared') > -1;
+  return utils.getTypedArrayType(obj).indexOf('Shared') === 0;
 };
 
 utils.getTypedArrayConstructorType = function(array) {
