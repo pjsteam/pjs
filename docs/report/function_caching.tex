@@ -1,4 +1,4 @@
-\section{Function caching}
+\section{Function caching}\label{sec:func-caching}
 
 Before comparing the sequential implementation of \code{map} against the parallel one we believed that the cost of dynamically instantiating a \tfunction{} from a \tstring{} in the Web Workers could be avoided by introducing a cache for cases where the worker has already seen the code for a particular function.
 
