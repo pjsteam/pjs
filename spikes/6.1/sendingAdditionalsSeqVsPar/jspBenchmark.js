@@ -1,4 +1,4 @@
-// http://jsperf.com/additional-sendingdata-comparison/3
+// http://jsperf.com/additional-sendingdata-comparison/2
 
 // HTML setup
 <script>
