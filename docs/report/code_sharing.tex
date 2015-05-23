@@ -1,4 +1,4 @@
-\section{Code sharing}
+\section{Code sharing}\label{sec:code-sharing}
 The library must handle the distribution of the code between the different workers when an operation is executed. This is a challenging problem with many possible alternatives: Cloud Haskell \cite{cloud-haskell} for example, requires a customized version of the Glasgow Haskell Compiler (GHC) to serialize closures and their captured variables as a code pointer and an environment, operating under the assumption that the same code is executed in all nodes. A proposal for using Scheme for distributed programming \cite{distributed-scheme} uses a custom serializable data structure to represent procedures, and macros in order to capture a closure's captured variables and serialize their values. It also assumes that all nodes are executing the same program since serialized functions store pointers to parts of source code files.
 
 In our case, modifying the runtime is not a viable alternative since we want our library to be usable by anyone creating applications for major browser versions.
