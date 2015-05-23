@@ -1,8 +1,8 @@
 \section{Array sharing}
 
-As explained in section~\ref{sec:serialization-and-transference} of this document transferring \ttarray{} objects to and from workers requires the use of \code{Transferable}s to achieve acceptable performance. Since our library will receive \ttarray{} objects to be partiotioned and handled between multiple workers, it is important that it takes as little time as possible for the partitioning of the arrays.
+As explained in section~\ref{sec:serialization-and-transference} of this document, transferring \ttarray{} objects to and from workers requires the use of \code{Transferable}s to achieve acceptable performance. Since our library will receive \ttarray{} objects to be partitioned and handed over to multiple workers, it is important that it takes as little time as possible for the partitioning of the arrays.\footnote{This does not apply to \tstarray{}s as those can be transferred without being partitioned}
 
-If the library is configured to use \(N\) workers then the original data in the \ttarray{} will copied into \(N\) smaller \ttarray{}s. For ideal performance it would be nice to be able to pass a pointer into the array and an amount of elements to process, but since there's no shared memory and element ownership is tranferred to the Web Workers the elements must be copied to the sub-arrays.
+If the library is configured to use \(N\) workers then the original data in the \ttarray{} will copied into \(N\) smaller \ttarray{}s. For ideal performance it would be nice to be able to pass a pointer into the array and an amount of elements to process, but \ttarray{}s do not support shared memory and element ownership is tranferred to the Web Workers, the elements must be copied to the sub-arrays.
 
 \subsection{Copying \ttarray{}s}
 \label{subsec:copying-typed-arrays}
@@ -31,8 +31,8 @@ The results for it are displayed in Figure~\ref{fig:typed-array-split}.
 \img{Comparing \ttarray{} split approaches}{../../spikes/2.3.1/splitComparison}{fig:typed-array-split}
 
 \subsubsection{Conclusion}
-The benchmark shows that there are three very similar alternatives to split a \ttarray{}. We are going to use \textit{Buffer subarray} as it yields better performance in a newer version of Chrome. The implementation of the slice function could look something like this:
-\begin{lstlisting}[caption=Function to benchmark]
+The benchmark shows that there are three very similar alternatives to partition a \ttarray{}. We are going to use \textit{Buffer subarray} as it yields better performance in a newer version of Chrome. The implementation of the slice function could look something like this:
+\begin{lstlisting}[caption=Possible approach to copy a slice of a \ttarray{}]
 function typedArraySlice(array, from, to) {
   return new array.constructor(array.subarray(from, to));
 }
