@@ -1,10 +1,10 @@
-// http://jsperf.com/pjs-map-inlining/2
+// http://jsperf.com/pjs-map-inlining/6
 
 // HTML setup
-<script src="https://rawgit.com/pjsteam/pjs/v0.1.1/dist/p-j-s.min.js"></script>
+<script src="http://rawgit.com/pjsteam/pjs/v1.0.0-beta/dist/p-j-s.min.js"></script>
 <script>
   var pjs = require('p-j-s');
-  pjs.init();
+  pjs.init({ maxWorkers: 4});
 
   var generateElements = function (total) {
     var typed = new Uint32Array(total);
@@ -56,20 +56,33 @@
 
     return (pixel & 0xFF000000) + (new_b << 16) + (new_g << 8) + (new_r & 0xFF);
   };
+
+  function notInlinedTest() {
+    wrappedXs.map(notInlinedMapper).seq(function (result) {
+      if (!result) {
+        console.log('error');
+      }
+      __finish();
+    });
+  };
+
+  function inlinedTest() {
+    wrappedXs.map(inlinedMapper).seq(function (result) {
+      if (!result) {
+        console.log('error');
+      }
+      __finish();
+    });
+  };
 </script>
 
-// Test case 1 - Not inlined map
-wrappedXs.map(notInlinedMapper, function (result) {
-  if (!result) {
-    console.log('error');
-  }
+// Javascript setup
+__finish = function () {
   deferred.resolve();
-});
+};
+
+// Test case 1 - Not inlined map
+notInlinedTest();
 
 // Test case 2 - Inlined map
-wrappedXs.map(inlinedMapper, function (result) {
-  if (!result) {
-    console.log('error');
-  }
-  deferred.resolve();
-});
+inlinedTest();

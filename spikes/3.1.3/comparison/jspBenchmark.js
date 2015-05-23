@@ -1,10 +1,10 @@
-// http://jsperf.com/pjs-map-vs-serial/3
+// http://jsperf.com/pjs-map-vs-serial/8
 
 // HTML preparation
-<script src="https://rawgit.com/pjsteam/pjs/v0.1.1/dist/p-j-s.min.js"></script>
+<script src="http://rawgit.com/pjsteam/pjs/v1.0.0-beta/dist/p-j-s.min.js"></script>
 <script>
   var pjs = require('p-j-s');
-  pjs.init();
+  pjs.init({ maxWorkers: 4});
 
   var generateElements = function (total) {
     var typed = new Uint32Array(total);
@@ -69,7 +69,7 @@
   };
 
   function runPjs(wrappedXs) {
-    wrappedXs.map(mapper, function (r) {
+    wrappedXs.map(mapper).seq(function (err, r) {
       __finish();
     });
   };

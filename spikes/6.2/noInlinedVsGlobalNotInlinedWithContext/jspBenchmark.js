@@ -1,7 +1,7 @@
-// http://jsperf.com/global-ctx-no-inlined-func
+// http://jsperf.com/global-ctx-no-inlined-func/2
 
 // HTML setup
-<script src="http://rawgit.com/pjsteam/pjs/v0.5.2/dist/p-j-s.min.js"></script>
+<script src="http://rawgit.com/pjsteam/pjs/v1.0.0-beta/dist/p-j-s.min.js"></script>
 <script>
   var pjs = require('p-j-s');
   pjs.init();
