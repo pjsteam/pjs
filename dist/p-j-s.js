@@ -1028,7 +1028,7 @@ var ResultCollector = require('./result_collector');
 var work = require('webworkify');
 
 var workers = [];
-var packQueue = [];
+var packQueue;
 var sentPack;
 
 Object.defineProperty(module.exports, 'length', {
@@ -1042,6 +1042,8 @@ module.exports.init = function(workersCount){
     var worker = work(require('./worker.js'));
     workers.push(worker);
   }
+  packQueue = [];
+  sentPack = undefined;
 };
 
 module.exports.terminate = function(){
@@ -1050,6 +1052,8 @@ module.exports.terminate = function(){
   });
 
   workers = [];
+  packQueue = undefined;
+  sentPack = undefined;
 };
 
 module.exports.sendPacks = function(packs, callback){
