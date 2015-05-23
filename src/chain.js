@@ -44,7 +44,7 @@ var Chain = function (options) {
   this.packager = new JobPackager(options.parts, options.source);
   this.source = options.source;
   this.parts = options.parts;
-  this.operation = options.operation; //todo: (mati) por ahora lo dejo para finalizar el reduce correctamente
+  this.operation = options.operation;
   this.globalContext = options.globalContext;
   this.chainContext = options.chainContext;
   var previousOperations = options.previousOperations || [];
@@ -101,7 +101,7 @@ function createChain(oldChain, options){
     operation: operation,
     globalContext: oldChain.globalContext,
     chainContext: extendChainContext,
-    previousOperations: oldChain.operations,
+    previousOperations: oldChain.operations.slice(),
     depth: nextDepth
   };
   return new Chain(opt);
@@ -110,16 +110,23 @@ function createChain(oldChain, options){
 Chain.prototype.seq = function (done) {
   var self = this;
   return new Promise(function (resolve, reject) {
-    var TypedArrayConstructor = self.source.constructor;
     var packs = self.packager.generatePackages(self.operations, self.chainContext);
-
     workers.sendPacks(packs, function(err, results){
       if (err) { if (done) { done(err); } else { reject(err); } return; }
-      var partial_results = results.map(function(result){
-        return new TypedArrayConstructor(result.value).subarray(0, result.newLength);
-      });
-      var m = merge_typed_arrays(partial_results);
-      return finisher[self.operation.name](self, m, done, resolve);
+      var finalResult;
+      var type = packs[0].elementsType;
+      if (self.__shouldMergeSeparatedBuffers(type, self.operations)) {
+        var partial_results = results.map(function(result){
+          var start = result.start;
+          var end = result.newEnd;
+          var temp = utils.createTypedArray(type, result.value);
+          return temp.subarray(start, end);
+        });
+        finalResult = merge_typed_arrays(partial_results);
+      } else {
+        finalResult = utils.createTypedArray(type, results[0].value);
+      }
+      return finisher[self.operation.name](self, finalResult, done, resolve);
     });
   });
 };
@@ -128,6 +135,25 @@ Chain.prototype.__verifyPreviousOperation = function () {
   if (this.operation.name === 'reduce') {
     throw new errors.InvalidOperationError(errors.messages.INVALID_CHAINING_OPERATION);
   }
+};
+
+Chain.prototype.__shouldMergeSeparatedBuffers = function (typedArrayType, operations) {
+  if (typedArrayType.indexOf('Shared') === 0) {
+    return this.__arrayChangingSizeOperationWasApplied(operations);
+  }
+  return true;
+};
+
+Chain.prototype.__arrayChangingSizeOperationWasApplied = function (operations) {
+  var i;
+  var length = operations.length;
+  for (i = 0; i < length; i += 1) {
+    var operation = operations[i];
+    if (operation.name !== operation_names.MAP) {
+      return true;
+    }
+  }
+  return false;
 };
 
 module.exports = Chain;

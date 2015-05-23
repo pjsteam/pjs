@@ -1,0 +1,1 @@
+// http://jsperf.com/pjs-encoding/2

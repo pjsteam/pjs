@@ -70,7 +70,11 @@ function doSendPacks() {
     workers[index].addEventListener('message', onMessageHandler);
 
     if (pack.buffer){
-      workers[index].postMessage(pack, [ pack.buffer ]);
+      if (pack.sourceBuffer) {
+        workers[index].postMessage(pack, [ pack.sourceBuffer, pack.buffer ]);
+      } else {
+        workers[index].postMessage(pack, [ pack.buffer ]);
+      }
     } else {
       workers[index].postMessage(pack);
     }

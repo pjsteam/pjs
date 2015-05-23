@@ -8,7 +8,7 @@
     var wCode = function(event){
       var code = event.data;
       eval('var __f = ' + code);
-      postMessage(__f());
+      postMessage(__f.length);
     };
 
     var blob = new Blob(["onmessage = " + wCode.toString()]);
@@ -30,7 +30,7 @@
       var codeArray = new Uint8Array(codeBuffer);
       var code = decoder.decode(codeArray);
       eval('var __f = ' + code);
-      postMessage(__f());
+      postMessage(__f.length);
     };
 
     var blob = new Blob(["var decoder = new TextDecoder(); onmessage = " + wCode.toString()]);
@@ -52,7 +52,7 @@
     var wCode = function(event){
       var blobURL = event.data;
       importScripts(blobURL);
-      postMessage(__f());
+      postMessage(__f.length);
     };
     
     var blob = new Blob(["onmessage = " + wCode.toString()]);

@@ -33,12 +33,21 @@ describe('initialization', function(){
     expect(pjs.terminate).to.throw(errors.InvalidOperationError);
   });
 
-  it('should have workers count equal to navigator.hardwareConcurrency if no options are passed.', function () {
-    pjs.init();
-    expect(pjs.config.workers).to.not.equal(undefined);
-    expect(pjs.config.workers).to.not.equal(0);
-    expect(pjs.config.workers).to.equal(navigator.hardwareConcurrency);
-  });
+  if (navigator.hardwareConcurrency) {
+    it('should have workers count equal to navigator.hardwareConcurrency if no options are passed.', function () {
+      pjs.init();
+      expect(pjs.config.workers).to.not.equal(undefined);
+      expect(pjs.config.workers).to.not.equal(0);
+      expect(pjs.config.workers).to.equal(navigator.hardwareConcurrency);
+    });
+  } else {
+    it('should have workers count equal to 1 if navigator.hardwareConcurrency is not defined and no options are passed.', function () {
+      pjs.init();
+      expect(pjs.config.workers).to.not.equal(undefined);
+      expect(pjs.config.workers).to.not.equal(0);
+      expect(pjs.config.workers).to.equal(1);
+    });
+  }
 
   it('should not have configuration after termination.', function () {
     pjs.init();
@@ -49,11 +58,11 @@ describe('initialization', function(){
 
   it('should have configuration after init-terminate-init cycle.', function () {
     pjs.init();
-    expect(pjs.config.workers).to.equal(navigator.hardwareConcurrency);
+    expect(pjs.config.workers).to.equal(navigator.hardwareConcurrency||1);
     pjs.terminate();
     expect(pjs.config).to.equal(undefined);
     pjs.init();
-    expect(pjs.config.workers).to.equal(navigator.hardwareConcurrency);
+    expect(pjs.config.workers).to.equal(navigator.hardwareConcurrency||1);
   });
 
   it('should clear globalContext when terminating', function(done){
@@ -84,24 +93,26 @@ describe('initialization', function(){
     });
   });
 
-  it('should have workers count equal to navigator.hardwareConcurrency - 1 if that value is passed as maxWorkers option.', function () {
-    var max = navigator.hardwareConcurrency - 1;
-    pjs.init({
-      maxWorkers: max
+  if (navigator.hardwareConcurrency) {
+    it('should have workers count equal to navigator.hardwareConcurrency - 1 if that value is passed as maxWorkers option.', function () {
+      var max = navigator.hardwareConcurrency - 1;
+      pjs.init({
+        maxWorkers: max
+      });
+      expect(pjs.config.workers).to.not.equal(undefined);
+      expect(pjs.config.workers).to.not.equal(0);
+      expect(pjs.config.workers).to.equal(max);
     });
-    expect(pjs.config.workers).to.not.equal(undefined);
-    expect(pjs.config.workers).to.not.equal(0);
-    expect(pjs.config.workers).to.equal(max);
-  });
 
-  it('should have workers count equal to navigator.hardwareConcurrency if navigator.hardwareConcurrency + 3 is passed as maxWorkers option.', function () {
-    pjs.init({
-      maxWorkers: navigator.hardwareConcurrency + 3
+    it('should have workers count equal to navigator.hardwareConcurrency if navigator.hardwareConcurrency + 3 is passed as maxWorkers option.', function () {
+      pjs.init({
+        maxWorkers: navigator.hardwareConcurrency + 3
+      });
+      expect(pjs.config.workers).to.not.equal(undefined);
+      expect(pjs.config.workers).to.not.equal(0);
+      expect(pjs.config.workers).to.equal(navigator.hardwareConcurrency);
     });
-    expect(pjs.config.workers).to.not.equal(undefined);
-    expect(pjs.config.workers).to.not.equal(0);
-    expect(pjs.config.workers).to.equal(navigator.hardwareConcurrency);
-  });
+  }
 
   it('should not be possible to override config property', function () {
     pjs.init();
@@ -148,10 +159,9 @@ describe('wrap tests', function(){
     }).to.throw(errors.InvalidArgumentsError);
   });
 
-  [Uint8Array, Int8Array, Uint8ClampedArray,
-    Uint16Array, Int16Array,
-    Uint32Array, Int32Array,
-    Float32Array, Float64Array].forEach(function (TypedArray) {
+  var supportedArrays = require('./supported_array_types_helper')();
+  
+  supportedArrays.forEach(function (TypedArray) {
       describe(utils.format('tests for {0}', utils.getTypedArrayConstructorType(TypedArray)), function(){
         var sourceArray = new TypedArray([1,2,3,4,5]);
 

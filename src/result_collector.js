@@ -33,8 +33,7 @@ Collector.prototype.onPart = function (data){
     throw new errors.InvalidArgumentsError(
       utils.format(errors.messages.PART_ALREADY_COLLECTED, data.index));
   }
-
-  this.collected[data.index] = {value: data.value, newLength: data.newLength} ;
+  this.collected[data.index] = {value: data.value, start: data.start, newEnd: data.newEnd} ;
   this.updateCompleted();
 };
 

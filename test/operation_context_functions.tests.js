@@ -114,7 +114,7 @@ describe('operation context functions', function(){
         var sourceArray = new Uint32Array([1,2,3,4,5]);
         pjs(sourceArray).map('f.g.h').seq(function(err){
           expect(err.name).to.equal('WorkerError');
-          expect(err.message).to.equal('Uncaught Error: Cannot get nested path f.g.h from context');
+          expect(err.message).to.match(/(Uncaught )?Error: Cannot get nested path f.g.h from context/);
           done();
         });
       });
@@ -196,7 +196,7 @@ describe('operation context functions', function(){
         var sourceArray = new Uint32Array([1,2,3,4,5]);
         pjs(sourceArray).filter('g.h.i').seq(function(err){
           expect(err.name).to.equal('WorkerError');
-          expect(err.message).to.equal('Uncaught Error: Cannot get nested path g.h.i from context');
+          expect(err.message).to.match(/(Uncaught )?Error: Cannot get nested path g.h.i from context/);
           done();
         });
       });
@@ -265,7 +265,7 @@ describe('operation context functions', function(){
         var sourceArray = new Uint32Array([1,2,3,4,5]);
         pjs(sourceArray).reduce('r.s.t', 0, 0).seq(function(err){
           expect(err.name).to.equal('WorkerError');
-          expect(err.message).to.equal('Uncaught Error: Cannot get nested path r.s.t from context');
+          expect(err.message).to.match(/(Uncaught )?Error: Cannot get nested path r.s.t from context/);
           done();
         });
       });

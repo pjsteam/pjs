@@ -4,6 +4,7 @@ describe('queueing workers jobs', function(){
 
   var pjs;
   var utils = require('../src/utils.js');
+  var supportedArrays = require('./supported_array_types_helper')();
 
   before(function () {
     pjs = require('../src/index.js');
@@ -16,10 +17,7 @@ describe('queueing workers jobs', function(){
     }
   });
 
-  [Uint8Array, Int8Array, Uint8ClampedArray,
-    Uint16Array, Int16Array,
-    Uint32Array, Int32Array,
-    Float32Array, Float64Array].forEach(function (TypedArray) {
+  supportedArrays.forEach(function (TypedArray) {
       describe(utils.format('tests for {0}', utils.getTypedArrayConstructorType(TypedArray)), function(){
         var sourceArrayA = new TypedArray([1,2,3,4,5,6,7,8,9,10,11,12,13,14]);
         var sourceArrayB = new TypedArray([20,21,22,23,24,25,26,27,28,29,30,31]);
