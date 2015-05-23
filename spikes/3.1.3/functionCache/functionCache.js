@@ -1,14 +1,14 @@
-// http://jsperf.com/p-j-s-with-vs-without-function-cache
+// http://jsperf.com/p-j-s-with-vs-without-function-cache/3
 
 // HTML setup
-<script src="http://127.0.0.1:3000/p-j-s.min.js"></script>
-<script src="https://cdn.rawgit.com/pjsteam/pjs/v0.1.0/dist/p-j-s.min.js"></script>
+<script src="http://rawgit.com/pjsteam/pjs/1bf39be3012cedf13fdf2f85bd4b1197eaabde96/dist/p-j-s.min.js"></script>
+<script src="http://rawgit.com/pjsteam/pjs/v1.0.0-beta/dist/p-j-s.min.js"></script>
 <script>
   var __finish;
-  var pjs = require('p-j-s');
-  var pjsCacheFunction = require('p-j-s-with-function-cache');
-  pjs.init();
-  pjsCacheFunction.init();
+  var pjs = require('p-j-s-no-cache');
+  var pjsCacheFunction = require('p-j-s');
+  pjs.init({ maxWorkers: 4});
+  pjsCacheFunction.init({ maxWorkers: 4});
 
   // JavaScript setup
   var generateElements = function (total) {
@@ -53,7 +53,7 @@ __finish = function(){
 }
 
 // Test case 1 - Without function cache
-wrappedNoCacheXs.map(mapper, mapCallback);
+wrappedNoCacheXs.map(mapper).seq(mapCallback);
 
 // Test case 2 - Function cache
-wrappedCacheXs.map(mapper, mapCallback);
+wrappedCacheXs.map(mapper).seq(mapCallback);
