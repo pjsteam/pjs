@@ -62,6 +62,21 @@ The benchmark with the long function was the following one:
 The results for it are displayed in Figure~\ref{fig:long-serialization}.
 \img{Comparing string encoding/decoding approaches}{../../spikes/2.2.1/test-howToSendCode/longSerialization}{fig:long-serialization}
 
+\subsubsection{\tstring{} serialization and shared tranfer benchmark}
+
+We created a benchmark that compares these two scenarios:
+
+\begin{enumerate}
+\item Sending the \tstring{} representation of a function to four Web Workers.
+\item Encoding a function into a \tsabuffer{} and sending it to four Web Workers.
+\end{enumerate}
+
+The code for the benchmark is presented in the following code listing:
+\bmcode{http://jsperf.com/shared-function-transfer}{../../spikes/shared/2.2.1/jspBenchmark.longSendCode.js}
+
+The results for it are displayed in Figure~\ref{fig:serialization-vs-shared-transfer}.
+\img{Comparing string serialization vs shared buffer transfer approaches}{../../spikes/shared/2.2.1/jspBenchmarklongSendCode.png}{fig:serialization-vs-shared-transfer}
+
 \subsubsection{\tstring{} and \ttarray{} serialization and tranfer benchmarks}
 We created a benchmark that tranfers a \ttarray{} and a \tstring{} that are properties of the same object back and forth between the main thread an a worker to understand if transferring additional objects affected the transfer time when comparing it with just tranferring a \tstring{}.
 
