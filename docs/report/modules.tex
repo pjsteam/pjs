@@ -2,7 +2,7 @@
 
 \note{At the time of writing, neither Google Chrome nor Mozilla Firefox support the ES6 module specification so that is not a viable choice.}
 
-The two most known module formats/API in JavaScript are known as:
+The two most known module formats/API in JavaScript are:
 \begin{description}
 \item[CommonJS] Recognized for being used in node.js~\cite{nodejs}.
 \item[AMD~\cite{amd}] The most known implementation being require.js~\cite{requirejs}.
@@ -10,7 +10,7 @@ The two most known module formats/API in JavaScript are known as:
 
 CommonJS has many similar aspects with the ES6 module specification, although it does not provide a way to load modules asynchronously. AMD is very different from the ES6 module specification but does support asynchronous module loading which is useful for browser applications.
 
-Instead of making the choice for users, our library will support both systems in a way that makes it easier for users to consume either of them.
+Instead of making the choice for users, our library will support both systems in a way that makes it easy for users to consume either of them.
 
 \subsection{CommonJS support}
 All that needs to be done to use the library is shown in the following code snippet:
@@ -26,7 +26,7 @@ All that needs to be done to use the library is shown in the following code snip
 \end{lstlisting}
 
 \subsection{AMD support}
-This example shows how to use the library with require.js. It assumes a folder structure like the one shown below:
+This example shows how to use the library with require.js. It assumes a folder structure like the one in the following listing:
 \begin{lstlisting}[language=bash, caption=AMD folder structure]
 .
 |__ index.html
@@ -45,6 +45,6 @@ require(["https://rawgit.com/pjsteam/pjs/v1.0.0-beta/dist/p-j-s-standalone.min.j
 \end{lstlisting}
 
 \subsection{Conclusion}
-As the previous examples show, using our library with either module system is really simple and is done in a way that should feel familiar for users of those module formats.
+As the previous examples show, using our library with either module system is really simple and is done in a way that should feel familiar for users of those systems.
 
 \pagebreak
