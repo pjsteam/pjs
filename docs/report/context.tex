@@ -48,7 +48,7 @@ pjs.updateContext({
 
 \img{Comparing \ttarray{} merge approaches}{../../spikes/6.1/context}{fig:context}
 
-The reason why there are two kinds of context is because there will usually be data that does not need to be passed to the Web Workers with each chain, so having a global context allows this. Additionally, the local context allows users to avoid polluting the global one with keys that are not necessary for all operations.
+The reason why there are two kinds of context is because there will usually be data that does not need to be passed to the Web Workers with each chain, so having a global context allows this. Additionally, the local context provides a way for developers to avoid polluting the global one with keys that are not necessary for all operations.
 
 We created a benchmark to explore the difference between sending the context and chains to execute as part of the same message, and using two different messages. The code for the benchmark is in the following listing:
 \bmcode{http://jsperf.com/additional-sendingdata-comparison/2}{../../spikes/6.1/sendingAdditionalsSeqVsPar/jspBenchmark.js}
@@ -57,15 +57,15 @@ The results for the benchmark are displayed in Figure~\ref{fig:context-send}.
 \img{Comparing small context message passing}{../../spikes/6.1/sendingAdditionalsSeqVsPar/jspBenchmark-all-browsers}{fig:context-send}
 
 \subsection{Implementation}
-Internally the context is sent as a message to all workers to make its properties available. Two possible implementatios were possible:
+Internally the context is sent as a message to all Web Workers to make its properties available. Two possible implementatios were possible:
 \begin{itemize}
-  \item Send the object directly and rely on structured cloning
-  \item Serialize the object using \code{JSON.stringify} and deserialize it in the workers
+  \item Sending the object directly and rely on structured cloning
+  \item Serializing the object using \code{JSON.stringify} and deserialize it in the workers
 \end{itemize}
 
 \note{None of the aforementioned approaches support sending functions as context keys. This is covered in Subsection~\ref{sub-sec:contexts-with-function}.}
 
-We created to separate benchmarks, one that sends small objects to a Web Worker and another one that sends large objects to a Web Worker. Both benchmarks compare the approaches against each other.
+We created two separate benchmarks, one that sends small objects to a Web Worker and another one that sends large objects to a Web Worker. Both benchmarks compare the approaches against each other.
 
 The code for the benchmark with the small object is in the following listing:
 \bmcode{http://jsperf.com/additional-clonningdata-comparison/3}{../../spikes/6.1/cloningComparison/jspBenchmark.js}
@@ -103,6 +103,6 @@ It would result in the following object before being serialized:
 \end{lstlisting}
 
 \subsection{Conclusion}
-Based on the benchmark results we decided to use \code{JSON.stringify} to serialize \code{context} objects. This involves a tradeoff as, unlike structured cloning, it does not support cyclic references. For this scenario, we believe that the performance benefit is more valuable than supporting cyclic references.
+Based on the benchmark results, we decided to use \code{JSON.stringify} to serialize \code{context} objects. This involves a tradeoff as, unlike structured cloning, it does not support cyclic references. For this scenario, we believe that the performance benefit is more valuable than supporting cyclic references.
 
 \pagebreak
