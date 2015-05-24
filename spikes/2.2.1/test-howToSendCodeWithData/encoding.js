@@ -1,4 +1,4 @@
-// http://jsperf.com/pjs-encoding/2
+// http://jsperf.com/pjs-encoding/3
 
 // HTML setup
 <script>
