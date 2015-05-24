@@ -1,6 +1,6 @@
-\section{Array sharing}
+\section{Array partitioning}
 
-As explained in section~\ref{sec:serialization-and-transference} of this document, transferring \ttarray{} objects to and from workers requires the use of \code{Transferable}s to achieve acceptable performance. Since our library will receive \ttarray{} objects to be partitioned and handed over to multiple workers, it is important that it takes as little time as possible for the partitioning of the arrays.\footnote{This does not apply to \tstarray{}s as those can be transferred without being partitioned}
+As explained in section~\ref{sec:serialization-and-transference} of this document, transferring \ttarray{} objects to and from workers requires the use of \code{Transferable}s to achieve acceptable performance. Since our library will receive \ttarray{} objects to be partitioned and handed over to multiple workers, it is important that it takes as little time as possible for the partitioning of the arrays.\footnote{This does not apply to \tstarray{}s as those can be transferred without being partitioned.}
 
 If the library is configured to use \(N\) workers then the original data in the \ttarray{} will copied into \(N\) smaller \ttarray{}s. For ideal performance it would be nice to be able to pass a pointer into the array and an amount of elements to process, but \ttarray{}s do not support shared memory and element ownership is tranferred to the Web Workers, the elements must be copied to the sub-arrays.
 
