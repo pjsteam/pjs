@@ -7,7 +7,7 @@ Let's assume that we have an array of \code{N} elements on which we want to perf
 When trying to parallelize this operation using \code{K} threads the ideal goal is to reach a total time \(T_{par}\) that is:
 \[T_{par} = \frac{T_{ser}}{K}\]
 
-Nevertheless, there are additional time consuming tasks other than the main computation that need to be considered when performing the operation in parallel in programs with no shared memory. These are:
+Nevertheless, there are additional time consuming tasks other than the main computation that need to be considered when performing the operation in parallel in programs where memory is not shared by default. These are:
 \begin{itemize}
   \item Partitioning or joining the elements to transfer.
   \item Serializing/deserializing the elements to transfer.
@@ -37,28 +37,41 @@ Worker implements AbstractWorker;
 As the aforementioned interface states, one can either send just a message or send a message with a sequence of transferable objects. From section \textbf{2.7.5} of the HTML Standard \cite{html-whatwg}:
 \textit{``Some objects support being copied and closed in one operation. This is called transferring the object, and is used in particular to transfer ownership of unsharable\footnote{Note that the definition does not consider \tsabuffer{} instances as those are sharable and transferable.} or expensive resources across worker boundaries."}
 
-Considering the definition of a \code{Transferable} the latter seems like a good alternative to minimize both \(T_{s}\) and \(T_{s}\). Even more so when one considers that otherwise objects are copied using structured cloning (explained in section \textbf{2.7.6} of that same standard).
+Considering the definition of a \code{Transferable} the latter seems like a good alternative to minimize both \(T_{s}\) and \(T_{t}\). Even more so when one considers that otherwise objects are copied using structured cloning (explained in section \textbf{2.7.6} of that same standard).
+
+In the case of \tsabuffer{} instances, \(T_{p}\) is also minimized. Instead of actually making copies of the buffer's data, all that is required a simple calculation to determine the boundaries on which each Web Worker should operate. Additionally, \(T_{t}\) should also decrease as there is no need to transfer the \tsabuffer{} back to the UI thread.
 
 \subsection{Benchmarks}
-To verify the above we put together two benchmarks that aim to verify the difference between invoking \code{postMessage} with and without structured cloning for a \ttarray{}. Both transfer a \ttarray{} back and forth between the UI thread and a worker; the only difference between the two is that one has 100,000 (a hundred thousand) elements in the \ttarray{} and the other one 1,000,000 (a million).
+To verify the above we put together two benchmarks that aim to verify the difference between invoking \code{postMessage} with and without structured cloning for a \ttarray{}. Since \tsabuffer{}s cannot be cloned, we created a separate benchmark to compare the performance of transferring \tsabuffer{}s and \tabuffer{}s.
 
-\subsubsection{With 100,000 elements}
+The benchmarks transfer the arrays back and forth between the UI thread and a worker; the only difference between the two is that one has 100,000 (a hundred thousand) elements in the array and the other one 1,000,000 (a million).
+
+\subsubsection{TypedArray With 100,000 elements}
 The following is the code for the benchmark:
 \bmcode{http://jsperf.com/transferrable-vs-cloning}{../../spikes/1.2/transferrableVsCloning.js}
 
 The results for it are displayed in Figure~\ref{fig:transferrable-vs-cloning}.
 \img{Results with 100,000 elements}{../../spikes/1.2/transferrableVsCloning}{fig:transferrable-vs-cloning}
 
-\subsubsection{With 1,000,000 elements}
+\subsubsection{TypedArray With 1,000,000 elements}
 The following is the code for the benchmark:
 \bmcode{http://jsperf.com/longer-transferrable-vs-cloning}{../../spikes/1.2/longerTransferrableVsCloning.js}
 
 The results for it are displayed in Figure~\ref{fig:long-transferrable-vs-cloning}.
 \img{Results with 100,000 elements}{../../spikes/1.2/longerTransferrableVsCloning}{fig:long-transferrable-vs-cloning}
 
+\subsubsection{Transferring SharedArrayBuffers and ArrayBuffers}
+The following is the code for the benchmark:
+\bmcode{http://jsperf.com/transfer-shared-vs-not-shared}{../../spikes/1.2/transferableSharedVsNotShared.js}
+
+The results for it are displayed in Figure~\ref{fig:sab-vs-ab-transfer}.
+\img{Transferring SharedArrayBuffers and ArrayBuffers}{../../spikes/1.2/transferableSharedVsNotShared}{fig:sab-vs-ab-transfer}
+
 \subsubsection{Conclusion}
 As we can see from the previous results, increasing the amount of elements by 10x does not change the amount of operations that can be performed when using \code{Transferable} objects; it scales. On the other hand, the amount of operations that can be performed with structured cloning greatly decreases.
 
-For that reason we will only work with {\ttarray{}}s and all of them will be passed to/from Web Workers by transferring their ownership.
+For that reason we will only work with \ttarray{}s and \tstarray{}s and all of them will be passed to/from Web Workers by transferring their ownership.
+
+Although it does not affect our decision, it is also interesting to note the big difference between transferring \tsabuffer{}s and \tabuffer{} in Firefox Nightly. This difference is probably going to be smaller over the course of time.
 
 \pagebreak
