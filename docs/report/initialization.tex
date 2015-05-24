@@ -1,6 +1,6 @@
 \section{Initialization}\label{sec:initialization}
 
-As explained in the Web Workers standard \cite{w3c-ww} \textit{``Generally, workers are expected to be long-lived, have a high start-up performance cost, and a high per-instance memory cost."}.
+As explained in the Web Workers standard \cite{w3c-ww-startup} \textit{``Generally, workers are expected to be long-lived, have a high start-up performance cost, and a high per-instance memory cost."}.
 
 There are two factors to consider from the above sentence regarding the library's implementation:
 
@@ -23,7 +23,7 @@ The results for it are displayed in Figure~\ref{fig:new-vs-pre}.
 The previous benchmark shows a huge difference between the time required to process a message on a pre-existent Web Worker compared to the one necessary to start a Web Worker and process a message. For that reason, we decided to create a pool of Web Workers when the library is initialized and dispatch work to them when it arrives. Since operations are asynchronous, if an operation is executing when another one is added for processing, the latter will be added to a queue and processed when the former completes.
 
 \subsection{High per-instance memory cost}
-The second factor makes it important for users to be able to control/limit the amount of web workers that the library instantiates. For that reason the library allows users to specify a maximum amount of workers to be instantiated, and also provide through its API a way to terminate all workers in existance.
+The second factor makes it important for users to be able to control/limit the amount of web workers that the library instantiates. For that reason the library allows users to specify a maximum amount of workers to be instantiated, and also provide through its API a way to terminate all workers in existence.
 
 \subsection{Maximum amount of workers}
 Since the work being done is CPU intensive (i.e.: the workers' goal is not to perform I/O operations), the maximum amount of workers to be created should not be greater than the amount of cores in the machine \(W_{cores}\), otherwise interleaving would start to affect performance. Additionally, considering the necessity of users to control how many workers are created, an upper bound can be specified \(W_{upper bound}\)\footnote{If the executing browser does not have an API to detect the amount of cores in a device \(W_{cores}=W_{upper bound}\). If no \(W_{upper bound}\) is provided, \(W_{cores}=1\).}. If no upper bound is specified, the user upper bound for workers is assumed to be infinite (because the user is not providing a restriction). To summarize, the number of workers to be instantiated is:
