@@ -1,8 +1,18 @@
 \section{Array merging}
 
-Once all the workers have executed the function provided to them on each element of their respective \ttarray{}s they are to notify the main thread and provide the resulting \ttarray{}.
+Once all the workers have executed the function provided to them on each element of their portion of the original array, they are to notify the main thread and provide the resulting \tabuffer{} or \tsabuffer{}.
 
-At this point the main thread must consolidate the results into a new \ttarray{} that represents the result for the entire operation. This means copying all the elements of each partial result into a larger \ttarray{} while maintaining the original order.
+At this point the UI thread must consolidate the results from the Web Workers into a new \ttarray{} or \tstarray{} that represents the result for the entire operation.\footnote{The case for chains with \code{reduce} as the last step similar and simpler. Thus, it is not worth analyzing.}
+
+For the \tabuffer{} case, this means copying all the elements of each partial result into a larger \ttarray{} while maintaining the original order.
+
+For the \tsabuffer{} case there are two different options:
+\begin{enumerate}
+  \item If all steps in the chain perform the \code{map} transformation, then no changes are required.
+  \item If there is at least one \code{filter} step, the elements need to be placed at the beginning of the resulting \tstarray{} in order to avoid \textif{holes}.
+\end{enumerate}
+
+The latter is similar to the \tabuffer{} case, but instead of copying from one array to another, the source and target are the same.
 
 \subsection{\ttarray{} merge benchmark}
 Unlike the case for \ttarray{} splitting (Section~\ref{subsec:copying-typed-arrays}) there aren't that many native alternatives to create a \ttarray{} from smaller ones.
