@@ -57,14 +57,14 @@ JobPackager.prototype.generatePackages = function (operations, chainContext) {
   var isShared = utils.isSharedArray(this.elements);
   var strfyCtx = contextSerializer.serializeChainContext(chainContext);
   return partitionedElements.map(function (partitionedElement, index) {
-    var sourceBuffer, buffer, start, to;
+    var sourceBuffer, targetBuffer, start, to;
     if (isShared) {
       sourceBuffer = partitionedElement.sourceArray.buffer;
-      buffer = partitionedElement.sharedArray.buffer;
+      targetBuffer = partitionedElement.sharedArray.buffer;
       start = partitionedElement.from;
       to = partitionedElement.to;
     } else {
-      buffer = partitionedElement.buffer;
+      targetBuffer = partitionedElement.buffer;
       start = 0;
       to = partitionedElement.length;
     }
@@ -73,7 +73,7 @@ JobPackager.prototype.generatePackages = function (operations, chainContext) {
       start: start,
       end: to,
       sourceBuffer: sourceBuffer,
-      buffer: buffer,
+      targetBuffer: targetBuffer,
       operations: parsedOperations,
       elementsType: elementsType,
       ctx: strfyCtx

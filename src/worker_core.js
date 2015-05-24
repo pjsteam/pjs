@@ -89,7 +89,8 @@ module.exports = function(event){
   var ops = pack.operations;
   var opsLength = ops.length;
   var context = createOperationContexts(opsLength, pack.ctx);
-  var sourceArray, targetArray = utils.createTypedArray(pack.elementsType, pack.buffer);
+  var sourceArray;
+  var targetArray = utils.createTypedArray(pack.elementsType, pack.targetBuffer);
   if (pack.sourceBuffer) {
     sourceArray = utils.createTypedArray(pack.elementsType, pack.sourceBuffer);
   } else {
@@ -111,6 +112,15 @@ module.exports = function(event){
     }
     newEnd = operations[operation.name](sourceArray, targetArray, start, newEnd, f, localCtx, seed);
     sourceArray = targetArray;
+  }
+  if (pack.sourceBuffer) {
+    return {
+      message: {
+        index: pack.index,
+        start: start,
+        newEnd: newEnd
+      }
+    };
   }
   return {
     message: {

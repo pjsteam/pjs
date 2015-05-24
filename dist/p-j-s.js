@@ -208,17 +208,18 @@ Chain.prototype.seq = function (done) {
     workers.sendPacks(packs, function(err, results){
       if (err) { if (done) { done(err); } else { reject(err); } return; }
       var finalResult;
-      var type = packs[0].elementsType;
+      var firstPack = packs[0];
+      var type = firstPack.elementsType;
       if (self.__shouldMergeSeparatedBuffers(type, self.operations)) {
         var partial_results = results.map(function(result){
           var start = result.start;
           var end = result.newEnd;
-          var temp = utils.createTypedArray(type, result.value);
+          var temp = utils.createTypedArray(type, result.value || firstPack.targetBuffer);
           return temp.subarray(start, end);
         });
         finalResult = merge_typed_arrays(partial_results);
       } else {
-        finalResult = utils.createTypedArray(type, results[0].value);
+        finalResult = utils.createTypedArray(type, results[0].value || firstPack.targetBuffer);
       }
       return finisher[self.operation.name](self, finalResult, done, resolve);
     });
@@ -480,14 +481,14 @@ JobPackager.prototype.generatePackages = function (operations, chainContext) {
   var isShared = utils.isSharedArray(this.elements);
   var strfyCtx = contextSerializer.serializeChainContext(chainContext);
   return partitionedElements.map(function (partitionedElement, index) {
-    var sourceBuffer, buffer, start, to;
+    var sourceBuffer, targetBuffer, start, to;
     if (isShared) {
       sourceBuffer = partitionedElement.sourceArray.buffer;
-      buffer = partitionedElement.sharedArray.buffer;
+      targetBuffer = partitionedElement.sharedArray.buffer;
       start = partitionedElement.from;
       to = partitionedElement.to;
     } else {
-      buffer = partitionedElement.buffer;
+      targetBuffer = partitionedElement.buffer;
       start = 0;
       to = partitionedElement.length;
     }
@@ -496,7 +497,7 @@ JobPackager.prototype.generatePackages = function (operations, chainContext) {
       start: start,
       end: to,
       sourceBuffer: sourceBuffer,
-      buffer: buffer,
+      targetBuffer: targetBuffer,
       operations: parsedOperations,
       elementsType: elementsType,
       ctx: strfyCtx
@@ -881,7 +882,11 @@ var worker_core = require('./worker_core');
 module.exports = function (self) {
   self.addEventListener('message', function (event){
     var result = worker_core(event);
-    self.postMessage(result.message, result.transferables);
+    if (result.transferables) {
+    	self.postMessage(result.message, result.transferables);
+    } else {
+    	self.postMessage(result.message);
+    }
   });
 };
 },{"./worker_core":17}],17:[function(require,module,exports){
@@ -976,7 +981,8 @@ module.exports = function(event){
   var ops = pack.operations;
   var opsLength = ops.length;
   var context = createOperationContexts(opsLength, pack.ctx);
-  var sourceArray, targetArray = utils.createTypedArray(pack.elementsType, pack.buffer);
+  var sourceArray;
+  var targetArray = utils.createTypedArray(pack.elementsType, pack.targetBuffer);
   if (pack.sourceBuffer) {
     sourceArray = utils.createTypedArray(pack.elementsType, pack.sourceBuffer);
   } else {
@@ -998,6 +1004,15 @@ module.exports = function(event){
     }
     newEnd = operations[operation.name](sourceArray, targetArray, start, newEnd, f, localCtx, seed);
     sourceArray = targetArray;
+  }
+  if (pack.sourceBuffer) {
+    return {
+      message: {
+        index: pack.index,
+        start: start,
+        newEnd: newEnd
+      }
+    };
   }
   return {
     message: {
@@ -1099,11 +1114,11 @@ function doSendPacks() {
     workers[index].addEventListener('error', onErrorHandler);
     workers[index].addEventListener('message', onMessageHandler);
 
-    if (pack.buffer){
+    if (pack.targetBuffer){
       if (pack.sourceBuffer) {
-        workers[index].postMessage(pack, [ pack.sourceBuffer, pack.buffer ]);
+        workers[index].postMessage(pack, [ pack.sourceBuffer, pack.targetBuffer ]);
       } else {
-        workers[index].postMessage(pack, [ pack.buffer ]);
+        workers[index].postMessage(pack, [ pack.targetBuffer ]);
       }
     } else {
       workers[index].postMessage(pack);

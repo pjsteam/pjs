@@ -73,11 +73,11 @@ function doSendPacks() {
     workers[index].addEventListener('error', onErrorHandler);
     workers[index].addEventListener('message', onMessageHandler);
 
-    if (pack.buffer){
+    if (pack.targetBuffer){
       if (pack.sourceBuffer) {
-        workers[index].postMessage(pack, [ pack.sourceBuffer, pack.buffer ]);
+        workers[index].postMessage(pack, [ pack.sourceBuffer, pack.targetBuffer ]);
       } else {
-        workers[index].postMessage(pack, [ pack.buffer ]);
+        workers[index].postMessage(pack, [ pack.targetBuffer ]);
       }
     } else {
       workers[index].postMessage(pack);

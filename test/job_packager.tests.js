@@ -97,7 +97,7 @@ describe('job packager', function(){
 
   it('should generate packaged buffer on all packages', function () {
     packages.forEach(function (jobPackage) {
-      expect(jobPackage.buffer).to.not.be.undefined;
+      expect(jobPackage.targetBuffer).to.not.be.undefined;
     });
   });
 
@@ -154,7 +154,7 @@ describe('job packager', function(){
 
   it('should not package elements buffer on the packages', function () {
     packages.forEach(function (jobPackage) {
-      expect(jobPackage.buffer).to.not.equal(elements.buffer);
+      expect(jobPackage.targetBuffer).to.not.equal(elements.buffer);
     });
   });
 
@@ -163,7 +163,7 @@ describe('job packager', function(){
 
     var index = 0;
     packages.forEach(function (jobPackage) {
-      var packagedElements = new elementsConstructor(jobPackage.buffer);
+      var packagedElements = new elementsConstructor(jobPackage.targetBuffer);
       for (var i = 0; i < packagedElements.length; i++, index++) {
         expect(packagedElements[i]).to.equal(elements[index]);
       }

@@ -114,17 +114,18 @@ Chain.prototype.seq = function (done) {
     workers.sendPacks(packs, function(err, results){
       if (err) { if (done) { done(err); } else { reject(err); } return; }
       var finalResult;
-      var type = packs[0].elementsType;
+      var firstPack = packs[0];
+      var type = firstPack.elementsType;
       if (self.__shouldMergeSeparatedBuffers(type, self.operations)) {
         var partial_results = results.map(function(result){
           var start = result.start;
           var end = result.newEnd;
-          var temp = utils.createTypedArray(type, result.value);
+          var temp = utils.createTypedArray(type, result.value || firstPack.targetBuffer);
           return temp.subarray(start, end);
         });
         finalResult = merge_typed_arrays(partial_results);
       } else {
-        finalResult = utils.createTypedArray(type, results[0].value);
+        finalResult = utils.createTypedArray(type, results[0].value || firstPack.targetBuffer);
       }
       return finisher[self.operation.name](self, finalResult, done, resolve);
     });
