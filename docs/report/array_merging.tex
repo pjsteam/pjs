@@ -13,8 +13,16 @@ The benchmark presented only has one alternative that uses a method with a nativ
 The results for the benchmark are displayed in Figure~\ref{fig:typed-array-merge}.
 \img{Comparing \ttarray{} merge approaches}{../../spikes/2.4.1/merge}{fig:typed-array-merge}
 
+\subsection{\tstarray{} merge benchmark}
+
+The benchmark presented modifies \ttarray{} merge benchmarks to support \tstarray{}s. The implementation removes \dataview{} test case as it is not supported by \tstarray{}:
+\bmcode{http://jsperf.com/sharedtypedarray-merge}{../../spikes/2.4.1/sharedMerge.js}
+
+The results for the benchmark are displayed in Figure~\ref{fig:shared-typed-array-merge}.
+\img{Comparing \tstarray{} merge approaches}{../../spikes/2.4.1/sharedMerge}{fig:shared-typed-array-merge}
+
 \subsection{Conclusion}
-The benchmark shows that the best alternative to merge small \ttarray{}s into a larger one is using \code{TypedArray::Set} method.
+The benchmark shows that the best alternative to merge small arrays into a larger one is using \code{Set} method of eighter \ttarray or \tstarray.
 
 For illustration purposes, a naive implementation (without optimizations or error checking) would be similar to the following one:
 \begin{lstlisting}[caption=Simple \ttarray{} merge function]

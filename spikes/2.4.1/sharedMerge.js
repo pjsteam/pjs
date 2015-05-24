@@ -91,13 +91,6 @@
     }
   }
 
-  function withDataViewSet(parts) {
-    var result = caseDataViewSet(parts);
-    if (result.length !== (arraySize * arraysCount)) {
-      console.log('error');
-    }
-  }
-
   function withArrayLikeFunction(parts) {
     var result = caseArrayLikeFunction(parts);
     if (result.length !== (arraySize * arraysCount)) {
