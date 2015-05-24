@@ -2,11 +2,11 @@
 
 Each time \code{seq} is invoked on a chain, all callback functions related to \code{map}, \code{filter} and \code{reduce} steps are serialized and sent to the Web Workers.
 
-Each Web Worker has a cache to avoid using different instances of the same function (as explained in Section~\ref{sec:func-caching}). Nevertheless, if the same function is going to be used multiple times in a program as the callback for steps, it might make sense to send them to the Web Workers once and then simply make use of them.
+Each Web Worker has a cache to avoid using different instances of the same function (as explained in Section~\ref{sec:func-caching}). Nevertheless, if the same function is going to be used multiple times in a program as the callback for steps, it might make sense to send it to the Web Workers once and then simply make a reference to it.
 
-This can be achieved by taking advantage of the global context object (detailed in Section~\ref{sec:context}).
+This can be achieved by taking advantage of the global context object (introduced in Section~\ref{sec:context}).
 
-The first thing that needs to be done is to call \code{pjs.updateContext} by providing a \tfunction{} as a property of the context parameter. An example is shown in the following code snippet:
+The first thing that needs to be done is to call \code{pjs.updateContext} by providing a \tfunction{} as a property of the context object. An example is shown in the following code snippet:
 \begin{lstlisting}[caption=Sending function in global context]
 var promise = pjs.updateContext({
   add: function (x) { return x + 2; },
@@ -14,7 +14,7 @@ var promise = pjs.updateContext({
 \end{lstlisting}
 
 Once the global context has been updated, the \tstring{} representation of the function's key (\code{'add'}) can be used as a callback parameter instead of using a \tfunction{} instance. An example is shown in the following code snippet:
-\begin{lstlisting}[caption=Passing a function name from the global context instead of a funciton as a callback]
+\begin{lstlisting}[caption=Passing a function name from the global context instead of a \tfunction{} as a callback]
 var promise = pjs.updateContext({
   add: function (x) { return x + 2; },
 }).then(function(){
@@ -32,8 +32,9 @@ The following listing shows the code for the benchmark:
 \bmcode{http://jsperf.com/global-ctx-inlined-func/3}{../../spikes/6.2/inlinedVsGlobalInlined/jspBenchmark.js}
 
 The results for the benchmark are displayed in Figure~\ref{fig:func-key-vs-instance}.
-\img{Comparing sending function key in global context against function instance}{../../spikes/6.2/inlinedVsGlobalInlined/result}{fig:func-key-vs-instance}
+\img{Comparing sending function key in global context against \tfunction{} instance}{../../spikes/6.2/inlinedVsGlobalInlined/result}{fig:func-key-vs-instance}
 
-\note{The improvement shown in Figure~\ref{fig:func-key-vs-instance} will vary if the difference in character length between the key and the function's code does.}
+\subsection{Conclusion}
+While the performance improvement obtained is not remarkable, it is still noticeable and does not require a lot of effort from a developer's standpoint. It is worth pointing out that the improvement shown in Figure~\ref{fig:func-key-vs-instance} will vary if the difference in character length between the key and the function's code does.
 
 \pagebreak
