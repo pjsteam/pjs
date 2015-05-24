@@ -31,7 +31,7 @@ function map(binaryData, len) {
 
 \note{The serial code works with a \code{Uint8ClampedArray} but accesses three elements at the same time. The parallel implementation uses a \code{Uint32Array} and works on one pixel (A,R,G,B) at a time.}
 
-Which was implemented as shown in the following listing for the parallel case:
+It was implemented as shown in the following listing for the parallel case:
 \begin{lstlisting}[caption=Sepia tone initial parallel implementation]
 pjs(new Uint32Array(canvasData.data.buffer)).map(function(pixel){
   function noise() {
@@ -61,10 +61,10 @@ pjs(new Uint32Array(canvasData.data.buffer)).map(function(pixel){
 \end{lstlisting}
 
 \subsection{The problem}
-Taking the experience from previous experiments into account we considered that the performance of the two implementations with a source \code{Uint32Array} of about \(8E7\) (eight million) elements should be similar, even favoring the parallel one. The initial measurements showed that the linear implementation fared approximately four times better than the parallel one.
+Taking the experience from previous experiments into account we considered that the performance of the two implementations with a source \code{Uint32Array} of about 8,000,000 (eight million) elements should be similar, even favoring the parallel one. The initial measurements showed that the linear implementation fared approximately four times better than the parallel one.
 
 \subsection{The hypothesis}
-As the two code samples were similar our hypothesis was that for some reason some v8 optimizations were not taking place. It was a definite possibility considering that the parallel implementation depends on the \tfunction{} constructor to create \tfunction{} objects in the Web Workers. Specifically we believed that the internal functions \code{noise}, \code{clamp} and \code{colorDistance} were not being inlined. Inlining could be the cause of both benefits\cite{inline-pro} and drawbacks\cite{inline-cons} but the belief was that performance was being affected because of lack of it
+As the two code samples were similar our hypothesis was that for some reason some v8 optimizations were not taking place. It was a definite possibility considering that the parallel implementation depends on the \tfunction{} constructor to create \tfunction{} objects in the Web Workers. Specifically we believed that the internal functions \code{noise}, \code{clamp} and \code{colorDistance} were not being inlined. Inlining could be the cause of both benefits\cite{inline-pro} and drawbacks\cite{inline-cons} but the belief was that performance was being affected because of lack of it.
 
 Using IR Hydra it was easy to verify the hypothesis, as Figures \ref{fig:serial-clamp} through \ref{fig:parallel-noise} show.
 
@@ -78,7 +78,7 @@ Figures \ref{fig:serial-clamp} through \ref{fig:serial-processSepia} are related
 \img{\code{processSepia} function - serial implementation}{../../spikes/3.1.3/irhydra-noworkers/inlined-processSepia}{fig:serial-processSepia}
 
 \subsubsection{Parallel implementation generated code}
-Figures \ref{fig:parallel-clamp} through \ref{fig:parallel-noise} are related to the serial implementation. As it can be seen from them, only \code{Math.random} is being inlined.
+Figures \ref{fig:parallel-clamp} through \ref{fig:parallel-noise} are related to the parallel implementation. As it can be seen from them, only \code{Math.random} is being inlined.
 \img{\code{clamp} function - parallel implementation}{../../spikes/3.1.3/irhydra-pjs-noinlined/ww-clamp}{fig:parallel-clamp}
 \img{\code{colorDistance} function - parallel implementation}{../../spikes/3.1.3/irhydra-pjs-noinlined/ww-colorDistance}{fig:parallel-colorDistance}
 \img{\code{mapper} function - parallel implementation}{../../spikes/3.1.3/irhydra-pjs-noinlined/ww-mapper}{fig:parallel-mapper}
@@ -109,7 +109,7 @@ We created a benchmark to understand the difference between the initial version 
 \bmcode{http://jsperf.com/pjs-map-inlining/6}{../../spikes/3.1.3/pjsMapInlining/pjsMapInlining.js}
 
 The results for it are displayed in Figure~\ref{fig:pjs-map-inlining}.
-\img{Comparing string encoding/decoding approaches}{../../spikes/3.1.3/pjsMapInlining/pjsMapInlining}{fig:pjs-map-inlining}
+\img{Comparing a version of \code{map} without inlining against a developer inlined one}{../../spikes/3.1.3/pjsMapInlining/pjsMapInlining}{fig:pjs-map-inlining}
 
 \subsection{Conclusion}
 This section shows that in those cases in which the compiler inlines some operations that are executed as part of the skeleton, it is important for developers to explicitly inline those when using the library.
