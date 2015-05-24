@@ -9,7 +9,7 @@ For the \tabuffer{} case, this means copying all the elements of each partial re
 For the \tsabuffer{} case there are two different options:
 \begin{enumerate}
   \item If all steps in the chain perform the \code{map} transformation, then no changes are required.
-  \item If there is at least one \code{filter} step, the elements need to be placed at the beginning of the resulting \tstarray{} in order to avoid \textif{holes}.
+  \item If there is at least one \code{filter} step, the elements need to be placed at the beginning of the resulting \tstarray{} in order to avoid \textit{holes}.
 \end{enumerate}
 
 The latter is similar to the \tabuffer{} case, but instead of copying from one array to another, the source and target are the same.
