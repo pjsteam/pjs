@@ -428,11 +428,11 @@ The results for the benchmark are the displayed in Tab.~\ref{tab:benchmark}. Bas
     \hline
     Elements & Serial [ops/sec] & Parallel [ops/sec] \\
     \hline
-    100 & \textbf{142223} & 328 \\
-    1,000 & \textbf{16503.8} &  359 \\
-    10,000 & \textbf{1683.8} & 321.8 \\
-    100,000 & 169.6 & \textbf{184.4} \\
-    1,000,000 & 16.8 & \textbf{34.1} \\
+    100 & \textbf{130572} & 385 \\
+    1,000 & \textbf{14697} &  421 \\
+    10,000 & \textbf{1469} & 357 \\
+    100,000 & 151 & \textbf{188} \\
+    1,000,000 & 14 & \textbf{32} \\
     \hline
   \end{tabular}
   \caption{Comparing p-j-s (parallel) and plain JS (serial) performance for an image transformation.}
@@ -449,7 +449,7 @@ The results for the benchmark are the displayed in Tab.~\ref{tab:benchmark}. Bas
 \subsection{Conclusion}
 A couple of interesting findings result from the experiments. An expected one is that the amount of operations per second that can be performed with a serial implementation is almost inversely proportional to the amount of items to transform with a ratio of 1. On the other hand, this is not the case for the parallel approach.
 
-An acceptable speedup of approximately \textbf{2x} can be achieved with a relatively large amount of items (\(10E6\)) and performing a computationally expensive computation (generating pseudo-random numbers). Larger speedups might be possible by applying optimizations to the library and there might also be some potential improvements for operations with \verb+SharedArrayBuffer+s as they are likely not optimized, being that they are only an experimental feature in Firefox Nightly.
+An acceptable speedup of approximately \textbf{2.3x} can be achieved with a relatively large amount of items (\(10E6\)) and performing a computationally expensive computation (generating pseudo-random numbers). Larger speedups might be possible by applying optimizations to the library and there might also be some potential improvements for operations with \verb+SharedArrayBuffer+s as they are likely not fully optimized, being that they are only an experimental feature in Firefox Nightly.
 
 \section{Future Work}\label{sec:future}
 There are still some parts of the library that would benefit from optimizations. Of particular interest to us is to perform further profiling of the code executing in each Web Worker. As of today, using browser profiling tools for Web Workers is not as simple as doing so for the UI thread.\\
@@ -461,7 +461,7 @@ There is a strawman proposal to support typed objects \cite{typed-objects} in a 
 Once the \verb+SharedArrayBuffer+ type is available in other browsers (there is already a proposal for Google Chrome \cite{sab-chrome}) we plan to perform benchmarks and tests to compare with Firefox Nightly.
 
 \subsubsection*{Acknowledgments.}
-Thanks to Rosa Wachenhauzer, our tutor, for reviewing this paper and also for all her support and guidance throughout this entire project.
+Thanks to Rosa Wachenchauzer, our tutor, for reviewing this paper and also for all her support and guidance throughout this entire project.
 
 \begin{thebibliography}{4}
 
@@ -507,7 +507,7 @@ Thanks to Rosa Wachenhauzer, our tutor, for reviewing this paper and also for al
 
 \bibitem{encoding-api} Encoding Standard, WHATWG, \url{https://encoding.spec.whatwg.org}
 
-\bibitem{benchmark} Sepia tone transformation benchmark comparison between p-j-s and plain JS, \url{http://jsperf.com/pjs-shared-vs-normal-vs-seq-100/4}
+\bibitem{benchmark} Sepia tone transformation benchmark comparison between p-j-s and plain JS, \url{http://jsperf.com/pjs-map-vs-serial/9}
 
 \bibitem{typed-objects} Typed Objects, ECMA, \url{http://wiki.ecmascript.org/doku.php?id=harmony:typed_objects}
 
