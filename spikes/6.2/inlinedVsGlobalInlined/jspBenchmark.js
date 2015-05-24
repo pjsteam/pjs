@@ -46,12 +46,12 @@ var __finish = function (result) {
   deferred.resolve();
 };
 
-// Test case 1 - map with inlining
+// Test case 1 - map with function instance
 wrappedXs.map(inlinedMapper).seq(function (result) {
   __finish();
 });
 
-// Test case 2 - map with global inlining
+// Test case 2 - map with function key
 wrappedXs.map('x').seq(function (result) {
   __finish();
 });
