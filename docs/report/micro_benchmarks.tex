@@ -4,7 +4,7 @@ A common practice to measure the performance of a fragment of code, or to compar
 A micro benchmark usually involves wrapping the code under evaluation inside a loop, to:
 
 \begin{description}
-\item[First] Be able to evalute the time it takes to perform the operation multiple times (a single execution could either be too small or an outlier and the measurement could have too much variance/error).
+\item[First] Be able to evaluate the time it takes to perform the operation multiple times (a single execution could either be too small or an outlier and the measurement could have too much variance/error).
 \item[Second] Allow JIT optimizations to kick in.
 \end{description}
 
@@ -14,7 +14,7 @@ The first point is applicable to all programming languages but the second one is
 Let's assume that we want to profile the following function:
 \begin{lstlisting}[caption=Function to benchmark]
 function between(a, b, c){
-  return a <= b <= c;
+  return a <= b && b <= c;
 }
 \end{lstlisting}
 
