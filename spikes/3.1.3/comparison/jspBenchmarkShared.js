@@ -74,13 +74,6 @@
     });
   };
 </script>
-<script>
-  Benchmark.prototype.setup = function() {
-    __finish = function () {
-      deferred.resolve();
-    };
-  };
-</script>
 
 // Javascript setup
 __finish = function () {
