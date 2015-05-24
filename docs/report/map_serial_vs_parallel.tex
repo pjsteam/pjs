@@ -2,21 +2,34 @@
 
 Since as explained in Section~\ref{sec:serialization-and-transference} the cost of transferring objects is not zero, it is important to compare the performance of our parallel implementation against a serial one.
 
-In this regard, the more complex the computation to be performed on each array element the better the parallel implementation will perform. That is because in the parallel case, the source \ttarray{} must be copied to sub-arrays in order to be transferred. On the contrary, the serial implementation operates on elements during that time.
+In this regard, the more complex the computation to be performed on each array element the better the parallel implementation will perform. That is because in the parallel case, the source \ttarray{} must be copied to sub-arrays in order to be transferred. On the contrary, the serial implementation operates on elements during that time. To observe the effects of this, we also perform the same benchmark using \tstarray{}s.
 
 \subsection{Algorithm selection}
 For this benchmark we decided to use an algorithm that applies a sepia tone effect to pictures. This meets the criteria of both being useful and having some calls to \code{Math.random} which make it more computationally complex.
 
-\subsection{Benchmark code}
+\subsection{TypedArray Benchmark}
 The benchmark code is introduced in the following code listing:
 \bmcode{http://jsperf.com/pjs-map-vs-serial/8}{../../spikes/3.1.3/comparison/jspBenchmark.js}
 
 \note{Unlike other benchmarks in which we were comparing different ways to achieve the same result, this benchmark compares a single way with a changing amount of elements. For that reason, the original charts are not displayed.}
 
 The results for the benchmark are displayed in Figure~\ref{fig:map-par-vs-seq}.
-\img{Relative performance of parallel implementation with regards to sequential one}{../../spikes/3.1.3/comparison/chart}{fig:map-par-vs-seq}
+\img{Relative performance of parallel implementation with regards to sequential one using ArrayBuffers}{../../spikes/3.1.3/comparison/chart}{fig:map-par-vs-seq}
+
+\subsection{SharedTypedArray Benchmark}
+The benchmark code is introduced in the following code listing:
+\bmcode{http://jsperf.com/pjs-map-vs-serial/9}{../../spikes/3.1.3/comparison/jspBenchmarkShared.js}
+
+\note{Unlike other benchmarks in which we were comparing different ways to achieve the same result, this benchmark compares a single way with a changing amount of elements. For that reason, the original charts are not displayed.}
+
+The results for the benchmark are displayed in Figure~\ref{fig:map-par-vs-seq-shared}.
+\img{Relative performance of parallel implementation with regards to sequential one using SharedArrayBuffers}{../../spikes/3.1.3/comparison/chartShared}{fig:map-par-vs-seq-shared}
 
 \subsection{Conclusion}
-The parallel improvement might be more noticeable in lower end machines since the linear implementation would be able to operate on less elements ``while the parallel is doing the split'', since the first is a computationally expensive operationa and the other one isn't. This is consistent with our findings based on the machine specifications in \ref{sub-sec:serialization-and-transference}.
+A couple of interesting findings result from the experiments. An expected one is that the amount of operations per second that can be performed with a serial implementation is almost inversely proportional to the amount of items to transform with a ratio of 1. On the other hand, this is not the case for the parallel approach.
+
+An acceptable speedup of approximately \textbf{2.4x} can be achieved with a relatively large amount of items (\(10E6\)) and performing a computationally expensive computation (generating pseudo-random numbers). Larger speedups might be possible by applying optimizations to the library and there might also be some potential improvements for operations with \tsabuffer{}s as they are likely not fully optimized, being that they are only an experimental feature in Firefox Nightly.
+
+The speedup obtained without shared memory is relative small (approximately \textbf{1.2x}) when compared to that obtained with shared memory. That can be explained by the overhead of copying arrays elements, to work around the lack of shared memory, when communicating with the Web Workers.
 
 \pagebreak

@@ -1,4 +1,4 @@
-// http://jsperf.com/pjs-map-vs-serial/8
+// http://jsperf.com/pjs-map-vs-serial/9
 
 // HTML preparation
 <script src="http://rawgit.com/pjsteam/pjs/v1.0.0-beta/dist/p-j-s.min.js"></script>
@@ -7,7 +7,7 @@
   pjs.init({ maxWorkers: 4});
 
   var generateElements = function (total) {
-    var typed = new Uint32Array(total);
+    var typed = new SharedUint32Array(total);
     for (var i = total; i > 0; i--){
       typed[i - 1] = 0xdddddddd;
     }
@@ -72,6 +72,13 @@
     wrappedXs.map(mapper).seq(function (err, r) {
       __finish();
     });
+  };
+</script>
+<script>
+  Benchmark.prototype.setup = function() {
+    __finish = function () {
+      deferred.resolve();
+    };
   };
 </script>
 
