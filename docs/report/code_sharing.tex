@@ -29,7 +29,7 @@ One possible way of passing serialized \tfunction{}s to workers would be to enco
 \end{itemize}
 
 We created a benchmark to understand the difference between each approach:
-\bmcode{http://jsperf.com/pjs-serialization-comparison/2}{../../spikes/2.2.1/test-syncEncodingAPI/encodingAPI.js}
+\bmcode{http://jsperf.com/pjs-serialization-comparison/4}{../../spikes/2.2.1/test-syncEncodingAPI/encodingAPI.js}
 
 The results for it are displayed in Figure~\ref{fig:string-encode-decode}.
 \img{Comparing string encoding/decoding approaches}{../../spikes/2.2.1/test-syncEncodingAPI/encodingAPI}{fig:string-encode-decode}
@@ -51,13 +51,13 @@ We created a benchmark using two functions whose string representation has diffe
 \end{enumerate}
 
 The benchmark with the short function was the following one:
-\bmcode{http://jsperf.com/pjs-serialization/2}{../../spikes/2.2.1/test-howToSendCode/shortSerialization.js}
+\bmcode{http://jsperf.com/pjs-serialization/5}{../../spikes/2.2.1/test-howToSendCode/shortSerialization.js}
 
 The results for it are displayed in Figure~\ref{fig:short-serialization}.
 \img{Comparing string encoding/decoding approaches}{../../spikes/2.2.1/test-howToSendCode/shortSerialization}{fig:short-serialization}
 
 The benchmark with the long function was the following one:
-\bmcode{http://jsperf.com/pjs-serialization-long}{../../spikes/2.2.1/test-howToSendCode/longSerialization.js}
+\bmcode{http://jsperf.com/pjs-serialization-long/3}{../../spikes/2.2.1/test-howToSendCode/longSerialization.js}
 
 The results for it are displayed in Figure~\ref{fig:long-serialization}.
 \img{Comparing string encoding/decoding approaches}{../../spikes/2.2.1/test-howToSendCode/longSerialization}{fig:long-serialization}
@@ -66,7 +66,7 @@ The results for it are displayed in Figure~\ref{fig:long-serialization}.
 We created a benchmark that tranfers a \ttarray{} and a \tstring{} that are properties of the same object back and forth between the main thread an a worker to understand if transferring additional objects affected the transfer time when comparing it with just tranferring a \tstring{}.
 
 The benchmark's code is the following one:
-\bmcode{http://jsperf.com/pjs-encoding}{../../spikes/2.2.1/test-howToSendCodeWithData/encoding.js}
+\bmcode{http://jsperf.com/pjs-encoding/3}{../../spikes/2.2.1/test-howToSendCodeWithData/encoding.js}
 
 The results for it are displayed in Figure~\ref{fig:code-with-data}.
 \img{Comparing string encoding/decoding approaches}{../../spikes/2.2.1/test-howToSendCodeWithData/encoding}{fig:code-with-data}
