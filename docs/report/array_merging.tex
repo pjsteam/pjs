@@ -1,12 +1,12 @@
 \section{Array merging}
 
-Once all the workers have executed the function provided to them on each element of their portion of the original array, they are to notify the main thread and provide the resulting \tabuffer{} or \tsabuffer{}.
+Once all the workers have executed the \tfunction{} provided to them on each element of their portion of the original array, they are to notify the UI thread and provide the resulting \tabuffer{} or \tsabuffer{}.
 
 At this point the UI thread must consolidate the results from the Web Workers into a new \ttarray{} or \tstarray{} that represents the result for the entire operation.\footnote{The case for chains with \code{reduce} as the last step similar and simpler. Thus, it is not worth analyzing.}
 
 For the \tabuffer{} case, this means copying all the elements of each partial result into a larger \ttarray{} while maintaining the original order.
 
-For the \tsabuffer{} case there are two different options:
+For the \tsabuffer{} case there are two possible situations:
 \begin{enumerate}
   \item If all steps in the chain perform the \code{map} transformation, then no changes are required.
   \item If there is at least one \code{filter} step, the elements need to be placed at the beginning of the resulting \tstarray{} in order to avoid \textit{holes}.
@@ -25,14 +25,14 @@ The results for the benchmark are displayed in Figure~\ref{fig:typed-array-merge
 
 \subsection{\tstarray{} merge benchmark}
 
-The benchmark presented modifies \ttarray{} merge benchmarks to support \tstarray{}s. The implementation removes \dataview{} test case as it is not supported by \tstarray{}:
+The benchmark modifies the \ttarray{} merge benchmark to support instances of the \tstarray{} type. The implementation does not include the \dataview{} alternative as it is not supported by \tstarray{}s:
 \bmcode{http://jsperf.com/sharedtypedarray-merge}{../../spikes/2.4.1/sharedMerge.js}
 
 The results for the benchmark are displayed in Figure~\ref{fig:shared-typed-array-merge}.
 \img{Comparing \tstarray{} merge approaches}{../../spikes/2.4.1/sharedMerge}{fig:shared-typed-array-merge}
 
 \subsection{Conclusion}
-The benchmark shows that the best alternative to merge small arrays into a larger one is using \code{Set} method of eighter \ttarray or \tstarray.
+The benchmark shows that the best alternative to merge small arrays into a larger one is using \code{Set} method of either \ttarray{} or \tstarray{}.
 
 For illustration purposes, a naive implementation (without optimizations or error checking) would be similar to the following one:
 \begin{lstlisting}[caption=Simple \ttarray{} merge function]
