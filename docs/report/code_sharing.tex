@@ -38,14 +38,14 @@ The results for it are displayed in Figure~\ref{fig:string-encode-decode}.
 The native implementation was faster than the non-native one and the difference increased between Chrome versions, which seems to indicate that some extra optimizations could be expected in the future.
 
 \subsection{Transferring strings}
-Function's code not only needs to be serialized but also transferred. For that reason it was also worth comparing the time it takes to encode/decode a \tstring{} and tranfer the resulting \tabuffer{} to the worker against just passing the \tstring{} to the worker.
+Function's code not only needs to be serialized but also transferred. For that reason it was also worth comparing the time it takes to encode/decode a \tstring{} and transfer the resulting \tabuffer{} to the worker against just passing the \tstring{} to the worker.
 
 Additionally, in most scenarios code would have to be sent along with a \ttarray{} so it would also be interesting to see if the transfer time was affected by this fact.
 
-\subsubsection{\tstring{} serialization and tranfer benchmarks}
+\subsubsection{\tstring{} serialization and transfer benchmarks}
 We created a benchmark using two functions whose string representation has different lengths to see if the function's length affected the serialization and transfer time. We measured three approaches to transfer the string:
 \begin{enumerate}
-  \item Encoding the \tstring{} into an \tabuffer{}, sending it as a \code{Tranferable} and decoding it on the Web Worker.
+  \item Encoding the \tstring{} into an \tabuffer{}, sending it as a \code{Transferable} and decoding it on the Web Worker.
   \item Sending the string directly
   \item Using a \code{Blob} to store the stream and retrieving it in the Worker.
 \end{enumerate}
@@ -62,7 +62,7 @@ The benchmark with the long function was the following one:
 The results for it are displayed in Figure~\ref{fig:long-serialization}.
 \img{Comparing string encoding/decoding approaches}{../../spikes/2.2.1/test-howToSendCode/longSerialization}{fig:long-serialization}
 
-\subsubsection{\tstring{} serialization and shared tranfer benchmark}
+\subsubsection{\tstring{} serialization and shared transfer benchmark}
 
 We created a benchmark that compares these two scenarios:
 
@@ -77,8 +77,8 @@ The code for the benchmark is presented in the following code listing:
 The results for it are displayed in Figure~\ref{fig:serialization-vs-shared-transfer}.
 \img{Comparing string serialization vs shared buffer transfer approaches}{../../spikes/shared/2.2.1/jspBenchmarklongSendCode.png}{fig:serialization-vs-shared-transfer}
 
-\subsubsection{\tstring{} and \ttarray{} serialization and tranfer benchmarks}
-We created a benchmark that tranfers a \ttarray{} and a \tstring{} that are properties of the same object back and forth between the main thread an a worker to understand if transferring additional objects affected the transfer time when comparing it with just tranferring a \tstring{}.
+\subsubsection{\tstring{} and \ttarray{} serialization and transfer benchmarks}
+We created a benchmark that transfers a \ttarray{} and a \tstring{} that are properties of the same object back and forth between the main thread an a worker to understand if transferring additional objects affected the transfer time when comparing it with just transferring a \tstring{}.
 
 The benchmark's code is the following one:
 \bmcode{http://jsperf.com/pjs-encoding/3}{../../spikes/2.2.1/test-howToSendCodeWithData/encoding.js}
@@ -87,6 +87,6 @@ The results for it are displayed in Figure~\ref{fig:code-with-data}.
 \img{Comparing string encoding/decoding approaches}{../../spikes/2.2.1/test-howToSendCodeWithData/encoding}{fig:code-with-data}
 
 \subsubsection{Conclusion}
-As the benchmarks show, the fastest way to tranfer the \tstring{} between the UI thread and workers is by sending it directly.
+As the benchmarks show, the fastest way to transfer the \tstring{} between the UI thread and workers is by sending it directly.
 
 \pagebreak
