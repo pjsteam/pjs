@@ -55,7 +55,7 @@ pjs(new Uint32Array(canvasData.data.buffer)).map(function(pixel){
   var new_b = colorDistance(noise(), (r * 0.272) + (g * 0.534) + (b * 0.131), b);
 
   return (pixel & 0xFF000000) + (new_b << 16) + (new_g << 8) + (new_r & 0xFF);
-}, function(result){
+}).seq(function(result){
   // work on result
 });
 \end{lstlisting}
@@ -100,7 +100,7 @@ pjs(buff).map(function(pixel){
   var new_b = Math.max(Math.min(255, noiseb * ((r * 0.272) + (g * 0.534) + (b * 0.131)) + (1 - noiseb) * b), 0);
 
   return (pixel & 0xFF000000) + (new_b << 16) + (new_g << 8) + (new_r & 0xFF);
-}, function(result){
+}).seq(function(result){
   // work on result
 });
 \end{lstlisting}
