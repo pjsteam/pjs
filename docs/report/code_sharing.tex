@@ -21,7 +21,7 @@ Considering the fact that \tfunction{} objects cannot be directly transferred, a
 
 \note{An approach to provide contextual data to worker functions is explored in Section~\ref{sec:context}.}
 
-\subsubsection{\tstring{} serialization benchmarks}
+\subsubsection{\tstring{} encoding benchmarks}
 One possible way of passing serialized \tfunction{}s to workers would be to encode them as binary and transfer them as an \tabuffer{}. To encode the strings there are two possible approaches:
 \begin{itemize}
   \item Use the Encoding API\cite{encoding-api}
@@ -42,7 +42,7 @@ Function's code not only needs to be serialized but also transferred. For that r
 
 Additionally, in most scenarios code would have to be sent along with a \ttarray{} so it would also be interesting to see if the transfer time was affected by this fact.
 
-\subsubsection{\tstring{} serialization and transfer benchmarks}
+\subsubsection{\tstring{} encoding and transfer benchmarks}
 We created a benchmark using two functions whose string representation has different lengths to see if the function's length affected the serialization and transfer time. We measured three approaches to transfer the string:
 \begin{enumerate}
   \item Encoding the \tstring{} into an \tabuffer{}, sending it as a \code{Transferable} and decoding it on the Web Worker.
