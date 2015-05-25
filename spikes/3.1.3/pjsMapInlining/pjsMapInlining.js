@@ -1,4 +1,4 @@
-// http://jsperf.com/pjs-map-inlining/6
+// http://jsperf.com/pjs-map-inlining/7
 
 // HTML setup
 <script src="http://rawgit.com/pjsteam/pjs/v1.0.0-beta/dist/p-j-s.min.js"></script>

@@ -5,7 +5,7 @@ Before comparing the sequential implementation of \code{map} against the paralle
 We decided to introduce a simple key/value map acting as a cache where the keys are \tstring{}s with the function's code and the values are the \tfunction{} objects.
 
 To verify its performance we created a benchmark that runs both with and without the function cache:
-\bmcode{http://jsperf.com/p-j-s-with-vs-without-function-cache/3}{../../spikes/3.1.3/functionCache/functionCache.js}
+\bmcode{http://jsperf.com/p-j-s-with-vs-without-function-cache/4}{../../spikes/3.1.3/functionCache/functionCache.js}
 
 The results for the benchmark are displayed in Figure~\ref{fig:function-cache-result}.
 \img{Comparing p-j-s \code{map} with and without a function cache}{../../spikes/3.1.3/functionCache/functionCache}{fig:function-cache-result}
