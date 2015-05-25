@@ -1,4 +1,4 @@
-// http://jsperf.com/arraybuffer-copy/3
+// http://jsperf.com/arraybuffer-copy/4
 
 // HTML setup
 <script src="http://mrale.ph/irhydra/jsperf-renamer.js"></script>

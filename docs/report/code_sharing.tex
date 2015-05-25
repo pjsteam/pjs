@@ -1,6 +1,7 @@
-\section{Code sharing}
+\section{Code sharing}\label{sec:code-sharing}
+The library must handle the distribution of the code between the different workers when an operation is executed. This is a challenging problem with many possible alternatives: Cloud Haskell \cite{cloud-haskell} for example, requires a customized version of the Glasgow Haskell Compiler (GHC) to serialize closures and their captured variables as a code pointer and an environment, operating under the assumption that the same code is executed in all nodes. A proposal for using Scheme for distributed programming \cite{distributed-scheme} uses a custom serializable data structure to represent procedures, and macros in order to capture a closure's captured variables and serialize their values. It also assumes that all nodes are executing the same program since serialized functions store pointers to parts of source code files.
 
-One of the aspects that must be handled by the library is the distribution of the code between the different workers when a skeleton is created.
+In our case, modifying the runtime is not a viable alternative since we want our library to be usable by anyone creating applications for major browser versions.
 
 A naive approach would be trying to send the function to be executed directly to the worker. The following code fragment attempts to do so:
 \lstinputlisting[caption=Trying to send a function to a worker, escapechar=]{../../spikes/2.2.1/test-functionSerialization/funcSerialization.js}
@@ -8,27 +9,27 @@ A naive approach would be trying to send the function to be executed directly to
 When executed in the Google Chrome console the error shown in Figure~\ref{fig:func-serialization} is thrown.
 \img{Error when trying to send a \code{Function} object to a Web Worker}{../../spikes/2.2.1/test-functionSerialization/funcSerialization.png}{fig:func-serialization}
 
-That is an expected error as explained in section 9.5.3 of the HTML standard \cite{html-whatwg}, the value being sent must support the structured clone algorithm and a \code{Function} does not meet that requirement as explained in section 2.7.5 of that same standard. It could be assumed that this is because of the challenges of serializing function closures\cite{cloud-haskell}\cite{distributed-scheme}.
+That error is expected. As explained in section 9.5.3 of the HTML standard \cite{html-whatwg}, the value being sent must support the structured clone algorithm and a \code{Function} does not meet that requirement as explained in section 2.7.5 of that same standard. It could be assumed that this is because of the challenges of serializing functions.
 
 \subsection{Serializing functions}
-Considering the fact that \tfunction{} objects cannot be directly transferred a different serialization approach is to be considered. Since function closures will not be transferrable a possible alternative is to:
+Considering the fact that \tfunction{} objects cannot be directly transferred, a different serialization approach is to be considered. Since function closures will not be transferrable a possible alternative is to:
 \begin{enumerate}
   \item Serialize the function to a \tstring{}.
   \item Transfer the \tstring{} to the worker.
   \item Create a new function on the worker from that \tstring{}.
 \end{enumerate}
 
-\note{An approach to provide contextual data to worker functions is explored in \todo{link to section}.}
+\note{An approach to provide contextual data to worker functions is explored in Section~\ref{sec:context}.}
 
 \subsubsection{\tstring{} serialization benchmarks}
-One possible way of passing serialized \tfunction{} to workers would be to encode them as binary and transfer them as an \tabuffer{}. To encode the strings there are two possible approaches:
+One possible way of passing serialized \tfunction{}s to workers would be to encode them as binary and transfer them as an \tabuffer{}. To encode the strings there are two possible approaches:
 \begin{itemize}
-  \item Using the Encoding API\cite{encoding-api}
-  \item Implementing non native encoding/decoding functions
+  \item Use the Encoding API\cite{encoding-api}
+  \item Implement non native encoding/decoding functions
 \end{itemize}
 
 We created a benchmark to understand the difference between each approach:
-\bmcode{http://jsperf.com/pjs-serialization-comparison/2}{../../spikes/2.2.1/test-syncEncodingAPI/encodingAPI.js}
+\bmcode{http://jsperf.com/pjs-serialization-comparison/4}{../../spikes/2.2.1/test-syncEncodingAPI/encodingAPI.js}
 
 The results for it are displayed in Figure~\ref{fig:string-encode-decode}.
 \img{Comparing string encoding/decoding approaches}{../../spikes/2.2.1/test-syncEncodingAPI/encodingAPI}{fig:string-encode-decode}
@@ -37,40 +38,55 @@ The results for it are displayed in Figure~\ref{fig:string-encode-decode}.
 The native implementation was faster than the non-native one and the difference increased between Chrome versions, which seems to indicate that some extra optimizations could be expected in the future.
 
 \subsection{Transferring strings}
-Function's code not only needs to be serialized but also transferred. For that reason it was also worth comparing the time it takes to encode/decode a \tstring{} and tranfer the resulting \tabuffer{} to the worker against just passing the \tstring{} to the worker.
+Function's code not only needs to be serialized but also transferred. For that reason it was also worth comparing the time it takes to encode/decode a \tstring{} and transfer the resulting \tabuffer{} to the worker against just passing the \tstring{} to the worker.
 
 Additionally, in most scenarios code would have to be sent along with a \ttarray{} so it would also be interesting to see if the transfer time was affected by this fact.
 
-\subsubsection{\tstring{} serialization and tranfer benchmarks}
+\subsubsection{\tstring{} serialization and transfer benchmarks}
 We created a benchmark using two functions whose string representation has different lengths to see if the function's length affected the serialization and transfer time. We measured three approaches to transfer the string:
 \begin{enumerate}
-  \item Encoding the \tstring{} into an \tabuffer{}, sending it as a \code{Tranferable} and decoding it on the Web Worker.
+  \item Encoding the \tstring{} into an \tabuffer{}, sending it as a \code{Transferable} and decoding it on the Web Worker.
   \item Sending the string directly
-  \item Using a \code{Blob} to store the stream and retrieving that in the Worker.
+  \item Using a \code{Blob} to store the stream and retrieving it in the Worker.
 \end{enumerate}
 
 The benchmark with the short function was the following one:
-\bmcode{http://jsperf.com/pjs-serialization/2}{../../spikes/2.2.1/test-howToSendCode/shortSerialization.js}
+\bmcode{http://jsperf.com/pjs-serialization/5}{../../spikes/2.2.1/test-howToSendCode/shortSerialization.js}
 
 The results for it are displayed in Figure~\ref{fig:short-serialization}.
 \img{Comparing string encoding/decoding approaches}{../../spikes/2.2.1/test-howToSendCode/shortSerialization}{fig:short-serialization}
 
 The benchmark with the long function was the following one:
-\bmcode{http://jsperf.com/pjs-serialization-long}{../../spikes/2.2.1/test-howToSendCode/longSerialization.js}
+\bmcode{http://jsperf.com/pjs-serialization-long/3}{../../spikes/2.2.1/test-howToSendCode/longSerialization.js}
 
 The results for it are displayed in Figure~\ref{fig:long-serialization}.
 \img{Comparing string encoding/decoding approaches}{../../spikes/2.2.1/test-howToSendCode/longSerialization}{fig:long-serialization}
 
-\subsubsection{\tstring{} and \ttarray{} serialization and tranfer benchmarks}
-We created a benchmark that tranfers a \ttarray{} and a \tstring{} that are properties of the same object back and forth between the main thread an a worker to understand if transferring additional objects affected the transfer time when comparing it with just tranferring a \tstring{}.
+\subsubsection{\tstring{} serialization and shared transfer benchmark}
+
+We created a benchmark that compares these two scenarios:
+
+\begin{enumerate}
+\item Sending the \tstring{} representation of a function to four Web Workers.
+\item Encoding a function into a \tsabuffer{} and sending it to four Web Workers.
+\end{enumerate}
+
+The code for the benchmark is presented in the following code listing:
+\bmcode{http://jsperf.com/shared-function-transfer}{../../spikes/shared/2.2.1/jspBenchmark.longSendCode.js}
+
+The results for it are displayed in Figure~\ref{fig:serialization-vs-shared-transfer}.
+\img{Comparing string serialization vs shared buffer transfer approaches}{../../spikes/shared/2.2.1/jspBenchmarklongSendCode.png}{fig:serialization-vs-shared-transfer}
+
+\subsubsection{\tstring{} and \ttarray{} serialization and transfer benchmarks}
+We created a benchmark that transfers a \ttarray{} and a \tstring{} that are properties of the same object back and forth between the main thread an a worker to understand if transferring additional objects affected the transfer time when comparing it with just transferring a \tstring{}.
 
 The benchmark's code is the following one:
-\bmcode{http://jsperf.com/pjs-encoding}{../../spikes/2.2.1/test-howToSendCodeWithData/encoding.js}
+\bmcode{http://jsperf.com/pjs-encoding/3}{../../spikes/2.2.1/test-howToSendCodeWithData/encoding.js}
 
 The results for it are displayed in Figure~\ref{fig:code-with-data}.
 \img{Comparing string encoding/decoding approaches}{../../spikes/2.2.1/test-howToSendCodeWithData/encoding}{fig:code-with-data}
 
 \subsubsection{Conclusion}
-As the benchmarks show, the fastest way to tranfer the \tstring{} between the UI thread and workers is by sending it directly.
+As the benchmarks show, the fastest way to transfer the \tstring{} between the UI thread and workers is by sending it directly.
 
 \pagebreak

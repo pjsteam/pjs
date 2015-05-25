@@ -1,0 +1,108 @@
+\section{Context}\label{sec:context}
+
+Functions in JavaScript can capture variables as long as they are within the variable's lexical scope. Functions that make use of this feature are closures. As explained in Section~\ref{sec:code-sharing}, \code{Function} objects cannot be passed as messages to workers. This means that there is no out of the box mechanism to make variables that are available in the environment when the parallel computation is started accessible when executing the callback functions in each Web Worker.
+
+To solve this problem, p-j-s introduces the \emph{context} concept. There are two kinds of contexts:
+\begin{description}
+\item[Global context] Shared across all chains.
+\item[Local context] Specific to a particular step in a chain.
+\end{description}
+
+The following code snippet shows how developers can work with each type of context:
+\begin{lstlisting}[caption=Example using local and global context for chains]
+var xs = new SharedUint8Array(4);
+xs.set([1,2,3,4]);
+
+pjs.updateContext({
+  max: 3
+}).then(function(){
+  pjs(xs).filter(function(e, ctx){
+    return e <= ctx.max && e >= ctx.min;
+  }, {
+    min: 2
+  }).seq().then(function(range){
+    // range is [2,3]
+  });
+});
+\end{lstlisting}
+
+When executing each step in a chain, the local context is merged with the global context (neither is modified) into a separate object which is the \code{ctx} parameter that the function receives. If the same key is present in both the global and local context, the one in the local context is the one that will be available. Given the following code snippet, the available \code{ctx} for each function is displayed in Fig.~\ref{fig:context}.
+\begin{lstlisting}[caption=Example for resulting ctx]
+var xs = new SharedUint8Array(4);
+xs.set([1,2,3,4]);
+
+pjs.updateContext({
+  A: 0,
+  B: 25,
+  C: 44
+}).then(function(){
+  var chain = pjs(xs)
+    .map(function(e, ctx){
+      // code here
+    }, { A: 5, B: 13 })
+    .filter(function(e, ctx){
+      // code here
+    }, { A: 2, E: 9 })
+});
+\end{lstlisting}
+
+\img{Comparing \ttarray{} merge approaches}{../../spikes/6.1/context}{fig:context}
+
+The reason why there are two kinds of context is because there will usually be data that does not need to be passed to the Web Workers with each chain, so having a global context allows this. Additionally, the local context provides a way for developers to avoid polluting the global one with keys that are not necessary for all operations.
+
+We created a benchmark to explore the difference between sending the context and chains to execute as part of the same message, and using two different messages. The code for the benchmark is in the following listing:
+\bmcode{http://jsperf.com/additional-sendingdata-comparison/2}{../../spikes/6.1/sendingAdditionalsSeqVsPar/jspBenchmark.js}
+
+The results for the benchmark are displayed in Figure~\ref{fig:context-send}.
+\img{Comparing small context message passing}{../../spikes/6.1/sendingAdditionalsSeqVsPar/jspBenchmark-all-browsers}{fig:context-send}
+
+\subsection{Implementation}
+Internally the context is sent as a message to all Web Workers to make its properties available. Two possible implementatios were possible:
+\begin{itemize}
+  \item Sending the object directly and rely on structured cloning
+  \item Serializing the object using \code{JSON.stringify} and deserialize it in the workers
+\end{itemize}
+
+\note{None of the aforementioned approaches support sending functions as context keys. This is covered in Subsection~\ref{sub-sec:contexts-with-function}.}
+
+We created two separate benchmarks, one that sends small objects to a Web Worker and another one that sends large objects to a Web Worker. Both benchmarks compare the approaches against each other.
+
+The code for the benchmark with the small object is in the following listing:
+\bmcode{http://jsperf.com/additional-clonningdata-comparison/3}{../../spikes/6.1/cloningComparison/jspBenchmark.js}
+
+The results for the benchmark are displayed in Figure~\ref{fig:context-clone-small-cmp}.
+\img{Comparing small context message passing}{../../spikes/6.1/cloningComparison/result}{fig:context-clone-small-cmp}
+
+The code for the benchmark with the large object is in the following listing:
+\bmcode{http://jsperf.com/additional-clonningdata-comparison-long/3}{../../spikes/6.1/cloningComparison/jspBenchmarkLong.js}
+
+The results for the benchmark are displayed in Figure~\ref{fig:context-clone-large-cmp}.
+\img{Comparing large context message passing}{../../spikes/6.1/cloningComparison/resultLong}{fig:context-clone-large-cmp}
+
+\subsection{Contexts with functions}\label{sub-sec:contexts-with-function}
+Properties whose values are \code{Function} instances are serialized into an object. For example if the following object were passed as a context:
+\begin{lstlisting}[caption=Example context with a function property]
+{
+  a: 2,
+  b: function(c) {
+    return c + 1;
+  }
+}
+\end{lstlisting}
+
+It would result in the following object before being serialized:
+\begin{lstlisting}[caption=Example processed context]
+{
+  a: 2,
+  b: {
+    args: [ 'c' ],
+    code: '\n\treturn c + 1;\n',
+    __isFunction: true
+  }
+}
+\end{lstlisting}
+
+\subsection{Conclusion}
+Based on the benchmark results, we decided to use \code{JSON.stringify} to serialize \code{context} objects. This involves a tradeoff as, unlike structured cloning, it does not support cyclic references. For this scenario, we believe that the performance benefit is more valuable than supporting cyclic references.
+
+\pagebreak

@@ -1,7 +1,7 @@
-// http://jsperf.com/additional-context-comparison/3
+// http://jsperf.com/additional-context-comparison/4
 
 // HTML setup
-<script src="http://127.0.0.1:3000/p-j-s.min.js"></script>
+<script src="http://rawgit.com/pjsteam/pjs/v1.0.0-beta/dist/p-j-s.min.js"></script>
 <script>
   var pjs = require('p-j-s');
   pjs.init();
@@ -107,7 +107,7 @@
       g: 8,
       b: 16
     }
-  };
+  }
   function inlinedContextMapper(pixel, ctx) {
     var masks = ctx.masks;
     var shifts = ctx.shifts;

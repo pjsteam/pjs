@@ -1,7 +1,7 @@
-// http://jsperf.com/global-ctx-inlined-func
+// http://jsperf.com/global-ctx-inlined-func/3
 
 // HTML setup
-<script src="http://rawgit.com/pjsteam/pjs/v0.5.2/dist/p-j-s.min.js"></script>
+<script src="http://rawgit.com/pjsteam/pjs/v1.0.0-beta/dist/p-j-s.min.js"></script>
 <script>
   var pjs = require('p-j-s');
   pjs.init();
@@ -14,7 +14,7 @@
     return typed;
   };
 
-  var xs = generateElements(50000);
+  var xs = generateElements(100000); // 100.000
 
   var wrappedXs = pjs(xs);
 
@@ -34,7 +34,7 @@
   };
 
   pjs.updateContext({
-    inlinedMapper: inlinedMapper
+    x: inlinedMapper
   });
 </script>
 
@@ -46,12 +46,12 @@ var __finish = function (result) {
   deferred.resolve();
 };
 
-// Test case 1 - map with inlining
+// Test case 1 - map with function instance
 wrappedXs.map(inlinedMapper).seq(function (result) {
-  __finish(result);
+  __finish();
 });
 
-// Test case 2 - map with global inlining
-  wrappedXs.map('inlinedMapper').seq(function (result) {
-    __finish(result);
-  });
+// Test case 2 - map with function key
+wrappedXs.map('x').seq(function (result) {
+  __finish();
+});

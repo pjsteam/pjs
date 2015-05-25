@@ -1,4 +1,4 @@
-// http://jsperf.com/longer-transferrable-vs-cloning/2
+// http://jsperf.com/longer-transferrable-vs-cloning/3
 
 // HTML setup
 <script>

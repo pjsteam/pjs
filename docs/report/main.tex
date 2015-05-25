@@ -1,4 +1,5 @@
 \documentclass[12pt]{article}
+\usepackage{upquote}
 \usepackage{lingmacros}
 \usepackage{tree-dvips}
 \usepackage{cite}
@@ -13,6 +14,10 @@
 
 \input{intro.tex}
 
+\input{background.tex}
+
+\input{overview.tex}
+
 \input{micro_benchmarks.tex}
 
 \input{initialization.tex}
@@ -21,9 +26,13 @@
 
 \input{code_sharing.tex}
 
-\input{array_sharing.tex}
+\input{context.tex}
+
+\input{array_partitioning.tex}
 
 \input{array_merging.tex}
+
+\input{function_transfer_time.tex}
 
 \input{inlining.tex}
 

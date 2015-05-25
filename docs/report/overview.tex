@@ -1,0 +1,54 @@
+\section{Library Overview}\label{sec:overview}
+JavaScript developers are familiar with the concept of map, filter and reduce skeletons as language constructs. In JavaScript, \code{Array}s have \code{map}, \code{filter}, and \code{reduce} functions and version 6 of the EcmaScript standard adds those same methods to \ttarray{}s \cite{es6}. For example, to multiply all the elements of an \code{Array} by two:
+\begin{lstlisting}[caption=Example creating a new array with the values of the original one multiplied by two]
+var newValues = [1,2,3,4].map(function(e){
+  return e * 2;
+});
+
+// newValues is a new array [2,4,6,8]
+\end{lstlisting}
+
+Our library (p-j-s) only supports \tstarray{}s and \ttarray{}s due to performance reasons discussed in Section~\ref{sec:serialization-and-transference}. It aims to provide a similar interface while not changing the native object's prototypes and dealing with the asynchronous nature of the operation. Given a \tstarray{}, the following code would do the same as the previous example but parallelizing the work:
+\begin{lstlisting}[caption=Example creating a new array with the values of the original one multiplied by two using p-j-s]
+var pjs = require('p-j-s');
+pjs.init({ maxWorkers: 4 });
+var xs = new SharedUint8Array(4);
+xs.set([1,2,3,4]);
+pjs(xs).map(function(e){
+  return e * 2;
+}).seq().then(function(newValues){
+  // newValues is a new SharedUint8Array [2,4,6,8]
+});
+\end{lstlisting}
+
+The call to \code{pjs.init} initializes the library and the amount of workers to be used for processing (a worker pool is created with them).\footnote{More details in Section~\ref{sec:initialization}.}
+
+The API provided by p-j-s \cite{pjs-api} is very similar to the synchronous one that is provided by the language. The asynchronous nature of the operation is reflected by the fact that the call to \code{seq} returns a \code{Promise} \cite{promise} (alternatively a callback function could be passed as a parameter to it).
+
+It is possible to chain multiple operations before calling \code{seq} to avoid passing data back and forth between the Web Workers and the UI thread. Before \code{seq} is invoked, an operation is a chain of one or more steps. From the same main chain, multiple chains could be created:
+
+\begin{lstlisting}[caption=Example creating multiple chains from the same base chain]
+var xs = new SharedUint8Array(4);
+xs.set([1,2,3,4]);
+
+var chain = pjs(xs).map(function(e){
+  return e * 3;
+});
+
+var evenChain = chain.filter(function(e){
+  return e % 2 === 0;
+});
+
+var sumChain = chain.reduce(function(c, v){
+  return c + v;
+}, 0, 0);
+
+evenChain.seq().then(function(evens){
+  // evens is [6, 12]
+  sumChain.seq().then(function(sum){
+    // sum is [3,6,9,12]
+  });
+});
+\end{lstlisting}
+
+\pagebreak
