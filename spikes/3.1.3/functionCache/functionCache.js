@@ -1,4 +1,4 @@
-// http://jsperf.com/p-j-s-with-vs-without-function-cache/3
+// http://jsperf.com/p-j-s-with-vs-without-function-cache/4
 
 // HTML setup
 <script src="http://rawgit.com/pjsteam/pjs/1bf39be3012cedf13fdf2f85bd4b1197eaabde96/dist/p-j-s.min.js"></script>
