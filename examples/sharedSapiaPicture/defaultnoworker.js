@@ -43,9 +43,8 @@ var processSepia = function (binaryData, l) {
         tempContext.drawImage(source, 0, 0, canvas.width, canvas.height);
 
         var canvasData = tempContext.getImageData(0, 0, canvas.width, canvas.height);
-        var start = new Date();
         var binaryData = canvasData.data;
-        var diff = new Date() - start;
+        var start = new Date();
         processSepia(binaryData, len);
         var diff = new Date() - start;
         tempContext.putImageData(canvasData, 0, 0);
